@@ -10,7 +10,7 @@ labels:
 ---
 
 
-*Javascript, easy to understand, hard to master
+*Javascript, easy to understand, hard to master*
 
 Going across many of the languages that I have learned throughout the years, to be completely honest, I was a newbie with Javascript. I had no idea how it would function, how you would do basic arithmetic, declare variables, print out values and so forth. But as I went forward with it, I realized that it is not much different than say Java. How you would create a function (in Java would be a class) and be able to declare function variables throughout the body. One thing though that makes it different from the others is that it is able to be “First-class functions” meaning that variables can be declared through the function which make it easy and concise for the programmer to use.
 
