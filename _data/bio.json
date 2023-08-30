@@ -24,7 +24,7 @@
     {
       "name": "Languages and Frameworks",
       "keywords": [ "C", "C++", "Java", "Javascript" ]
-    }
+    },
     {
       "name": "Alternate Language",
       "keywords": [ "Japanese" ]
@@ -36,8 +36,8 @@
       "area": "Computer Science (expected Spring, 2025)",
       "studyType": "B.S.",
       "startDate": "2021-09-01",
-      "endDate": "Present",
-    }
+      "endDate": "Present"
+    },
     {
       "institution": "University of Hawaii, Honolulu, HI",
       "area": "Japanese (expected Spring, 2025)",
