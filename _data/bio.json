@@ -1,46 +1,49 @@
 {
   "basics": {
-    "name": "Molly Maluhia",
+    "name": "Lloyd Sanderson",
     "label": "Student",
     "picture": "https://github.com/kambergjohnson.png",
-    "email": "molly@hawaii.edu",
-    "phone": "808-333-4444",
-    "website": "https://mmaluhia.github.io",
-    "summary": "I am studying for a B.S. in Computer Science in the Department of Information and Computer Sciences at the University of Hawaii. I expect to graduate in Spring, 2024.",
+    "email": "llsanderson98@gmail.com",
+    "phone": "909-633-3893",
+    "website": "https://lsanderson1.github.io",
+    "summary": "I am studying for a B.S. in Computer Science and a B.A. in Japanese at the University of Hawaii at Manoa. I expect to graduate in Spring of 2025",
     "location": { "address": "", "postalCode": "96822", "city": "Honolulu", "countryCode": "USA", "region": "Hawaii" },
     "profiles": [
-      { "network": "github", "username": "mmaluhia", "url": "http://github.com/changeme" },
-      { "network": "linkedin", "username": "mollymaluhia", "url": "http://linkedin.com/in/changeme" },
-      { "network": "twitter", "username": "mollymal", "url": "http://twitter.com/changeme" },
-      { "network": "instagram", "username": "molly", "url": "http://instagram.com/changeme" }
+      { "network": "github", "username": "lsanderson1", "url": "http://github.com/lsanderson1" },
+      { "network": "linkedin", "username": "lloyd-sanderson", "url": "https://www.linkedin.com/in/lloyd-sanderson-4b48b0289/" }
     ]
   },
   "interests": [
-    { "name": "Interactive media" },
-    { "name": "Neuromorphic Computing" },
-    { "name": "Quantum Computing" },
+    { "name": "AI Design" },
+    { "name": "Game Design" },
+    { "name": "Java" },
     { "name": "Robotics" },
-    { "name": "3D Graphics" }
+    { "name": "3D Graphics / AutoCAD" }
   ],
   "skills": [
     {
       "name": "Languages and Frameworks",
-      "keywords": [ "C", "C++", "Java", "Javascript", "Assembly", "Common Lisp" ]
+      "keywords": [ "C", "C++", "Java", "Javascript" ],
     },
     {
-      "name": "Toolsets/OS",
-      "keywords": [ "MacOS", "Ubuntu", "Git/GitHub", "g++", "TI LaunchPad" ]
+      "name": "Alternate Language",
+      "keywords": [ "Japanese" ]
     }
   ],
   "education": [
     {
       "institution": "University of Hawaii, Honolulu, HI",
-      "area": "Computer Science (expected Spring, 2018)",
+      "area": "Computer Science (expected Spring, 2025)",
       "studyType": "B.S.",
-      "startDate": "2013-09-01",
+      "startDate": "2021-09-01",
       "endDate": "Present",
-      "courses": [
-      ]
+    }
+    {
+      "institution": "University of Hawaii, Honolulu, HI",
+      "area": "Japanese (expected Spring, 2025)",
+      "studyType": "B.A.",
+      "startDate": "2021-09-01",
+      "endDate": "Present",
     }
   ],
   "work": [
