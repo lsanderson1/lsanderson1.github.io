@@ -23,8 +23,8 @@
   "skills": [
     {
       "name": "Languages and Frameworks",
-      "keywords": [ "C", "C++", "Java", "Javascript" ],
-    },
+      "keywords": [ "C", "C++", "Java", "Javascript" ]
+    }
     {
       "name": "Alternate Language",
       "keywords": [ "Japanese" ]
