@@ -28,4 +28,4 @@ byte ADCRead(byte ch)
 }
 ```
 
-You can see more about this on the Space Commander X website: [Space Commander X Website]([https://nostalgialabs.weebly.com/]).
+You can see more about this on the Space Commander X website: [Space Commander X Website](https://nostalgialabs.weebly.com/).
