@@ -1,7 +1,7 @@
 ---
 layout: project
 type: project
-image: img/micromouse/micromouse-square.jpg
+image: img/SpaceCommanderX.png
 title: "Space Commander X"
 date: 2020
 published: true
