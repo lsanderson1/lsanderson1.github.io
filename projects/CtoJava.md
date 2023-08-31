@@ -1,124 +1,201 @@
 ---
 layout: project
 type: project
-image: img/Pokedex.png
-title: "Pokédex Construction"
+image: img/c-to-java.jpg
+title: "C to Java"
 date: 2022
 published: true
 labels:
-  - C++
-  - Constructors
-  - Deconstructors
+  - C
+  - Java
+  - Java Native Interface
   - Classes
-summary: "I developed a code to create and destroy objects based on when that specific member function is called."
+summary: "A code which converts Java to C, then back to Java."
 ---
 
-This code simply instantiates a constructor which would be called to create a member of the object and a deconstructor which
-is called at the end to delete said member.
-These are for which are called implicitly which means that they are not to be explicitly called.
-This starts to lean towards being more object oriented to which it focuses more on the object of the class, rather than the
-variable.
+This code implements native classes that can be found in Java as well as calling them from C. With this you are able to convert and write between two languages.
+Introduction to Java Native Interface was implemented and with simple code from Java calls from a library in C which has the C code to be used.
+Having knowledge of both languages as well as being able to use conversion between the two is a very powerful tool that can be used to produce a variety of things in both
+C and Java
 
-The code essentially is a Pokedex entry of three Pokemon, each of the Pokemon are called within the Pokemon class, and they can be given attributes, names and types.
-Each of the objects are created in the beginning, given their respective names and types, and then deconstructed in the end.
+The code starts off in Java, where it is to find the multiples of 5 given user input, it then goes and calls the library function which the C code is stored, and retrieves and does the C code.
+After, it exports it back to Java with the answers that it gave in C and produces a table to see if the number is a multiple or not.
 Here is an example of the code.
 ```cpp
-#include <string>
-#include <iostream>
-#include <vector>
-#include <map>
+import java.util.Scanner;
+import java.util.InputMismatchException;
 
-#include "pokemon.h"
-#include "wartortle.h"
-#include "charmeleon.h"
-#include "caterpie.h"
-
-using namespace std;
-
-/*****************************************************************
-//  Function name: checkPokedex
-//  
-//  DESCRIPTION:   A polymorphic function which retrieves from the 
-//                 data the information that was stored in the map
-//                 and prints out each pokemon
-//
-//  Parameters:    Pokemon *pokemon: Each child class pokemon with
-//                 the given nickname
-//
-//  Return values:  none
-//  
-****************************************************************/
-
-void checkPokedex(Pokemon *pokemon)
+public class homework10 
 {
-    pokemon->printData();
+    public static native int is_multiple5(int maxval);
+
+    /*****************************************************************
+    //  Function name: static (Library Loading)
+    //
+    //  DESCRIPTION:   Has the C Source code stored in here to be used
+    //                 in print_table
+    //
+    //  Parameters:    none
+    //
+    //  Return values:  none
+    //
+    ****************************************************************/  
+    static
+    {
+        System.loadLibrary("multiple");
+    }
+    
+    /*****************************************************************
+    //  Function name: main
+    //
+    //  DESCRIPTION:   Runs the user_interface, stores the value from
+    //                 user_interface in val, and runs print_table with
+    //                 that value
+    //
+    //  Parameters:    String args[]: The arguments given through the
+    //                 compiler
+    //
+    //  Return values:  none
+    //
+    ****************************************************************/  
+ 
+    public static void main(String args[])
+    {
+        int val = 0;
+        val = user_interface();
+
+        print_table(val);
+    }
+    
+    /*****************************************************************
+    //  Function name: user_interface
+    //
+    //  DESCRIPTION:   The user_interface which interacts with the user
+    //                 to input a maximum value (includes error handling)
+    //                 which is then to be printed through print_table
+    //
+    //  Parameters:    none
+    //
+    //  Return values:  maxval: the maximum value given by the user
+    //
+    ****************************************************************/  
+
+    static int user_interface()
+    {
+        int maxval = 0;
+        boolean control = true;
+        Scanner input = new Scanner(System.in);
+        
+        System.out.print("This program takes a user value and prints all the ");
+        System.out.print("multiples of 5 to the maximum value.\n");
+        System.out.print("Please enter a maximum value: ");
+        
+        do
+        {
+            try
+            {
+                maxval = input.nextInt();
+                control = false;
+            }
+            catch (InputMismatchException e)
+            {
+                System.out.print("Error, not a numeric integer.\n");
+                input = new Scanner(System.in);
+                System.out.print("Please enter a numeric integer: ");
+            }
+        } while(control != false);
+        
+        while (maxval < 0)
+        {
+            try
+            {
+                System.out.print("Error, not a positive integer.\n");
+                input = new Scanner(System.in);
+                System.out.print("Please enter a positive integer: ");
+                maxval = input.nextInt();
+            }
+            catch (InputMismatchException e)
+            {
+                input = new Scanner(System.in);
+            }
+        }
+        
+        input.close();
+        return maxval;
+    }
+    
+    /*****************************************************************
+    //  Function name: print_table
+    //
+    //  DESCRIPTION:   Prints out all the values from the maximum user
+    //                 input that shows whether or not the number is 
+    //                 divisible by 5 or not
+    //
+    //  Parameters:    maxval: the maximum value that was given by the user
+    //
+    //  Return values:  none
+    //
+    ****************************************************************/  
+ 
+    static void print_table(int maxval)
+    {
+        String str = String.format("%s %18s", "Number", "Is Multiple 5?\n");
+        System.out.print(str);
+        for (int i = 0; i <= maxval; i++)
+        {
+            int multiple = is_multiple5(i);
+            String str2 = "";
+            if (multiple == 1)
+            {
+                str2 = String.format("%6d %16s", i, "Yes");
+            }
+            else
+            {
+                str2 = String.format("%6d %16s", i, "No");
+            }
+           System.out.println(str2);
+        }
+       
+    }
 }
 
+#include "homework10.h"
+#include <stdio.h>
+
 /*****************************************************************
-//  Function name: main
-//  
-//  DESCRIPTION:   The main function whose job is to create a vector of
-//                 names, store those names, give the corresponding names
-//                 to each child class pokemon and call them using
-//                 checkPokedex. For vector, push_back was used to insert
-//                 names in the vector and for map, string is the key and
-//                 pokemon pointer is the value, insert puts the names in the
-//                 map and make_pair links the pokemon pointer (nickname) and
-//                 the actual name of the pokemon.
+//  Function name: Java_homework10_is_1multiple5
 //
-//  Parameters:    none
+//  DESCRIPTION:   The Java called native function which takes in the
+//                 maximum value from the user and goes through every
+//                 number to the maximum value to see if the number is
+//                 divisible by 5
 //
-//  Return values:  0: Success
-//  
-****************************************************************/
-
-
-int main()
+//  Parameters:    JNIEnv *env: The environment pointer to the native class
+//                 is_multiple5. Allows interaction with the JNI environment
+//                 and works with this C Source code to rotate data back
+//                 and forth.
+//                 jclass class: the object on which is_multiple5 is invoked.
+//                 A reference to the current class in homework10
+//                 jint i: The max value that was input by the user invoked
+//                 in java.
+//
+//  Return values:  0 : not divisible by 5
+//                  1 : divisible by 5
+//
+****************************************************************/        
+JNIEXPORT jint JNICALL Java_homework10_is_1multiple5
+(JNIEnv *env, jclass class, jint i)
 {
-    vector < string > names;
-    cout << "inserting names " << endl;
-    names.push_back("zappy");
-    names.push_back("zack");
-    names.push_back("jack");
-    cout << endl;
-
-    map < string, Pokemon * > pokemons;
-    
-    cout << "creating pokemon zappy the wartortle" << endl;
-    Pokemon *zappy = new Wartortle();
-    cout << endl;
-    cout << "creating pokemon zack the charmeleon" << endl;
-    Pokemon *zack = new Charmeleon();
-    cout << endl;
-    cout << "creating pokemon jack the caterpie" << endl;
-    Pokemon *jack = new Caterpie();
-    cout << endl;
-
-    cout << "inserting pokemons " << endl; 
-    pokemons.insert(make_pair(names[0], zappy));
-    pokemons.insert(make_pair(names[1], zack));
-    pokemons.insert(make_pair(names[2], jack));
-    cout << endl;
-
-    cout << "iterating over the names " << endl;
-    for(vector<string>::iterator it = names.begin(); it != names.end(); it++)
+    if (i % 5 == 0)
     {
-        cout << "using key: '" << *it << "'" << endl;
-        Pokemon *pokemon = pokemons.find(*it)->second;
-
-        cout << "calling the 'checkPokedex()' function" << endl;
-        checkPokedex(pokemon);
-        cout << endl;
-
-        cout << "deleting pokemon '" << *it << "'" << endl;
-        delete pokemon;
-        cout << endl;
+        i = 1;
     }
-    cout << endl;
-
-    pokemons.clear();
-
-
-    return 0;
+    
+    else
+    {
+        i = 0;
+    }
+    
+    return i;
 }
 ```
