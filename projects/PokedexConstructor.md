@@ -1,7 +1,7 @@
 ---
 layout: project
 type: project
-image: img/Constructor.png
+image: img/Pokedex.png
 title: "Constructors and Deconstructors"
 date: 2022
 published: true
