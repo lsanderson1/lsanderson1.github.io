@@ -1,7 +1,7 @@
 ---
 layout: project
 type: project
-image: img/SpaceCommanderX.png
+image: img/SpaceCommanderXcrop.png
 title: "Space Commander X"
 date: 2020
 published: true
