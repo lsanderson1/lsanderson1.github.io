@@ -16,6 +16,7 @@
   "interests": [
     { "name": "AI Design" },
     { "name": "Game Design" },
+    { "name": "C++" };
     { "name": "Java" },
     { "name": "Robotics" },
     { "name": "3D Graphics / AutoCAD" }
@@ -48,69 +49,42 @@
   ],
   "work": [
     {
-      "company": "UH Manoa Board of Publications",
-      "position": "Web Developer",
+      "company": "Sushi Love Boat",
+      "position": "Waiter",
       "website": "",
-      "startDate": "2015-08-01",
-      "endDate": "Present",
-      "summary": "Head of online presence for Ka Leo",
+      "startDate": "2021-04-16",
+      "endDate": "2021-11-26",
+      "summary": "Work as server for a sushi restaurant.",
       "highlights": [
-        "Maintain, update, and oversee official college newspaper website",
-        "Drive, design and build student-community projects for UH Manoa"
+        "Developed skill in customer service as well as interactions between customers and employees",
+        "Was able to multitask with various things, and keep time management in check"
       ]
     },
     {
-      "company": "UH Information Technology Services",
-      "position": "Help Desk Consultant",
-      "website": "http://www.hawaii.edu/its/",
-      "startDate": "2015-01-01",
-      "endDate": "2016-03-15",
-      "summary": "",
+      "company": "Gamestop",
+      "position": "Sales Representative",
+      "website": "",
+      "startDate": "2020-08-30",
+      "endDate": "2020-12-15",
+      "summary": "Employed sales strategies to efficiently sell and offer products.",
       "highlights": [
-        "Troubleshoot software, hardware and networking issues over the phone",
-        "Answer phone and email responses to the ITS Help Desk"
+        "Learned efficient strategies to communicate with customers about their interests, and gave solutions accordingly",
+        "Tracked inventory, management, and helped with many of the back end duties"
       ]
     }
   ],
   "volunteer": [
     {
-      "organization": "Center for Renewable Energy and Island Sustainability",
-      "website": "http://manoa.hawaii.edu/reis",
-      "position": "Software Developer",
-      "startDate": "2016-01-01",
-      "endDate": "Present",
-      "summary": "Lead developer for weather sensing project",
+      "organization": "Judson Church",
+      "website": "https://www.judsonsb.org/",
+      "position": "Organizer",
+      "startDate": "2012-10-31",
+      "endDate": "2016-10-31",
+      "summary": "A annual Halloween event which I would organize set up and carry out",
       "highlights": [
-        "Design firmware for distributed weather sensor network",
-        "Maintain custom data collection and storage infrastructure"
+        "Teamwork exercises and organization were prevalent and described.",
+        "Helping maintain and carry out events and plans according to what was provided."
       ]
-    },
-    {
-      "organization": "",
-      "website": "",
-      "position": "Professional organization involvement",
-      "startDate": "",
-      "endDate": "",
-      "summary": "",
-      "highlights": [
-        "Chair, ACM Manoa, 2016-Present",
-        "Member, IEEE Student Branch, 2014-Present",
-        "Webmaster/IT Officer, IEEE Student Branch, UH Manoa, 2012-2013"
-      ]
-    }
-  ],
-  "awards": [
-    {
-      "title": "B+ Scholarship",
-      "date": "2013-Present",
-      "awarder": "State of Hawaii",
-      "summary": "Scholarships awarded to incoming freshmen and continuing students who complete a rigorous high school curriculum with a minimum overall GPA of 3.0 at a Hawai'i public school."
-    },
-    {
-      "title": "First place",
-      "date": "2015",
-      "awarder": "University of Hawaii Micromouse Competition",
-      "summary": "My team won first place in 2015.  See my portfolio site for more details."
     }
   ],
   "references": [
