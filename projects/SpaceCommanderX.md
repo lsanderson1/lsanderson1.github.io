@@ -12,11 +12,6 @@ labels:
 summary: "I developed a Nostalgic Asteroid-type game that is accessible on the site."
 ---
 
-<div class="text-center p-4">
-  <img width="200px" src="../img/micromouse/micromouse-robot.png" class="img-thumbnail" >
-  <img width="200px" src="../img/micromouse/micromouse-robot-2.jpg" class="img-thumbnail" >
-  <img width="200px" src="../img/micromouse/micromouse-circuit.png" class="img-thumbnail" >
-</div>
 
 Space Commander X is a game developed on Unity where you control a ship in which you are to use to defeat oncoming forces. 
 Basic controls are used, WASD for example along with support for arrow keys as well.
@@ -33,4 +28,4 @@ byte ADCRead(byte ch)
 }
 ```
 
-You can learn more at the [UH Micromouse News Announcement](https://manoa.hawaii.edu/news/article.php?aId=2857).
+You can see more about this on the Space Commander X website: [Space Commander X Website]([https://nostalgialabs.weebly.com/]).
