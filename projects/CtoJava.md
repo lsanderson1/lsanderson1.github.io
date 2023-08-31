@@ -1,7 +1,7 @@
 ---
 layout: project
 type: project
-image: img/CtoJavacrop.png
+image: img/Java.png
 title: "C to Java"
 date: 2022
 published: true
