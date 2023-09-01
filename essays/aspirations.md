@@ -12,6 +12,7 @@ labels:
 ---
 
 *A Step up and Rise in Software Engineering*
+
 Software Engineering to me has always been a mysterious subject. Whether it be transformative or dynamic, it has always had a profound fascination with me. Always evolving, changing and developing are some of the many facets that make this interesting, as well as its ability to impact and shape the world today. Through innovative problem solving, software engineers have the power to create tools streamlining daily activities, revolutionize industries, and even have a communication aspect of connecting people around the world. My interest comes from these realizations as well as the intellectual growth for creative expression.
 
 ## Goals Setting and Accomplishments are Key
