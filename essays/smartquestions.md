@@ -29,3 +29,9 @@ However, there are some questions posed that are not as good as they seem which 
 ## My Thoughts and Experiences Now with Stack Overflow
 
 In this experience of researching Stack Overflow, asking Smart questions are paramount for software engineers, because they need to describe the problems in their code that they are facing, provide a description on what the code is doing with the desired output and actual output, along with any additional information that the developer has that can help the person answering the question to the best of their ability. Asking these questions not only demonstrates one’s ability to understand how to explain their code / project and the problems they are facing, but helps with the responder on how to appropriately answer the question. Moreover, most questions that are thought-invoking seem to get a thought-invoking answer. That is because the developer asking the question puts time into what they are trying to say to get a response that is best suited to their needs. As they say, “You get in what you put out.” So if one asks a meaningful Smart Question that has some thought behind it, one will receive an answer that has some thought behind it.
+
+## Works Cited
+
+1. https://stackoverflow.com/questions/72236553/im-creating-a-reddit-bot-using-python-pysimplegui-and-praw-it-runs-in-my-idl
+2. https://stackoverflow.com/questions/72235425/simplifying-aws-sdk-go-v2-testing-mocking
+3. https://stackoverflow.com/questions/72236070/mysql-8-0-29-installation-failed
