@@ -3,7 +3,7 @@ layout: essay
 type: essay
 title: "The Pleasures of Frameworks"
 # All dates must be YYYY-MM-DD format!
-date: 2023-08-31
+date: 2023-10-04
 published: true
 labels:
   - Computer Science
