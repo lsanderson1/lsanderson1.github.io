@@ -9,7 +9,7 @@ labels:
   - AI Assistance Tools
   - Software Engineering
   - Collaboration
-  - Learning Tools
+  - Learning Integration
   - ChatGPT
   - Practical Application
 ---
@@ -23,6 +23,7 @@ The relevance between AI and Software Engineering is vast, and can be accompanie
 + Automated Testing: AI is utilized to create intelligent testing frameworks that can automatically generate test cases, identify potential bugs, and optimize testing processes.
 + Natural Language Processing: AI-Powered Natural Language Processing (NLP for short) aids in generating and understanding documentation, creating comprehensibility and easily understandable documentation for software projects.
 + Predictive Analysis: Important tool in understanding and analyzing historical data to predict potential issues and maintenance requirements.
+
 These topics along with various others can exemplify the power that Chatbot AI tools can have and how it can have an impact on the user in the environment that it is creating. With many tools at its disposal, the role of AI in software engineering is vast and transformative. Applications span from coding to reliability in projects making it useful in this sense that contributes to an efficient workflow.
 
 ## Personal Experience with AI
