@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="title" content="The Coding Masterpiece: An Analogical Interpretation | Lloyd Sanderson | Professional Portfolio">
+    <meta name="description" content="">
+    <meta name="image" content="https://github.com/lsanderson1.png">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Lloyd Sanderson | Professional Portfolio">
+    <meta property="og:url" content="https://lsanderson1.github.io/essays/designpatterns.html">
+    <meta property="og:title" content="The Coding Masterpiece: An Analogical Interpretation | Lloyd Sanderson | Professional Portfolio">
+    <meta property="og:description" content="">
+    <meta property="og:image" content="https://github.com/lsanderson1.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+    <link rel="stylesheet" href="/css/techfolio-theme/skyblue.css">
+    <link rel="stylesheet" type="text/css" href="/css/rouge/github.css">
+    <!-- Load MathJax if 'mathjax: true' is found in your _config.yml. -->
+    
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-MML-AM_CHTML">
+    </script>
+    
+
+    <title>The Coding Masterpiece: An Analogical Interpretation | Lloyd Sanderson | Professional Portfolio</title>
+  </head>
+  <body>
+  <header class="navbar navbar-expand navbar-light bg-light bg-gradient border-bottom">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/">Lloyd Sanderson</a>
+    <div class="ms-auto">
+      <ul class="navbar-nav mb-2 mb-lg-0">
+        <a class="nav-link" href="/#projects">Projects</a>
+        <a class="nav-link" href="/#essays">Essays</a>
+        <a class="nav-link" href="/resume.html">Resume</a>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<div class="container py-4">
+  <h1 class="display-4">The Coding Masterpiece: An Analogical Interpretation</h1>
+  <span class="date">29 Nov 2023</span>
+  <hr>
+  <h2 id="design-patterns-the-many-variations">Design Patterns, The Many Variations</h2>
+<hr />
+<p>Throughout the realm of software development, design patterns emerge as architectural blueprints, akin to the blueprints that guide the construction of skyscrapers and intricate bridges. These patterns, much like blueprints, provide a structured approach to solving common design challenges, ensuring that software applications are crafted with elegance, robustness and adaptability. Each of the design patterns provide meaning to how each of coding is created, the Singleton Pattern, the Observer Pattern, the Composite Pattern, Strategy Pattern, and the Decorator Pattern. All come with unique functionality to create the most unique piece.</p>
+
+<h2 id="why-design-patterns-the-singleton-approach">Why Design Patterns? The Singleton Approach</h2>
+<hr />
+<p>So what and why design patterns? Why are they useful and what function does it really have? Imagine a world without design patterns, where programmers would deal with each design problem from scratch, re-inventing modern solutions without the benefit of shared knowledge and proven approaches. Software Development would turn into a chaotic endeavor, with countless variations of the solutions to the same problem. Design patterns, like beacons in unknown territories, illuminate the path toward optimal solutions that can be applied to a wide range of software scenarios.  For example the first basic pattern block is the Singleton Pattern. The goal of this pattern in standard Java terms is to ensure that a class has one instance and provides a global access point to that instance. Where the class has to be private, contains a private static instance of itself and a public static method, often called getInstance() which serves as the global access point to the singleton instance; if there is none available, it will be responsible for creating one. This embodies the concept of uniqueness, just like there can only be one sun in the solar system, it ensures that only one instance of a particular class exists within an application, a soloist encounter.</p>
+
+<h2 id="the-observer-pattern-steward">The Observer Pattern Steward</h2>
+<hr />
+<p>Transitioning to the vigilance of the Observer Pattern, it is more dependent on the object or the subject of the component. This maintains a list of dependencies called observers that are notified of any state changes, typically by calling one of their methods. I believe through the utilization of useState to save instances of data based on whatever has changed throughout the application. This pattern is used to define a one-to-many dependency between objects so that when one object changes state, all dependents are notified and updated automatically. This mimics the watchful eyes of a vigilant sentry, establishing a communication channel between the subject, and a set of interested observers. Whenever the subject’s state changes, the observers are notified allowing them to react accordingly. This is instrumental in event-driven, and maintaining data consistency across components.</p>
+
+<h2 id="the-uniqueness-of-composite-pattern">The Uniqueness of Composite Pattern</h2>
+<hr />
+<p>Moving to the Composite Pattern, it is a structural design pattern where objects can be composed into tree structures, then work with those structures as if they were individual objects. This promotes encapsulation by hiding implementation details of individual objects and composition of objects. It simplifies code by providing a uniform interface for working with individual objects and composition of objects, and makes adding new types of objects without changing the client code. Used mainly in user interface and XML documents, both of which have been thoroughly used throughout this ICS 314 class. Imagine a bustling city, where this city is composed of multiple neighborhoods, each with their own unique characteristics and distinct features. These neighborhoods can be viewed as individual components within the larger system of the city, and each city has its own unique landmarks, contributing to the identity of the city. Just like the above analogy, composite pattern allows organization of groups of similar objects to a tree structure. Such real world examples like a file system, organizes files and directories into tree-like arrangement, allowing users to navigate the file system, manipulate file directories, and perform various file operations on the entire file system without issue.</p>
+
+<h2 id="the-decisiveness-of-strategy-pattern">The Decisiveness of Strategy Pattern</h2>
+<hr />
+<p>The Strategy Pattern, which allows you to encapsulate a set of algorithms in separate objects and interchange them strategically, and is also able to facilitate the selection of algorithms at runtime. This implements the specific algorithms, where concrete strategies implement the methods defined in the strategy interface. With this, one can easily modify or replace algorithms without affecting client code. This strategy also provides greater flexibility allowing one to switch algorithms at runtime adapting the behavior of an application to different scenarios. Thinking algorithmically (for those taking ICS 311 now), one can implement different sorting algorithms such as bubble sort, quick sort, and merge sort as concrete strategies and select the appropriate one based on data size and criteria. Thinking analogically, it is like a skilled chef creating a culinary masterpiece, one does not simply throw ingredients in the pot haphazardly; instead, they employ a variety of cooking techniques and strategies to create dishes that are both flavorful and visually appealing. Similarly, software engineers utilize the strategy pattern to dynamically select and apply different algorithms based on specific requirements or conditions. Strategy pattern, like a collection of interchangeable cooking tools, each designed for a different purpose, selecting the tool based on the task at hand is paramount to the success of coding, just like selecting the most suitable algorithm for the current context.</p>
+
+<h2 id="the-functionality-of-decorator-pattern">The Functionality of Decorator Pattern</h2>
+<hr />
+<p>Lastly, the Decorator Pattern allows one to attach additional responsibilities to an object dynamically, which is done by wrapping the original object in a decorator object, then adds the desired functionality without modifying the original object itself. Picture a UI enriched with dynamic features, a canvas where decorators layered enhancements without altering the core structure. This is what allows to create an aesthetically pleasing user interface without the dissonance of convoluted code.</p>
+
+<h2 id="in-finale">In Finale</h2>
+<hr />
+<p>Each design pattern has its own unique purpose and functionality, with the Singleton pattern ensuring a soloist movement with one class and one instance, the vigilance of the Observer pattern allowing objects to communicate with each other whenever a state changes, the Composite pattern organizing groups into tree structures, Strategy pattern to allow algorithms to be selected at runtime and the Decorator pattern allowing additional responsibilities to be attached to objects dynamically. These provide a common vocabulary and shared understanding amongst programmers. They promote code use, encapsulation, and separation of concerns, making it easier to write, maintain and extend software applications, being essential tools to software developers who want to create well-crafted, maintainable and adaptable applications. Regarding the pattern name, it is fairly comprehendable on what the functionality does, but if it is not, at least a metaphor is easy to remember, right?</p>
+
+
+</div>
+
+<footer class="navbar navbar-expand navbar-light bg-light bg-gradient border-top">
+  <div class="container-fluid">
+    <div class="ms-auto">
+      <ul class="navbar-nav mb-2 mb-lg-0">
+        <small><a class="nav-link" href="https://techfolios.github.io">Made with Techfolios</a></small>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+  </body>
+</html>

@@ -1,0 +1,95 @@
+{
+  "basics": {
+    "name": "Lloyd Sanderson",
+    "label": "Student",
+    "picture": "https://github.com/lsanderson1.png",
+    "email": "llsanderson98@gmail.com",
+    "phone": "909-633-3893",
+    "website": "https://lsanderson1.github.io",
+    "summary": "I am studying for a B.S. in Computer Science and a B.A. in Japanese at the University of Hawaii at Manoa. I expect to graduate in Spring of 2025",
+    "location": { "address": "", "postalCode": "96822", "city": "Honolulu", "countryCode": "USA", "region": "Hawaii" },
+    "profiles": [
+      { "network": "github", "username": "lsanderson1", "url": "http://github.com/lsanderson1" },
+      { "network": "linkedin", "username": "lloyd-sanderson", "url": "https://www.linkedin.com/in/lloyd-sanderson-4b48b0289/" }
+    ]
+  },
+  "interests": [
+    { "name": "AI Design" },
+    { "name": "Game Design" },
+    { "name": "C++" },
+    { "name": "Java" },
+    { "name": "Robotics" },
+    { "name": "3D Graphics / AutoCAD" }
+  ],
+  "skills": [
+    {
+      "name": "Languages and Frameworks",
+      "keywords": [ "C", "C++", "Java", "Javascript" ]
+    },
+    {
+      "name": "Alternate Language",
+      "keywords": [ "Japanese" ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "University of Hawaii, Honolulu, HI",
+      "area": "Computer Science (expected Spring, 2025)",
+      "studyType": "B.S.",
+      "startDate": "2021-09-01",
+      "endDate": "Present"
+    },
+    {
+      "institution": "University of Hawaii, Honolulu, HI",
+      "area": "Japanese (expected Spring, 2025)",
+      "studyType": "B.A.",
+      "startDate": "2021-09-01",
+      "endDate": "Present",
+    }
+  ],
+  "work": [
+    {
+      "company": "Sushi Love Boat",
+      "position": "Waiter",
+      "website": "",
+      "startDate": "2021-04-16",
+      "endDate": "2021-11-26",
+      "summary": "Work as server for a sushi restaurant.",
+      "highlights": [
+        "Developed skill in customer service as well as interactions between customers and employees",
+        "Was able to multitask with various things, and keep time management in check"
+      ]
+    },
+    {
+      "company": "Gamestop",
+      "position": "Sales Representative",
+      "website": "",
+      "startDate": "2020-08-30",
+      "endDate": "2020-12-15",
+      "summary": "Employed sales strategies to efficiently sell and offer products.",
+      "highlights": [
+        "Learned efficient strategies to communicate with customers about their interests, and gave solutions accordingly",
+        "Tracked inventory, management, and helped with many of the back end duties"
+      ]
+    }
+  ],
+  "volunteer": [
+    {
+      "organization": "Judson Church",
+      "website": "https://www.judsonsb.org/",
+      "position": "Organizer",
+      "startDate": "2012-10-31",
+      "endDate": "2016-10-31",
+      "summary": "A annual Halloween event which I would organize set up and carry out",
+      "highlights": [
+        "Teamwork exercises and organization were prevalent and described.",
+        "Helping maintain and carry out events and plans according to what was provided."
+      ]
+    }
+  ],
+  "references": [
+    {
+      "name": "Available upon request"
+    }
+  ]
+}
