@@ -1,0 +1,236 @@
+<hr />
+<p>layout: project
+type: project
+image: img/BlenderIcon.png
+title: “Blender CLI Integration”
+date: 2025
+published: true
+labels:</p>
+<ul>
+  <li>Python</li>
+  <li>Common LISP</li>
+  <li>Blender / Assets</li>
+  <li>Socket and JSON Encapsulation</li>
+</ul>
+
+<h2 id="overview">Overview</h2>
+<p>This project is:</p>
+<ol>
+  <li><strong>A Python socket server</strong> embedded in Blender (v4.2+) that listens on TCP port (default: 5000) for JSON commands.</li>
+  <li><strong>A Common Lisp client library</strong> (<code class="language-plaintext highlighter-rouge">blender-ipc.lisp</code> + <code class="language-plaintext highlighter-rouge">blender-cli.lisp</code>) to send commands and an interactive menu.</li>
+</ol>
+
+<h2 id="what-is-used-to-execute-this-project">What is used to execute this project</h2>
+<ul>
+  <li><strong>Blender 4.2+</strong> with Python scripting enabled.</li>
+  <li><strong>Common Lisp</strong> with packages:
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">usocket</code></li>
+      <li><code class="language-plaintext highlighter-rouge">cl-json</code></li>
+    </ul>
+  </li>
+  <li>Network access between Lisp client and Blender (default <code class="language-plaintext highlighter-rouge">127.0.0.1:5000</code>).</li>
+</ul>
+
+<h2 id="setup">Setup</h2>
+<ol>
+  <li><strong>In Blender</strong>
+    <ul>
+      <li>Open the <code class="language-plaintext highlighter-rouge">blender-python_script_lloyd</code> text file and paste the Python script into the Text Editor.</li>
+      <li>Run the script or enable “Register” so it runs on file load.</li>
+      <li>
+        <p>Confirm console shows:</p>
+
+        <p>Blender socket server listening on 127.0.0.1:5000</p>
+      </li>
+    </ul>
+  </li>
+  <li><strong>In Lisp</strong>
+    <ul>
+      <li>Adjust <code class="language-plaintext highlighter-rouge">*blender-host*</code> and <code class="language-plaintext highlighter-rouge">*blender-port*</code> in <code class="language-plaintext highlighter-rouge">blender-ipc.lisp</code> if needed.</li>
+      <li>Load <code class="language-plaintext highlighter-rouge">blender-ipc.lisp</code> then <code class="language-plaintext highlighter-rouge">blender-cli.lisp</code> in your REPL. (or call ‘load’ on top, then C-c C-l on blender-cli.lisp)</li>
+      <li>Call <code class="language-plaintext highlighter-rouge">(blender-menu)</code> to access the interactive CLI.</li>
+    </ul>
+  </li>
+</ol>
+
+<h2 id="core-python-functions-action-handlers">Core Python Functions (action handlers)</h2>
+<ul>
+  <li>
+    <p><strong>ping</strong><br />
+Health check: replies “Get Pong’d!”</p>
+  </li>
+  <li>
+    <p><strong>create</strong><br />
+Create mesh primitives (<code class="language-plaintext highlighter-rouge">cube</code>, <code class="language-plaintext highlighter-rouge">sphere</code>, <code class="language-plaintext highlighter-rouge">cylinder</code>, <code class="language-plaintext highlighter-rouge">torus</code>, <code class="language-plaintext highlighter-rouge">plane</code>) with optional location, size, rotation.</p>
+  </li>
+  <li>
+    <p><strong>translate</strong>, <strong>rotate</strong>, <strong>scale</strong><br />
+Move, rotate (degrees), scale objects by given deltas or factors.</p>
+  </li>
+  <li>
+    <p><strong>delete</strong><br />
+Remove a named object—or all objects if no name provided.</p>
+  </li>
+  <li>
+    <p><strong>color</strong><br />
+Apply a solid RGBA color to an object’s material.</p>
+  </li>
+  <li>
+    <p><strong>rainbow</strong><br />
+Create a procedural rainbow material with optional shader type and roughness.</p>
+  </li>
+  <li>
+    <p><strong>emission</strong><br />
+Assign an emissive material with color and strength.</p>
+  </li>
+  <li>
+    <p><strong>particles</strong><br />
+Add or update a particle system: count, lifetime, velocity, smoke/fire toggles, resolution.</p>
+  </li>
+  <li>
+    <p><strong>light</strong><br />
+Add lights (<code class="language-plaintext highlighter-rouge">POINT</code>, <code class="language-plaintext highlighter-rouge">SUN</code>, <code class="language-plaintext highlighter-rouge">SPOT</code>, <code class="language-plaintext highlighter-rouge">AREA</code>) with location, energy, optional angle (°) &amp; blend (0–1) for spot, source color sampling, and optional radius-based light linking.</p>
+  </li>
+  <li>
+    <p><strong>add-camera</strong>, <strong>set-camera</strong><br />
+Create and set active camera with location &amp; rotation.</p>
+  </li>
+  <li>
+    <p><strong>get-info</strong><br />
+Query object transform and dimensions.</p>
+  </li>
+  <li>
+    <p><strong>material</strong><br />
+Assign node-based materials: principled, glass, glossy, metallic, anisotropic, sss, transparent, sheen, wireframe; with color, roughness, anisotropy, scale, radius parameters.</p>
+  </li>
+  <li>
+    <p><strong>animate</strong><br />
+Keyframe interpolate location, rotation_euler, or scale between start/end values over frames.</p>
+  </li>
+</ul>
+
+<h2 id="core-lisp-functions">Core Lisp Functions</h2>
+<ul>
+  <li><strong>blender-ping</strong></li>
+  <li><strong>blender-create</strong> NAME TYPE &amp;key :location :size :rotation</li>
+  <li><strong>blender-translate</strong> NAME DX DY DZ</li>
+  <li><strong>blender-rotate</strong> NAME RX RY RZ</li>
+  <li><strong>blender-scale</strong> NAME SX SY SZ</li>
+  <li><strong>blender-color</strong> NAME R G B &amp;optional A</li>
+  <li><strong>blender-rainbow</strong> NAME &amp;key :base_type :roughness</li>
+  <li><strong>blender-delete</strong> NAME</li>
+  <li><strong>blender-particles</strong> NAME &amp;key :count :lifetime :frame-start :frame-end :velocity :location :smoke :fire :resolution-max</li>
+  <li><strong>blender-light</strong> NAME TYPE &amp;key :location :energy :source :radius :angle :blend</li>
+  <li><strong>blender-add-camera</strong> NAME &amp;key :location :rotation</li>
+  <li><strong>blender-set-camera</strong> NAME</li>
+  <li><strong>blender-emission</strong> NAME &amp;key :color :strength</li>
+  <li><strong>blender-object-info</strong> NAME</li>
+  <li><strong>blender-material</strong> NAME TYPE &amp;key :color :roughness :anisotropy :scale :radius</li>
+  <li><strong>blender-animate</strong> NAME PROP &amp;key :start-frame :end-frame :start-value :end-value</li>
+  <li><strong>blender-menu</strong><br />
+Interactive menu driving all above commands.</li>
+</ul>
+
+<h2 id="usage-example">Usage Example</h2>
+<p>Once compiled and loaded IN SLIME-REPL: Creating and applying colors and materials to a Cube mesh</p>
+
+<p>CL-USER&gt; (blender-menu)
+==== BLENDER-CLI MENU =====
+Reminder: Please open your Blender Host and Port to connection before running payloads
+1) Ping
+2) Create Object
+3) Translate
+4) Rotate
+5) Scale
+6) Color
+7) Add Emission (+ Color)
+8) Apply Material
+9) Add Animation
+10) Add Particle System
+11) Add Light
+12) Add Camera
+13) Set Camera
+14) Delete Object
+15) Get Information
+16) Quit</p>
+
+<p>Choice: 1</p>
+
+<p>[Blender]:
+Get Pong’d!</p>
+
+<p>Choice: 2</p>
+
+<p>======== CREATING OBJECT… ==========
+Available Meshes:</p>
+
+<p>Cube
+Sphere
+Cylinder
+Torus
+Plane</p>
+
+<p>Please type in the mesh you wish to create: Cube
+How many Cube(s) would you like to create: 1
+======== Creating Cube #1… ========
+Name: Cube1
+Location (x y z): (0 0 0)
+Size: 9
+Rotation (Deg) (x y z): (0 0 0)</p>
+
+<p>[Blender]:
+You created a ‘cube’ named ‘Cube1’ at [0, 0, 0] with size 9 and rotation [0, 0, 0]</p>
+
+<p>Check your Blender Scene.</p>
+
+<p>Choice: 6</p>
+
+<p>======== APPLYING COLOR TO OBJECT… ==========
+Name: Cube1
+Apply Rainbow? (Y/N): N
+Solid Color (r g b (alpha)): (1 0 1)</p>
+
+<p>[Blender]:
+Colored ‘Cube1’ with [1, 0, 1, 1.0]</p>
+
+<p>Check your Blender Scene.</p>
+
+<p>Choice: 8</p>
+
+<p>======== APPLYING MATERIAL TO OBJECT ==========
+Name: Cube1
+Material Type:</p>
+
+<p>Principled
+Glass
+Glossy
+Metallic
+Anisotropic
+SSS (Subsurface Scattering)
+Transparent
+Sheen
+Wireframe</p>
+
+<p>Please input the material you wish to add to Cube1: Glossy
+Use existing object color? (Y/N): Y
+Roughness (0.0-1.0): 0</p>
+
+<p>[Blender]:
+Applied ‘glossy’ material to ‘Cube1’</p>
+
+<p>Check your Blender Scene.</p>
+
+<p>Choice: 14</p>
+
+<p>======== DELETING OBJECT… ==========
+Name to delete (or press Enter to delete ALL): Cube1</p>
+
+<p>[Blender]:
+Deleted object: ‘Cube1’</p>
+
+<p>Check your Blender Scene</p>
+
+<p>Choice: 16
+Goodbye.
+NIL</p>
