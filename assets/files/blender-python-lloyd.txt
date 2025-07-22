@@ -1,0 +1,933 @@
+import socket      # Provides low-level socket interfacing for networks
+import json        # For converting between JSON text and Python dictionaries
+import traceback   # For printing detailed exceptions (Stack Traces)
+import bpy         # Blender-Python API for interacting with the scene
+import math        # For use in conversion of degrees to radians in the create portion of rotation (certain functions)
+
+# === CONFIGURATION ===
+HOST = '127.0.0.1'  # Binds to loopback interface (local machine only)
+PORT = 5000         # TCP port to listem on
+POLL_INTERVAL = 0.1  # seconds between socket polls
+
+# === SETUP NON‑BLOCKING SERVER SOCKET ===
+# Creates the TCP/ICP socket
+server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+# Allows reuse of a local address (Prevents "Address already in use" errors)
+server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+# Configure the socket to non-blocking so accept() won't block (IMPORTANT: will crash Blender when trying to establish unknown connection)
+server_sock.setblocking(False)
+
+# Bind the socket to the specified Host and Port
+server_sock.bind((HOST, PORT))
+
+# Listener for the socket: backlog:5 in queue maximum is allowed to be taken
+server_sock.listen(5)
+
+print(f"Blender socket server listening on {HOST}:{PORT}")
+
+
+def send(msg, conn):
+    # Print to Blender's System Console - To still see it there
+    print(msg)
+    # Echo back to LISP client over the socket
+    try:
+        conn.sendall((msg + "\n").encode('utf-8'))
+    except Exception as e:
+        print(f"ERROR: Failed to send back to Lisp: {e}")
+
+# === HANDLE JSON COMMANDS ===
+def update_blender_scene(data, conn):
+    """
+    Interpret and execute commands received over the network
+    Supported commands in data dict
+      - ping: health check
+      - translate: moves an object by dx, dy, and dz
+      - rotate: rotate an object by rx, ry, rz (radians)
+      - scale: scale an object by factors sx, sy, sz
+      - color: sets a color on an object or creates a rainbow on the object
+      - create: creates a mesh primitive based on the definition by the user
+      - delete: deletes an object in the scene
+      - particles: creates or updates an existing particle system in the scene
+      - light: able to add light to scene
+      - camera: add and set cameras
+      - material: apply material and shaders to a given object
+      - animation: applies animation to an object over a set frame
+    """
+    
+    action = (data.get('action') or "").lower()     # Command Type
+    name   = data.get('object')                     # Name of the target Blender object
+    raw    = data.get('params', {})                 # Parameters for the command
+
+    # If params is retrieved as a list of [key, value] pairs, convert it to a dict
+    if isinstance(raw, list):
+        try:
+            params = dict(raw)
+        except Exception:
+            params = {}
+    elif isinstance(raw, dict):
+        params = raw
+    else:
+        params = {}
+    
+    if action == 'ping':
+        # Responds to the health check
+        send("Get Pong'd!", conn)
+
+    elif action == 'translate':
+        # Move object in 3D space by deltas
+        obj = bpy.data.objects.get(name)
+        if obj:
+            dx = params.get('dx', 0.0)
+            dy = params.get('dy', 0.0)
+            dz = params.get('dz', 0.0)
+            obj.location.x += dx
+            obj.location.y += dy
+            obj.location.z += dz
+            send(f"Translated '{name}' by ({dx}, {dy}, {dz}) on the world location.", conn)
+        else:
+            # Target object not found in Blender scene
+            send(f"Translate failed: object '{name}' not found.", conn)
+
+    elif action == 'rotate':
+        # Rotate an object around its local axes (Always in radians)
+        obj = bpy.data.objects.get(name)
+        if obj:
+            rx_deg = params.get('rx', 0.0)
+            ry_deg = params.get('ry', 0.0)
+            rz_deg = params.get('rz', 0.0)
+            obj.rotation_euler.x = math.radians(rx_deg)
+            obj.rotation_euler.y = math.radians(ry_deg)
+            obj.rotation_euler.z = math.radians(rz_deg)
+            send(f"Rotated '{name}' to ({rx_deg}, {ry_deg}, {rz_deg}).", conn)
+        else:
+            send(f"Rotate failed: object '{name}' not found.", conn)
+
+    elif action == 'scale':
+        # Scales object by its multiplication factors
+        obj = bpy.data.objects.get(name)
+        if obj:
+            sx = params.get('sx', 1.0)
+            sy = params.get('sy', 1.0)
+            sz = params.get('sz', 1.0)
+            obj.scale.x = sx
+            obj.scale.y = sy
+            obj.scale.z = sz
+            send(f"Scaled '{name}' by sx={sx}, sy={sy}, sz={sz}.", conn)
+        else:
+            send(f"Scale failed: object '{name}' not found.", conn)
+    
+    elif action == 'create':
+        # Creates a mesh primitive object
+        # Params should include...
+        # type: Cube or sphere
+        # location [x, y, z]
+        # Size optional (uniform scale)
+        obj_type = params.get('type', 'cube').lower()
+        loc      = params.get('location', [0.0, 0.0, 0.0])
+        size     = params.get('size', 1.0)
+        rot_deg  = params.get('rotation', [0.0, 0.0, 0.0])
+        
+        # Spawn the primitive at the given location and size (spawns a cube, sphere, cylinder, or torus in type)
+        if obj_type == 'cube':
+            # Cube uses the size argument
+            bpy.ops.mesh.primitive_cube_add(size=size, location=loc)
+            
+            # apply active rotation
+            new_obj = bpy.context.active_object
+            new_obj.rotation_euler = [math.radians(a) for a in rot_deg]
+            
+        elif obj_type in ('sphere', 'uv-sphere'):
+            bpy.ops.mesh.primitive_uv_sphere_add(radius=size, location=loc)
+            
+            # apply active rotation
+            new_obj = bpy.context.active_object
+            new_obj.rotation_euler = [math.radians(a) for a in rot_deg]
+            
+        elif obj_type == 'cylinder':
+            # Cylinder: size is its radius, default depth is 2 x radius
+            bpy.ops.mesh.primitive_cylinder_add(radius=size, depth=size * 2, location=loc)
+            
+            # apply active rotation
+            new_obj = bpy.context.active_object
+            new_obj.rotation_euler = [math.radians(a) for a in rot_deg]
+            
+        elif obj_type == 'torus':
+            # Torus uses major_radius and minor_radius
+            # Here, treat 'size' as the major radius and size/4 as the minor radius
+            bpy.ops.mesh.primitive_torus_add(
+                major_radius=size,
+                minor_radius=size * 0.25,
+                location=loc,
+            )
+            # apply active rotation
+            new_obj = bpy.context.active_object
+            new_obj.rotation_euler = [math.radians(a) for a in rot_deg]
+            
+        elif obj_type == 'plane':
+            # Plane basically just takes in the parameters of size and location
+            bpy.ops.mesh.primitive_plane_add(size=size, location=loc)
+            
+            # apply active rotation
+            new_obj = bpy.context.active_object
+            new_obj.rotation_euler = [math.radians(a) for a in rot_deg]
+            
+        else:
+            send(f"Unknown create type '{obj_type}'", conn)
+            return
+        
+        # Rename the created object if a name was passed
+        new_obj = bpy.context.active_object
+        if name:
+            new_obj.name = name
+            
+        send(f"You created a {obj_type!r} named {new_obj.name!r} at {loc} with size {size} and rotation {rot_deg}", conn)
+        
+    elif action == 'delete':
+        name = data.get('object')
+        if name:
+            obj = bpy.data.objects.get(name)
+            if obj:
+                # Firstly, unlink it from all collections so it no longer appears
+                for coll in obj.users_collection:
+                    coll.objects.unlink(obj)
+                # Then, remove it from .blend data so it is fully gone
+                bpy.data.objects.remove(obj, do_unlink=True)
+                send(f"Deleted object: '{name}'", conn)
+            else:
+                send(f"Delete failed: object '{name}' not found.", conn)
+        # Delete all objects in the scene
+        else:
+            # Static list of the objects in the scene
+            all_objs = list(bpy.data.objects)
+            for obj in all_objs:
+                for coll in obj.users_collection:
+                    coll.objects.unlink(obj)
+                    # Then, remove it from .blend data so it is fully gone
+                bpy.data.objects.remove(obj, do_unlink=True)
+            send(f"Deleted all objects in the scene.", conn)  
+        
+    elif action == 'color':
+        # Parse params to dict
+        raw = data.get('params', {})
+        if isinstance(raw, list):
+            params = {entry[0]: (entry[1] if len(entry)==2 else entry[1:])
+                    for entry in raw if isinstance(entry, list) and len(entry)>=2}
+        else:
+            params = raw if isinstance(raw, dict) else {}
+
+        # Normalize RGBA
+        col = params.get('color', [1.0,1.0,1.0,1.0])
+        if len(col) == 3:
+            col.append(1.0)
+        col = col[:4]
+        for i in range(4):
+            if col[i] is None:
+                col[i] = 1.0
+
+        # Find the object
+        obj = bpy.data.objects.get(name)
+        if not obj:
+            send(f"Color failed: '{name}' not found", conn)
+            return
+
+        # Get or create a node‐based material
+        mat = obj.active_material
+        if not mat:
+            mat = bpy.data.materials.new(name=f"Mat_{name}")
+            mat.use_nodes = True
+            obj.data.materials.append(mat)
+
+        nt = mat.node_tree
+        # If there are no nodes at all, give it a default Principled→Output
+        if not nt.nodes:
+            bsdf = nt.nodes.new("ShaderNodeBsdfPrincipled")
+            out  = nt.nodes.new("ShaderNodeOutputMaterial")
+            nt.links.new(bsdf.outputs['BSDF'], out.inputs['Surface'])
+
+        # Now walk every node, and wherever you see an input called "Base Color" or "Color",
+        # write your RGBA into it
+        for node in nt.nodes:
+            for inp in node.inputs:
+                if inp.name in ("Base Color", "Color"):
+                    try:
+                        inp.default_value = col
+                    except Exception:
+                        # some inputs might not accept 4‐element arrays; ignore those
+                        pass
+
+        send(f"Colored '{name}' with {col}", conn)
+    
+    elif action == 'rainbow':
+        # Applying procedural rainbow to object
+        obj = bpy.data.objects.get(name)
+        if not obj:
+            send(f"Rainbow failed: Could not find object '{name}'", conn)
+            return
+        
+        # What Shader to drive with the rainbow ramp?
+        base_type = params.get('base_type', 'principled').lower()
+        roughness = params.get('roughness', 0.4)
+
+        # Map from the string to the actual node class
+        node_map = {
+            'principled':  'ShaderNodeBsdfPrincipled',
+            'glass':       'ShaderNodeBsdfGlass',
+            'glossy':      'ShaderNodeBsdfGlossy',
+            'metallic':    'ShaderNodeBsdfPrincipled',   # Principled + Metallic[1]
+            'anisotropic': 'ShaderNodeBsdfAnisotropic',
+            'transparent': 'ShaderNodeBsdfTransparent',
+            'sheen':       'ShaderNodeBsdfSheen',
+            'wireframe':    None,
+        }
+        node_name = node_map.get(base_type, 'ShaderNodeBsdfPrincipled')  
+        
+        mat = bpy.data.materials.new(name=f"Mat_{name}_Rainbow")
+        mat.use_nodes = True
+        obj.data.materials.clear()
+        obj.data.materials.append(mat)
+        
+        nodes = mat.node_tree.nodes
+        links = mat.node_tree.links
+        nodes.clear()
+        
+        # Build the gradient → ramp → principled chain once
+        coord   = nodes.new("ShaderNodeTexCoord")
+        mapping = nodes.new("ShaderNodeMapping")
+        grad    = nodes.new("ShaderNodeTexGradient")
+        ramp    = nodes.new("ShaderNodeValToRGB")
+        out     = nodes.new("ShaderNodeOutputMaterial")
+        
+        links.new(coord.outputs['Generated'], mapping.inputs['Vector'])
+        links.new(mapping.outputs['Vector'], grad.inputs['Vector'])
+        links.new(grad.outputs['Fac'],         ramp.inputs['Fac'])
+        
+        # Insert the correct Bsdf
+        if base_type == 'wireframe':
+            wf = nodes.new("ShaderNodeWireframe")
+            diff = nodes.new("ShaderNodeDiffuse")
+            diff.inputs['Color'].default_value = (1,1,1,1)
+            links.new(wf.outputs['Fac'], diff.inputs['Color'])
+            links.new(diff.outputs['BSDF'], out.inputs['Surface'])
+        else:
+            bsdf = nodes.new(node_name)
+            # Principled Metallic
+            if base_type == 'metallic':
+                bsdf.inputs['Metallic'].default_value = 1.0
+            # Feed the rainbow color or base color
+            color_socket = (
+                bsdf.inputs.get('Base Color') or
+                bsdf.inputs.get('Color')
+            )
+            links.new(ramp.outputs['Color'], color_socket)
+            # Set the roughness, if it allows
+            if 'Roughness' in bsdf.inputs:
+                bsdf.inputs['Roughness'].default_value = roughness
+            links.new(bsdf.outputs['BSDF'], out.inputs['Surface'])
+        
+        # The master list of rainbow stops — always defined
+        rainbow = [
+            (0.00, (1,    0,    0,  1)),  # Red
+            (0.17, (1,  0.5,    0,  1)),  # Orange
+            (0.33, (1,    1,    0,  1)),  # Yellow
+            (0.50, (0,    1,    0,  1)),  # Green
+            (0.67, (0,    0,    1,  1)),  # Blue
+            (0.83, (0.3,  0,  0.5,  1)),  # Indigo
+            (1.00, (0.6,  0,  0.8,  1)),  # Violet
+        ]
+
+        # Now populate the ramp stops (endpoints + intermediates)
+        cr = ramp.color_ramp
+
+        # Remove any old “middle” stops
+        while len(cr.elements) > 2:
+            cr.elements.remove(cr.elements[-2])
+
+        # Set the two endpoints
+        cr.elements[0].position = rainbow[0][0]
+        cr.elements[0].color    = rainbow[0][1]
+        cr.elements[1].position = rainbow[-1][0]
+        cr.elements[1].color    = rainbow[-1][1]
+
+        # Add the intermediate colors
+        for pos, col in rainbow[1:-1]:
+            elt = cr.elements.new(pos)
+            elt.color = col
+
+        send(f"Rainbow applied to '{name}'", conn)
+            
+    elif action == 'emission':
+        obj = bpy.data.objects.get(name)
+        if obj:
+            mat = bpy.data.materials.new(name+'__EM')
+            mat.use_nodes = True
+            nodes = mat.node_tree.nodes
+            nodes.clear()
+            em = nodes.new('ShaderNodeEmission')
+            # Set both RGBA color and the strength it emits
+            em.inputs['Color'].default_value = params.get('color', [1,1,1,1])
+            em.inputs['Strength'].default_value = params.get('strength', 1.0)
+            out = nodes.new('ShaderNodeOutputMaterial')
+            mat.node_tree.links.new(em.outputs[0], out.inputs['Surface'])
+            obj.data.materials.clear()
+            obj.data.materials.append(mat)
+            send(f"Emission set on '{name}'", conn)
+        
+    elif action == 'particles':
+        # Add a particle system to an emitter or existing object
+        # params expected:
+        # count             - Total number of particles
+        # lifetime          - How long each particle lives
+        # frame start/end   - Emitter emission window
+        # velocity          - Initial velocity magnitude
+        # name              - Optional: name for the emitter if it needs creating
+        emitter_name = params.get('name', f"Emitter_{name}")
+        count        = params.get('count', 1000)
+        lifetime     = params.get('lifetime', 50)
+        fs           = params.get('frame_start', 1)
+        fe           = params.get('frame_end', 200)
+        vel_mag      = params.get('velocity', 1.0)
+        
+        # Get or create the emitter object
+        emitter = bpy.data.objects.get(emitter_name)
+        if not emitter:
+            # Make a tiny plane as emitter
+            mesh = bpy.data.meshes.new(emitter_name + "_mesh")
+            emitter = bpy.data.objects.new(emitter_name, mesh)
+            bpy.context.collection.objects.link(emitter)
+            bpy.ops.object.select_all(action="DESELECT")
+            emitter.select_set(True)
+            bpy.context.view_layer.objects.active = emitter
+            bpy.ops.mesh.primitive_plane_add(size=0.2, location=params.get('location', [0, 0, 0]))
+            emitter = bpy.context.active_object
+            
+        # Add a new particle system slot
+        psys = emitter.modifiers.new("ParticleSys", type='PARTICLE_SYSTEM').particle_system
+        settings = bpy.data.particles.new(emitter_name + "_settings")
+        psys.settings = settings
+        
+        # Configuration of particle system
+        settings.count              = count
+        settings.frame_start        = fs
+        settings.frame_end          = fe
+        settings.lifetime           = lifetime
+        settings.emit_from          = 'FACE'
+        settings.physics_type       = 'NEWTON'
+        settings.normal_factor      = vel_mag
+        
+        send(f"Added particle system on '{emitter_name}': count={count}, life={lifetime}, velocity={vel_mag}", conn)
+        
+        # Smoke / Fire toggle
+        smoke_on = bool(params.get('smoke'))
+        fire_on  = bool(params.get('fire'))
+
+        if smoke_on or fire_on:
+            # Make sure emitter is active
+            bpy.context.view_layer.objects.active = emitter
+            emitter.select_set(True)
+
+            # Quickly set up smoke + flow
+            bpy.ops.object.quick_smoke()
+
+            # Configure the SmokeFlow modifier
+            flow_mod = emitter.modifiers.get("SmokeFlow")
+            if flow_mod:
+                fs_mod = flow_mod.flow_settings
+                if smoke_on and fire_on:
+                    fs_mod.flow_type = 'BOTH'
+                elif fire_on:
+                    fs_mod.flow_type = 'FIRE'
+                else:
+                    fs_mod.flow_type = 'SMOKE'
+
+            # Find the domain object
+            domain_obj = next(
+                (o for o in bpy.context.scene.objects
+                if o.modifiers.get("SmokeDomain")),
+                None
+            )
+
+            if domain_obj:
+                # Create or re-use a material on the domain
+                mat = domain_obj.active_material
+                if mat is None:
+                    mat = bpy.data.materials.new(name=f"{domain_obj.name}_SmokeMat")
+                    domain_obj.data.materials.append(mat)
+                mat.use_nodes = True
+                nodes = mat.node_tree.nodes
+                links = mat.node_tree.links
+                nodes.clear()
+
+                #  Read the sim’s Temperature attribute
+                attr = nodes.new('ShaderNodeAttribute')
+                attr.attribute_name = 'Temperature'
+                attr.location = (-400, 0)
+                
+                # Shader Node Blackbody
+                blackbody = nodes.new('ShaderNodeBlackbody')
+                blackbody.location = (-200, 0)
+                links.new(attr.outputs['Fac'], blackbody.inputs['Temperature'])
+
+                # Principled Volume shader with blackbody coloring
+                vol = nodes.new('ShaderNodeVolumePrincipled')
+                vol.location = (0, 0)
+                vol.inputs['Density'].default_value = 10.0
+                vol.inputs['Blackbody Intensity'].default_value = 1.0
+
+                # Link temperature → fire color
+                links.new(blackbody.outputs['Fac'], vol.inputs['Temperature'])
+
+                #  Output node
+                out = nodes.new('ShaderNodeOutputMaterial')
+                out.location = (200, 0)
+                links.new(vol.outputs['Volume'], out.inputs['Volume'])
+
+                # Tweak domain resolution if requested
+                dom_mod = domain_obj.modifiers["SmokeDomain"]
+                dom_settings = dom_mod.domain_settings
+                dom_settings.resolution_max = params.get('resolution_max', dom_settings.resolution_max)
+
+                what = []
+                if smoke_on: what.append("smoke")
+                if fire_on:  what.append("fire")
+                send(f"Added {' + '.join(what)} simulation on '{emitter_name}' "
+                  f"(domain: '{domain_obj.name}').", conn)
+            else:
+                # Domain wasn’t found—shouldn’t happen, but just in case
+                what = []
+                if smoke_on: what.append("smoke")
+                if fire_on:  what.append("fire")
+                send(f"Added {' + '.join(what)} simulation on '{emitter_name}', "
+                    "but no SmokeDomain was found.", conn)
+        else:
+            print("Warning: Neither smoke nor fire requested, skipping fluid setup.")
+            
+    elif action == 'light':
+        # Adds a light to the scene
+        # type: POINT, SUN, SPOT, AREA
+        lt_type  = params.get('type', 'POINT').upper()
+        loc      = params.get('location', [0.0, 0.0, 0.0])
+        energy   = params.get('energy', 1000)
+        angle_deg  = params.get('angle', None)
+        blend    = params.get('blend', None)
+        src_name = params.get('source')     # Object to sample the color from
+        radius   = params.get('radius')     # Link everything within this distance
+        
+        # Create and configure
+        bpy.ops.object.light_add(type=lt_type, location=loc)
+        light = bpy.context.active_object
+        light.data.energy = energy
+        if name:
+            light.name = name
+        
+        if lt_type == 'SPOT':
+            if angle_deg is not None:
+                # Spot size is the full cone angle in radians
+                light.data.spot_size = math.radians(angle_deg)
+            if blend is not None:
+                light.data.spot_blend = blend
+                
+        # --- If passed a source, sample the base color and apply to light
+        if src_name:
+            src = bpy.data.objects.get(src_name)
+            if src and src.active_material and src.active_material.use_nodes:
+                bsdf = src.active_material.node_tree.nodes.get("Principled BSDF")
+                if bsdf:
+                    # Take the RGB from the base color socket
+                    light.data.color = bsdf.inputs['Base Color'].default_value [:3]
+                    
+        # Optional: Cycles light-linking so only 'target' is illuminated
+        if radius and bpy.context.scene.render.engine == 'CYCLES':
+            # Create (or reuse) a collection list for this link
+            coll_name = f"LL_{name}_{radius}"
+            if coll_name in bpy.data.collections:
+                ll_coll = bpy.data.collections[coll_name]
+            else:
+                ll_coll = bpy.data.collections.new(coll_name)
+                bpy.context.scene.collection.children.link(ll_coll)
+                    
+                # Move light into it
+            for col in light.users_collection:
+                col.objects.unlink(light)
+            ll_coll.objects.link(light)
+                
+            # Find every mesh whose world location is within radius
+            for obj in bpy.data.objects:
+                if obj.type == 'MESH':
+                    dist = (obj.location - light.location).length
+                    if dist <= radius:
+                        # Relink that object into the list collection
+                        for c in obj.users_collection:
+                            c.objects.unlink(obj)
+                        ll_coll.objects.link(obj)
+        
+        send(f"Added {lt_type} light at {loc} with energy={energy}"
+         + (f", angle={angle_deg}°" if angle_deg is not None else "")
+         + (f", blend={blend}"    if blend     is not None else "")
+         , conn)
+        
+    elif action == 'add-camera':
+        # Pull in the raw parameters and put them into a dict
+        raw = data.get('params', {})
+        params = {}
+        if isinstance(raw, dict):
+            params = raw
+        elif isinstance(raw, list):
+            for entry in raw:
+                if isinstance(entry, list) and len(entry) >= 2:
+                    key = entry[0]
+                    vals = entry[1:]
+                    params[key] = vals[0] if len(vals) == 1 else vals
+        
+        loc = params.get('location', [0.0, 0.0, 0.0])
+        # Expect the rotation in degrees
+        rot_deg = params.get('rotation', [0.0, 0.0, 0.0])
+        
+        # Make sure it is float
+        loc = [float(x) for x in loc]
+        rot_deg = [float(x) for x in rot_deg]
+        
+        rot_rad = [math.radians(a) for a in rot_deg]
+        
+        bpy.ops.object.camera_add(location=loc, rotation=rot_rad)
+        cam = bpy.context.active_object
+        if name:
+            cam.name = name
+        send(f"Added camera '{cam.name}' at location {loc} and rotation {rot_deg}", conn)
+        
+    elif action == 'set-camera':
+        cam = bpy.data.objects.get(name)
+        if cam and cam.type == 'CAMERA':
+            bpy.context.scene.camera = cam
+            send(f"Scene camera set to '{name}'", conn)
+        else:
+            send(f"Set camera failed: {name} is not found or not a camera!", conn)
+            
+    elif action == 'get-info':
+        name = data.get('object')
+        # Ask for specific object
+        def report(obj):
+            loc = obj.location
+            rot_deg = tuple(math.degrees(a) for a in obj.rotation_euler)
+            scale = tuple(obj.scale)
+            dims = tuple(obj.dimensions)
+            msg = (
+                f"'{obj.name}':\n"
+                f"  location   = {tuple(loc)}\n"
+                f"  rotation   = {rot_deg}°\n"
+                f"  scale      = {scale}\n"
+                f"  dimensions = {dims}"
+            )
+            send(msg, conn)
+            
+        if name:
+            obj = bpy.data.objects.get(name)
+            if obj:
+                report(obj)
+            else:
+                send(f"Information retrieval failed: '{name}' not found.", conn)
+            
+        else:
+            for obj in bpy.data.objects:
+                report(obj)
+                          
+    elif action == 'material':
+        """
+        Material assignment:
+            params:
+                type        - 'principled' (default), 'glass', 'glossy',
+                              'metallic', 'anisotropic', 'sss'
+                              'transparent', 'sheen', 'wireframe'
+                color       - [r, g, b, a]
+                roughness   - float (for principled, glass, glossy, metallic, anisotropic)
+                anisotropy  - float 0 - 1 (for anisotropic)
+                scale       - float (for sss)
+                radius      - [r, g, b] (for sss scatter radius)
+                sheen       - to give a slightly detailed look in light transformations
+        """
+        obj = bpy.data.objects.get(name)
+        if not obj:
+            send(f"Material Failed: '{name}' not found.", conn)
+            return
+        
+        mat_type    = params.get('type', 'principled').lower()
+        
+        # Try to grab from the active material
+        orig_color = [1.0,1.0,1.0,1.0]
+        mat0 = obj.active_material
+        if mat0 and mat0.use_nodes:
+            for node in mat0.node_tree.nodes:
+                for inp in node.inputs:
+                    if inp.name in ("Base Color", "Color"):
+                        try:
+                            orig_color = list(inp.default_value)
+                        except Exception:
+                            pass
+                        break
+                else:
+                    continue
+                break
+        elif mat0:
+            # Non-node material
+            orig_color = list(mat0.diffuse_color) + [1.0]
+        else:
+            # Object.color fallback
+            orig_color = list(obj.color)
+            
+        # Use the passed in parameters or the original color
+        col = params.get('color', orig_color)
+        if len(col) == 3:
+            col.append(1.0)
+        
+        col = col[:4]
+        
+        for i in range(4):
+            if col[i] is None:
+                col[i] = 1.0
+                                         
+        roughness   = float(params.get('roughness', 0.4))
+        anisotropy  = float(params.get('anisotropy', 0.5))
+        scale       = float(params.get('scale', 0.1))
+        radius      = params.get('radius', [1.0,0.2,0.1])
+        sigma       = float(params.get('sigma', 1.0))
+        
+        # New material only if absolutely needed
+        mat = bpy.data.materials.new(name=f"Mat_{name}_{mat_type.capitalize()}")
+        mat.use_nodes = True
+        nodes = mat.node_tree.nodes
+        links = mat.node_tree.links
+        nodes.clear()
+        
+        out = nodes.new('ShaderNodeOutputMaterial')
+        
+        if mat_type == 'glass':
+            glass = nodes.new('ShaderNodeBsdfGlass')
+            glass.inputs['Color'].default_value     = col
+            glass.inputs['Roughness'].default_value = roughness
+            links.new(glass.outputs['BSDF'], out.inputs['Surface'])
+        
+        elif mat_type == 'glossy':
+            glossy = nodes.new('ShaderNodeBsdfGlossy')
+            glossy.inputs['Color'].default_value       = col
+            glossy.inputs['Roughness'].default_value   = roughness
+            links.new(glossy.outputs['BSDF'], out.inputs['Surface'])
+            
+        elif mat_type == 'metallic':
+            bsdf = nodes.new('ShaderNodeBsdfPrincipled')
+            bsdf.inputs['Base Color'].default_value   = col
+            bsdf.inputs['Metallic'].default_value     = 1.0
+            bsdf.inputs['Roughness'].default_value    = roughness
+            links.new(bsdf.outputs['BSDF'], out.inputs['Surface'])
+            
+        elif mat_type == 'anisotropic':
+            aniso = nodes.new('ShaderNodeBsdfAnisotropic')
+            aniso.inputs['Color'].default_value       = col
+            aniso.inputs['Roughness'].default_value   = roughness
+            aniso.inputs['Anisotropy'].default_value  = anisotropy
+            links.new(aniso.outputs['BSDF'], out.inputs['Surface'])
+            
+        elif mat_type == 'sss':
+            sss = nodes.new('ShaderNodeSubsurfaceScattering')
+            sss.inputs['Color'].default_value         = col
+            sss.inputs['Scale'].default_value         = scale
+            sss.inputs['Radius'].default_value        = radius
+            links.new(sss.outputs['BSSRDF'], out.inputs['Surface'])
+            
+        elif mat_type == 'transparent':
+            transp = nodes.new('ShaderNodeBsdfTransparent')
+            transp.inputs['Color'].default_value      = col
+            links.new(transp.outputs['BSDF'], out.inputs['Surface'])
+            
+        elif mat_type == 'sheen': 
+            bsdf = nodes.new('ShaderNodeBsdfSheen')
+            # 1) Base tint color
+            bsdf.inputs['Color'].default_value = col[:4] 
+        
+            # 2) Roughness (controls the width of the sheen highlight)
+            bsdf.inputs['Roughness'].default_value = roughness
+        
+            # hook into output
+            links.new(bsdf.outputs['BSDF'], out.inputs['Surface'])
+            
+        elif mat_type == 'wireframe':
+            wf = nodes.new('ShaderNodeWireframe')
+            diffuse = nodes.new('ShaderNodeBsdfDiffuse')
+            diffuse.inputs['Color'].default_value   = col
+            glossy = nodes.new('ShaderNodeBsdfGlossy')
+            glossy.inputs['Roughness'].default_value = roughness
+            mix     = nodes.new('ShaderNodeMixShader')
+            links.new(wf.outputs['Fac'], mix.inputs['Fac'])
+            links.new(diffuse.outputs['BSDF'], mix.inputs[1])
+            links.new(glossy.outputs['BSDF'], mix.inputs[2])
+            links.new(mix.outputs['Shader'], out.inputs['Surface'])
+            
+        else:
+            # Defaults to principled
+            bsdf = nodes.new('ShaderNodeBsdfPrincipled')
+            bsdf.inputs['Base Color'].default_value     = col
+            bsdf.inputs['Roughness'].default_value      = roughness
+            links.new(bsdf.outputs['BSDF'], out.inputs['Surface'])
+            
+        # Assigning the material
+        obj.data.materials.clear()
+        obj.data.materials.append(mat)
+        send(f"Applied '{mat_type}' material to '{name}'", conn)
+        
+        
+    elif action == 'animate':
+        """
+        Smoothly interpolate a property from start value to end value
+        from start frame to end frame.
+        params:
+            property - "location", "rotation_euler", "scale"
+            start_frame - first frame to key
+            end_frame: - last frame to key
+            start_value - list of floats, length matches the property
+            end_value - same as the start value
+        """
+        
+        obj = bpy.data.objects.get(name)
+        if not obj:
+            send(f"Animate failed: object '{name}' not found.", conn)
+            return
+        
+        prop        = params.get('property', 'location')
+        
+        raw_sf      = params.get('start_frame')
+        if raw_sf is None:
+            start_f = bpy.context.scene.frame_current
+        else:
+            start_f = int(raw_sf)
+        raw_ef      = params.get('end_frame')
+        if raw_ef is None:
+            end_f   = start_f + 1
+        else:
+            end_f   = int(raw_ef)
+            
+        start_val   = params.get('start_value')
+        end_val     = params.get('end_value')
+        
+        # Validate
+        if prop not in ('location', 'rotation_euler', 'scale'):
+            send(f"Animate failed: unsupported property '{prop}'.", conn)
+            return
+        if (not isinstance(start_val, (list,tuple)) or
+            not isinstance(end_val,   (list,tuple)) or
+            len(start_val) != len(getattr(obj,prop)) or
+            len(end_val) != len(getattr(obj,prop))):
+                send(f"Animate failed: start_value/end_value must be "
+                      f"list of lengths {len(getattr(obj,prop))}.", conn)
+                return
+            
+            # Insert the first key frame:
+        setattr(obj, prop, start_val)
+        obj.keyframe_insert(data_path=prop, frame=start_f)
+            
+        # Insert the last key frame
+        setattr(obj, prop, end_val)
+        obj.keyframe_insert(data_path=prop, frame=end_f)
+            
+        # Force linear interpolation (can add other forms in the future)
+        anim = obj.animation_data.action
+        if action:
+            for fcurve in anim.fcurves:
+                if fcurve.data_path == prop:
+                    for kp in fcurve.keyframe_points:
+                        kp.interpolation == 'LINEAR'
+            
+        send(f"Animated '{name}.{prop}' from {start_val} -> {end_val} "
+              f"over frames {start_f}-{end_f}", conn)
+              
+    else:
+        # Unrecognized action type
+        send(f"Unknown action: '{action}'", conn)
+
+def setup_world_sky():
+    scene = bpy.context.scene
+
+    # 1) Switch to Eevee Next + Screen‐Trace fallback
+    scene.render.engine = 'BLENDER_EEVEE_NEXT'
+    eevee = scene.eevee
+    eevee.use_raytracing       = True
+    eevee.ray_tracing_method   = 'SCREEN'
+
+    # 2) Legacy SSR so you get that smear across the floor
+    eevee.use_ssr              = True
+    eevee.use_ssr_refraction   = True
+    eevee.ssr_thickness        = 0.9     # tweak up if you need more coverage
+    eevee.ssr_quality          = 1.0     # max precision
+    eevee.fast_gi_distance     = 10.0
+    eevee.fast_gi_step_count   = 16
+
+    # 3) Build your sky shader exactly as before
+    if scene.world is None:
+        scene.world = bpy.data.worlds.new("World")
+    world = scene.world
+    world.use_nodes = True
+    nodes = world.node_tree.nodes
+    links = world.node_tree.links
+
+    # clear any existing world nodes
+    for n in list(nodes):
+        nodes.remove(n)
+
+    # Sky texture → Background → Output
+    sky = nodes.new(type="ShaderNodeTexSky")
+    sky.sun_elevation = math.radians(45)
+    bg  = nodes.new(type="ShaderNodeBackground")
+    out = nodes.new(type="ShaderNodeOutputWorld")
+    links.new(sky.outputs["Color"], bg.inputs["Color"])
+    links.new(bg.outputs["Background"], out.inputs["Surface"])
+
+# call once at startup
+setup_world_sky()
+
+# === TIMER CALLBACK ===
+def socket_poll():
+    """
+    Called every POLL_INTERVAL seconds.
+    Accepts one connection, reads JSON, handles it.
+    Re‑schedules itself by returning POLL_INTERVAL.
+    """
+    try:
+        # Attempt to connect a new client connection
+        conn, addr = server_sock.accept()
+        # Set the blocking to true once found so recv() start wait for data
+        conn.setblocking(True)
+        with conn:
+            try:
+                # Read up to 4096 bytes of incoming data
+                raw = conn.recv(4096)
+                if raw:
+                    # Decode data to string, parse JSON, and dispatch
+                    decoded = json.loads(raw.decode('utf-8'))
+                    update_blender_scene(decoded, conn)
+            except json.JSONDecodeError as jde:
+                # Handle malformed payloads
+                send(f"JSON parse error: {jde}", conn)
+            except Exception:
+                 # Grab the full traceback as a string
+                 tb = traceback.format_exc()
+        
+                 # Send a header
+                 send("Error handling connection:", conn)
+        
+                 # Now the full error
+                 for line in tb.splitlines():
+                     send(line, conn)
+    except BlockingIOError:
+        # No incoming connection ready; expected in non‑blocking mode
+        pass
+    except Exception:
+        # Grab the full traceback as a string
+        tb = traceback.format_exc()
+        print("Error in socket_poll:")
+        print(tb)
+    finally:
+        # Return the interval to reschedule this function
+        return POLL_INTERVAL
+
+# === REGISTER TIMER ===
+# Blender's built in timer to call socket_poll() every POLL_INTERVAL seconds
+bpy.app.timers.register(socket_poll)
