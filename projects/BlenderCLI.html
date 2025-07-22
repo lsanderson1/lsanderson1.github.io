@@ -159,126 +159,114 @@ Keyframe interpolate location, rotation_euler, or scale between start/end values
 Interactive menu driving all above commands.</li>
 </ul>
 
-<h2 id="usage-example">Usage Example</h2>
-<p>Once compiled and loaded IN SLIME-REPL: Creating and applying colors and materials to a Cube mesh</p>
+<h2 id="usage-example"><strong>Usage Example</strong></h2>
+<div class="language-lisp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">CL-USER&gt;</span> <span class="p">(</span><span class="nv">blender-menu</span><span class="p">)</span>
+<span class="nv">====</span> <span class="nv">BLENDER-CLI</span> <span class="nv">MENU</span> <span class="nv">=====</span>
+<span class="nv">Reminder:</span> <span class="nv">Please</span> <span class="nb">open</span> <span class="nv">your</span> <span class="nv">Blender</span> <span class="nv">Host</span> <span class="nb">and</span> <span class="nv">Port</span> <span class="nv">to</span> <span class="nv">connection</span> <span class="nv">before</span> <span class="nv">running</span> <span class="nv">payloads</span>
+<span class="mi">1</span><span class="err">)</span> <span class="nv">Ping</span>
+<span class="mi">2</span><span class="err">)</span> <span class="nv">Create</span> <span class="nv">Object</span>
+<span class="mi">3</span><span class="err">)</span> <span class="nv">Translate</span>
+<span class="mi">4</span><span class="err">)</span> <span class="nv">Rotate</span>
+<span class="mi">5</span><span class="err">)</span> <span class="nv">Scale</span>
+<span class="mi">6</span><span class="err">)</span> <span class="nv">Color</span>
+<span class="mi">7</span><span class="err">)</span> <span class="nv">Add</span> <span class="nv">Emission</span> <span class="p">(</span><span class="nb">+</span> <span class="nv">Color</span><span class="p">)</span>
+<span class="mi">8</span><span class="err">)</span> <span class="nv">Apply</span> <span class="nv">Material</span>
+<span class="mi">9</span><span class="err">)</span> <span class="nv">Add</span> <span class="nv">Animation</span>
+<span class="mi">10</span><span class="err">)</span> <span class="nv">Add</span> <span class="nv">Particle</span> <span class="nv">System</span>
+<span class="mi">11</span><span class="err">)</span> <span class="nv">Add</span> <span class="nv">Light</span>
+<span class="mi">12</span><span class="err">)</span> <span class="nv">Add</span> <span class="nv">Camera</span>
+<span class="mi">13</span><span class="err">)</span> <span class="nv">Set</span> <span class="nv">Camera</span>
+<span class="mi">14</span><span class="err">)</span> <span class="nv">Delete</span> <span class="nv">Object</span>
+<span class="mi">15</span><span class="err">)</span> <span class="nv">Get</span> <span class="nv">Information</span>
+<span class="mi">16</span><span class="err">)</span> <span class="nv">Quit</span>
 
-<p>CL-USER&gt; (blender-menu)
-==== BLENDER-CLI MENU =====
-Reminder: Please open your Blender Host and Port to connection before running payloads
-1) Ping
-2) Create Object
-3) Translate
-4) Rotate
-5) Scale
-6) Color
-7) Add Emission (+ Color)
-8) Apply Material
-9) Add Animation
-10) Add Particle System
-11) Add Light
-12) Add Camera
-13) Set Camera
-14) Delete Object
-15) Get Information
-16) Quit</p>
+<span class="nv">Choice:</span> <span class="mi">1</span>
 
-<p>Choice: 1</p>
+<span class="nv">[Blender]:</span>
+<span class="nv">Get</span> <span class="nv">Pong</span><span class="ss">'d!</span>
 
-<p>[Blender]:
-Get Pong’d!</p>
+<span class="nv">Choice:</span> <span class="mi">2</span>
 
-<p>Choice: 2</p>
+<span class="nv">========</span> <span class="nv">CREATING</span> <span class="nv">OBJECT...</span> <span class="nv">==========</span>
+<span class="nv">Available</span> <span class="nv">Meshes:</span>
 
-<p>======== CREATING OBJECT… ==========
-Available Meshes:</p>
+  <span class="nv">Cube</span>  
+  <span class="nv">Sphere</span>  
+  <span class="nv">Cylinder</span>  
+  <span class="nv">Torus</span>  
+  <span class="nv">Plane</span>  
 
-<p>Cube
-Sphere
-Cylinder
-Torus
-Plane</p>
+<span class="nv">Please</span> <span class="k">type</span> <span class="nv">in</span> <span class="k">the</span> <span class="nv">mesh</span> <span class="nv">you</span> <span class="nv">wish</span> <span class="nv">to</span> <span class="nv">create:</span> <span class="nv">Cube</span>  
+<span class="nv">How</span> <span class="nv">many</span> <span class="nv">Cube</span><span class="p">(</span><span class="nv">s</span><span class="p">)</span> <span class="nv">would</span> <span class="nv">you</span> <span class="nv">like</span> <span class="nv">to</span> <span class="nv">create:</span> <span class="mi">1</span>  
+<span class="nv">========</span> <span class="nv">Creating</span> <span class="nv">Cube</span> <span class="err">#</span><span class="nv">1...</span> <span class="nv">==========</span>
+<span class="nv">Name:</span> <span class="nv">Cube1</span>  
+<span class="nv">Location</span> <span class="p">(</span><span class="nv">x</span> <span class="nv">y</span> <span class="nv">z</span><span class="p">)</span><span class="err">:</span> <span class="p">(</span><span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span><span class="p">)</span>  
+<span class="nv">Size:</span> <span class="mi">9</span>  
+<span class="nv">Rotation</span> <span class="p">(</span><span class="nv">Deg</span><span class="p">)</span> <span class="p">(</span><span class="nv">x</span> <span class="nv">y</span> <span class="nv">z</span><span class="p">)</span><span class="err">:</span> <span class="p">(</span><span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span><span class="p">)</span>  
 
-<p>Please type in the mesh you wish to create: Cube
-How many Cube(s) would you like to create: 1
-======== Creating Cube #1… ========
-Name: Cube1
-Location (x y z): (0 0 0)
-Size: 9
-Rotation (Deg) (x y z): (0 0 0)</p>
+<span class="nv">[Blender]:</span>  
+<span class="nv">You</span> <span class="nv">created</span> <span class="nv">a</span> <span class="ss">'cube</span><span class="o">'</span> <span class="nv">named</span> <span class="ss">'Cube1</span><span class="o">'</span> <span class="nv">at</span> <span class="nv">[0,</span> <span class="mi">0</span><span class="o">,</span> <span class="nv">0]</span> <span class="nv">with</span> <span class="nv">size</span> <span class="mi">9</span> <span class="nb">and</span> <span class="nv">rotation</span> <span class="nv">[0,</span> <span class="mi">0</span><span class="o">,</span> <span class="nv">0]</span>  
 
-<p>[Blender]:
-You created a ‘cube’ named ‘Cube1’ at [0, 0, 0] with size 9 and rotation [0, 0, 0]</p>
+<span class="nv">Check</span> <span class="nv">your</span> <span class="nv">Blender</span> <span class="nv">Scene.</span>
 
-<p>Check your Blender Scene.</p>
+<span class="nv">Choice:</span> <span class="mi">6</span>
 
-<p>Choice: 6</p>
+<span class="nv">========</span> <span class="nv">APPLYING</span> <span class="nv">COLOR</span> <span class="nv">TO</span> <span class="nv">OBJECT...</span> <span class="nv">==========</span>
+<span class="nv">Name:</span> <span class="nv">Cube1</span>  
+<span class="nv">Apply</span> <span class="nv">Rainbow?</span> <span class="p">(</span><span class="nv">Y/N</span><span class="p">)</span><span class="err">:</span> <span class="nv">N</span>  
+<span class="nv">Solid</span> <span class="nv">Color</span> <span class="p">(</span><span class="nv">r</span> <span class="nv">g</span> <span class="nv">b</span> <span class="p">(</span><span class="nv">alpha</span><span class="p">))</span><span class="err">:</span> <span class="p">(</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span><span class="p">)</span>  
 
-<p>======== APPLYING COLOR TO OBJECT… ==========
-Name: Cube1
-Apply Rainbow? (Y/N): N
-Solid Color (r g b (alpha)): (1 0 1)</p>
+<span class="nv">[Blender]:</span>  
+<span class="nv">Colored</span> <span class="ss">'Cube1</span><span class="o">'</span> <span class="nv">with</span> <span class="nv">[1,</span> <span class="mi">0</span><span class="o">,</span> <span class="mi">1</span><span class="o">,</span> <span class="nv">1.0]</span>  
 
-<p>[Blender]:
-Colored ‘Cube1’ with [1, 0, 1, 1.0]</p>
+<span class="nv">Check</span> <span class="nv">your</span> <span class="nv">Blender</span> <span class="nv">Scene.</span>
 
-<p>Check your Blender Scene.</p>
+<span class="nv">Choice:</span> <span class="mi">8</span>
 
-<p>Choice: 8</p>
+<span class="nv">========</span> <span class="nv">APPLYING</span> <span class="nv">MATERIAL</span> <span class="nv">TO</span> <span class="nv">OBJECT</span> <span class="nv">==========</span>
+<span class="nv">Name:</span> <span class="nv">Cube1</span>  
+<span class="nv">Material</span> <span class="nv">Type:</span>
 
-<p>======== APPLYING MATERIAL TO OBJECT ==========
-Name: Cube1
-Material Type:</p>
+  <span class="nv">Principled</span>  
+  <span class="nv">Glass</span>  
+  <span class="nv">Glossy</span>  
+  <span class="nv">Metallic</span>  
+  <span class="nv">Anisotropic</span>  
+  <span class="nv">SSS</span> <span class="p">(</span><span class="nv">Subsurface</span> <span class="nv">Scattering</span><span class="p">)</span>  
+  <span class="nv">Transparent</span>  
+  <span class="nv">Sheen</span>  
+  <span class="nv">Wireframe</span>  
 
-<p>Principled</p>
+<span class="nv">Please</span> <span class="nv">input</span> <span class="k">the</span> <span class="nv">material</span> <span class="nv">you</span> <span class="nv">wish</span> <span class="nv">to</span> <span class="nv">add</span> <span class="nv">to</span> <span class="nv">Cube1:</span> <span class="nv">Glossy</span>  
+<span class="nv">Use</span> <span class="nv">existing</span> <span class="nv">object</span> <span class="nv">color?</span> <span class="p">(</span><span class="nv">Y/N</span><span class="p">)</span><span class="err">:</span> <span class="nv">Y</span>  
+<span class="nv">Roughness</span> <span class="p">(</span><span class="nv">0.0</span><span class="err">–</span><span class="mf">1.0</span><span class="p">)</span><span class="err">:</span> <span class="mi">0</span>  
 
-<p>Glass</p>
+<span class="nv">[Blender]:</span>  
+<span class="nv">Applied</span> <span class="ss">'glossy</span><span class="o">'</span> <span class="nv">material</span> <span class="nv">to</span> <span class="ss">'Cube1</span><span class="o">'</span>  
 
-<p>Glossy</p>
+<span class="nv">Check</span> <span class="nv">your</span> <span class="nv">Blender</span> <span class="nv">Scene.</span>
 
-<p>Metallic</p>
+<span class="nv">Choice:</span> <span class="mi">14</span>
 
-<p>Anisotropic</p>
+<span class="nv">========</span> <span class="nv">DELETING</span> <span class="nv">OBJECT...</span> <span class="nv">==========</span>
+<span class="nv">Name</span> <span class="nv">to</span> <span class="nb">delete</span> <span class="p">(</span><span class="nb">or</span> <span class="nv">press</span> <span class="nv">Enter</span> <span class="nv">to</span> <span class="nb">delete</span> <span class="nv">ALL</span><span class="p">)</span><span class="err">:</span> <span class="nv">Cube1</span>  
 
-<p>SSS (Subsurface Scattering)</p>
+<span class="nv">[Blender]:</span>  
+<span class="nv">Deleted</span> <span class="nv">object:</span> <span class="ss">'Cube1</span><span class="o">'</span>  
 
-<p>Transparent</p>
+<span class="nv">Check</span> <span class="nv">your</span> <span class="nv">Blender</span> <span class="nv">Scene</span>
 
-<p>Sheen</p>
+<span class="nv">Choice:</span> <span class="mi">16</span>  
+<span class="nv">Goodbye.</span>  
+<span class="nv">NIL</span>
 
-<p>Wireframe</p>
-
-<p>Please input the material you wish to add to Cube1: Glossy
-Use existing object color? (Y/N): Y
-Roughness (0.0-1.0): 0</p>
-
-<p>[Blender]:
-Applied ‘glossy’ material to ‘Cube1’</p>
-
-<p>Check your Blender Scene.</p>
-
-<p>Choice: 14</p>
-
-<p>======== DELETING OBJECT… ==========
-Name to delete (or press Enter to delete ALL): Cube1</p>
-
-<p>[Blender]:
-Deleted object: ‘Cube1’</p>
-
-<p>Check your Blender Scene</p>
-
-<p>Choice: 16
-Goodbye.
-NIL</p>
-
-<hr />
-
+<span class="nv">---</span>
+</code></pre></div></div>
 <p>Download the file links here:</p>
 
-<p><a href="/assets/files/blender-cli.lisp">Blender CLI File</a></p>
-
-<p><a href="/assets/files/blender-ipc.lisp">Blender IPC File</a></p>
-
-<p><a href="/assets/files/blender-python-lloyd.txt">Blender-Python Integration and API Source Code</a></p>
+<p><a href="/assets/files/blender-cli.lisp">Blender CLI File</a><br />
+<a href="/assets/files/blender-ipc.lisp">Blender IPC File</a><br />
+<a href="/assets/files/blender-python-lloyd.txt">Blender-Python Integration and API Source Code</a></p>
 
 </div>
 
