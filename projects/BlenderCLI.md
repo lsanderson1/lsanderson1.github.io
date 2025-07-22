@@ -1,7 +1,7 @@
 ---
 layout: project
 type: project
-image: img/BlenderIcon.jpg
+image: img/BlenderLogo.png
 title: "Blender CLI Integration"
 date: 2025
 published: true
