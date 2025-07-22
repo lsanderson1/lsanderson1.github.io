@@ -21,3 +21,12 @@ both movement mechanics and simple AI for competitive racing.
 Each lap is tracked and shown based on your distance between the opponent and the next checkpoint. If the opponent is closer, it calculates the AI in the lead and
 places the player in second. Also health and boost were implemented for a better, more immersive experience to where ultimately, if recklessly done, the player can destroy themselves and
 lose the race.
+
+<figure style="display: table; margin: 0 auto;">
+  <figcaption style="display: table-caption; caption-side: top; text-align: center">
+    Start screen to the game:
+  </figcaption>
+  <img src="img/IfYoureNotFirstDemo.png" alt="If You're Not First" />
+</figure>
+
+The executable to the game is exported on Unity Play through WebGL and can be directly located [here](https://play.unity.com/en/games/f008e667-5c27-454c-ad07-19df6a7b2860/if-youre-not-first)
