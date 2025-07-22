@@ -103,10 +103,9 @@ Core Lisp Functions
 - **blender-menu**  
   Interactive menu driving all above commands.
 
-Usage Example
--------------
-Once compiled and loaded IN SLIME-REPL: Creating and applying colors and materials to a Cube mesh
-
+**Usage Example**
+-----------------
+```lisp
 CL-USER> (blender-menu)
 ==== BLENDER-CLI MENU =====
 Reminder: Please open your Blender Host and Port to connection before running payloads
@@ -137,90 +136,80 @@ Choice: 2
 ======== CREATING OBJECT... ==========
 Available Meshes:
 
-Cube
-Sphere
-Cylinder
-Torus
-Plane
+  Cube  
+  Sphere  
+  Cylinder  
+  Torus  
+  Plane  
 
-Please type in the mesh you wish to create: Cube
-How many Cube(s) would you like to create: 1
-======== Creating Cube #1... ========
-Name: Cube1
-Location (x y z): (0 0 0)
-Size: 9
-Rotation (Deg) (x y z): (0 0 0)
+Please type in the mesh you wish to create: Cube  
+How many Cube(s) would you like to create: 1  
+======== Creating Cube #1... ==========
+Name: Cube1  
+Location (x y z): (0 0 0)  
+Size: 9  
+Rotation (Deg) (x y z): (0 0 0)  
 
-[Blender]:
-You created a 'cube' named 'Cube1' at [0, 0, 0] with size 9 and rotation [0, 0, 0]
+[Blender]:  
+You created a 'cube' named 'Cube1' at [0, 0, 0] with size 9 and rotation [0, 0, 0]  
 
 Check your Blender Scene.
 
 Choice: 6
 
 ======== APPLYING COLOR TO OBJECT... ==========
-Name: Cube1
-Apply Rainbow? (Y/N): N
-Solid Color (r g b (alpha)): (1 0 1)
+Name: Cube1  
+Apply Rainbow? (Y/N): N  
+Solid Color (r g b (alpha)): (1 0 1)  
 
-[Blender]:
-Colored 'Cube1' with [1, 0, 1, 1.0]
+[Blender]:  
+Colored 'Cube1' with [1, 0, 1, 1.0]  
 
 Check your Blender Scene.
 
 Choice: 8
 
 ======== APPLYING MATERIAL TO OBJECT ==========
-Name: Cube1
+Name: Cube1  
 Material Type:
 
-Principled
+  Principled  
+  Glass  
+  Glossy  
+  Metallic  
+  Anisotropic  
+  SSS (Subsurface Scattering)  
+  Transparent  
+  Sheen  
+  Wireframe  
 
-Glass
+Please input the material you wish to add to Cube1: Glossy  
+Use existing object color? (Y/N): Y  
+Roughness (0.0–1.0): 0  
 
-Glossy
-
-Metallic
-
-Anisotropic
-
-SSS (Subsurface Scattering)
-
-Transparent
-
-Sheen
-
-Wireframe
-
-Please input the material you wish to add to Cube1: Glossy
-Use existing object color? (Y/N): Y
-Roughness (0.0-1.0): 0
-
-[Blender]:
-Applied 'glossy' material to 'Cube1'
+[Blender]:  
+Applied 'glossy' material to 'Cube1'  
 
 Check your Blender Scene.
 
 Choice: 14
 
 ======== DELETING OBJECT... ==========
-Name to delete (or press Enter to delete ALL): Cube1
+Name to delete (or press Enter to delete ALL): Cube1  
 
-[Blender]:
-Deleted object: 'Cube1'
+[Blender]:  
+Deleted object: 'Cube1'  
 
 Check your Blender Scene
 
-Choice: 16
-Goodbye.
+Choice: 16  
+Goodbye.  
 NIL
 
 ---
-
+```
 Download the file links here:
 
-[Blender CLI File](/assets/files/blender-cli.lisp)
-
-[Blender IPC File](/assets/files/blender-ipc.lisp)
-
+[Blender CLI File](/assets/files/blender-cli.lisp)  
+[Blender IPC File](/assets/files/blender-ipc.lisp)  
 [Blender-Python Integration and API Source Code](/assets/files/blender-python-lloyd.txt)
