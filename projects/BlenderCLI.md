@@ -175,13 +175,21 @@ Name: Cube1
 Material Type:
 
 Principled
+
 Glass
+
 Glossy
+
 Metallic
+
 Anisotropic
+
 SSS (Subsurface Scattering)
+
 Transparent
+
 Sheen
+
 Wireframe
 
 Please input the material you wish to add to Cube1: Glossy
@@ -208,6 +216,9 @@ Goodbye.
 NIL
 
 Download the file links here:
+
 [Blender CLI File](/assets/files/blender-cli.lisp)
+
 [Blender IPC File](/assets/files/blender-ipc.lisp)
+
 [Blender-Python Integration and API Source Code](/assets/files/blender-python-lloyd.txt)
