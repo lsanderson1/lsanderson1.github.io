@@ -29,10 +29,11 @@ lose the race.
   <img
     src="{{ '/img/IfYoureNotFirstDemo.png' | relative_url }}"
     alt="If You're Not First"
-    style="width: 320px; height: auto; display: block; margin: 0 auto;"
-  >
+    style="max-width: 320px; width: 100%; height: auto; display: block; margin: 0 auto;"
+  />
 </div>
 
-<div style="text-align: center;">
-  The executable to the game is exported on Unity Play through WebGL and can be directly located [here](https://play.unity.com/en/games/f008e667-5c27-454c-ad07-19df6a7b2860/if-youre-not-     first).
+<div style="text-align: center; margin-top: 1em;">
+  The executable to the game is exported on Unity Play through WebGL and can be directly located
+  <a href="https://play.unity.com/en/games/f008e667-5c27-454c-ad07-19df6a7b2860/if-youre-not-first">here</a>.
 </div>
