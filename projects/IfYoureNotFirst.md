@@ -26,7 +26,7 @@ lose the race.
   <figcaption style="display: table-caption; caption-side: top; text-align: center">
     Start screen to the game:
   </figcaption>
-  <img src="img/IfYoureNotFirstDemo.png" alt="If You're Not First">
+  <img src="{{ '/img/IfYoureNotFirstDemo.png' | relative_url }}" alt="If You're Not First">
 </figure>
 
 The executable to the game is exported on Unity Play through WebGL and can be directly located [here](https://play.unity.com/en/games/f008e667-5c27-454c-ad07-19df6a7b2860/if-youre-not-first).
