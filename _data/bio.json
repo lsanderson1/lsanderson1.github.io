@@ -6,7 +6,7 @@
     "email": "llsanderson98@gmail.com",
     "phone": "909-633-3893",
     "website": "https://lsanderson1.github.io",
-    "summary": "I am studying for a B.S. in Computer Science and a B.A. in Japanese at the University of Hawaii at Manoa. I expect to graduate in Spring of 2025",
+    "summary": "I am studying for a B.S. in Computer Science and a B.A. in Japanese at the University of Hawaii at Manoa. My expected graduation period is December 2025",
     "location": { "address": "", "postalCode": "96822", "city": "Honolulu", "countryCode": "USA", "region": "Hawaii" },
     "profiles": [
       { "network": "github", "username": "lsanderson1", "url": "http://github.com/lsanderson1" },
@@ -14,17 +14,18 @@
     ]
   },
   "interests": [
-    { "name": "AI Design" },
-    { "name": "Game Design" },
+    { "name": "AI Design and Procedural Implementation" },
+    { "name": "Game Development" },
     { "name": "C++" },
+    { "name": "C#" },
     { "name": "Java" },
     { "name": "Robotics" },
-    { "name": "3D Graphics / AutoCAD" }
+    { "name": "3D Graphics / Animation" }
   ],
   "skills": [
     {
       "name": "Languages and Frameworks",
-      "keywords": [ "C", "C++", "Java", "Javascript" ]
+      "keywords": [ "C", "C++", "C#", "Java", "Javascript", "Python", "Common LISP", "Prolog" ]
     },
     {
       "name": "Alternate Language",
@@ -34,14 +35,14 @@
   "education": [
     {
       "institution": "University of Hawaii, Honolulu, HI",
-      "area": "Computer Science (expected Spring, 2025)",
+      "area": "Computer Science (expected December, 2025)",
       "studyType": "B.S.",
       "startDate": "2021-09-01",
       "endDate": "Present"
     },
     {
       "institution": "University of Hawaii, Honolulu, HI",
-      "area": "Japanese (expected Spring, 2025)",
+      "area": "Japanese (expected December, 2025)",
       "studyType": "B.A.",
       "startDate": "2021-09-01",
       "endDate": "Present",
