@@ -22,11 +22,15 @@ Each lap is tracked and shown based on your distance between the opponent and th
 places the player in second. Also health and boost were implemented for a better, more immersive experience to where ultimately, if recklessly done, the player can destroy themselves and
 lose the race.
 
-<figure style="display: table; margin: 0 auto;">
-  <figcaption style="display: table-caption; caption-side: top; text-align: center">
+<div style="text-align: center;">
+  <div style="font-weight: bold; margin-bottom: 0.5em;">
     Start screen to the game:
-  </figcaption>
-  <img src="{{ '/img/IfYoureNotFirstDemo.png' | relative_url }}" alt="If You're Not First">
-</figure>
+  </div>
+  <img
+    src="{{ '/img/IfYoureNotFirstDemo.png' | relative_url }}"
+    alt="If You're Not First"
+    style="display: block; margin: 0 auto;"
+  >
+</div>
 
 The executable to the game is exported on Unity Play through WebGL and can be directly located [here](https://play.unity.com/en/games/f008e667-5c27-454c-ad07-19df6a7b2860/if-youre-not-first).
