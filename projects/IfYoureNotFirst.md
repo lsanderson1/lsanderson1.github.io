@@ -33,6 +33,6 @@ lose the race.
   />
 </div>
 
-<div style="text-align: center; margin-top: 1em;">
+<div markdown="1" style="text-align: center; margin-top: 1em;">
   The executable to the game is exported on Unity Play through WebGL and can be directly located [here](https://play.unity.com/en/games/f008e667-5c27-454c-ad07-19df6a7b2860/if-youre-not-first).
 </div>
