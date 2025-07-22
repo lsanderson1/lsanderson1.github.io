@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="title" content="Pokédex Construction | Lloyd Sanderson | Professional Portfolio">
+    <meta name="description" content="">
+    <meta name="image" content="https://github.com/lsanderson1.png">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Lloyd Sanderson | Professional Portfolio">
+    <meta property="og:url" content="https://lsanderson1.github.io/projects/PokedexConstructor.html">
+    <meta property="og:title" content="Pokédex Construction | Lloyd Sanderson | Professional Portfolio">
+    <meta property="og:description" content="">
+    <meta property="og:image" content="https://github.com/lsanderson1.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+    <link rel="stylesheet" href="/css/techfolio-theme/skyblue.css">
+    <link rel="stylesheet" type="text/css" href="/css/rouge/github.css">
+    <!-- Load MathJax if 'mathjax: true' is found in your _config.yml. -->
+    
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-MML-AM_CHTML">
+    </script>
+    
+
+    <title>Pokédex Construction | Lloyd Sanderson | Professional Portfolio</title>
+  </head>
+  <body>
+  <header class="navbar navbar-expand navbar-light bg-light bg-gradient border-bottom">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/">Lloyd Sanderson</a>
+    <div class="ms-auto">
+      <ul class="navbar-nav mb-2 mb-lg-0">
+        <a class="nav-link" href="/#projects">Projects</a>
+        <a class="nav-link" href="/#essays">Essays</a>
+        <a class="nav-link" href="/resume.html">Resume</a>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<div class="container py-4">
+  <h1 class="display-4">Pokédex Construction</h1>
+ <p>This code simply instantiates a constructor which would be called to create a member of the object and a deconstructor which
+is called at the end to delete said member.
+These are for which are called implicitly which means that they are not to be explicitly called.
+This starts to lean towards being more object oriented to which it focuses more on the object of the class, rather than the
+variable.</p>
+
+<p>The code essentially is a Pokedex entry of three Pokemon, each of the Pokemon are called within the Pokemon class, and they can be given attributes, names and types.
+Each of the objects are created in the beginning, given their respective names and types, and then deconstructed in the end.
+Here is an example of the code.</p>
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#include</span> <span class="cpf">&lt;string&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;iostream&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;vector&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;map&gt;</span><span class="cp">
+</span>
+<span class="cp">#include</span> <span class="cpf">"pokemon.h"</span><span class="cp">
+#include</span> <span class="cpf">"wartortle.h"</span><span class="cp">
+#include</span> <span class="cpf">"charmeleon.h"</span><span class="cp">
+#include</span> <span class="cpf">"caterpie.h"</span><span class="cp">
+</span>
+<span class="k">using</span> <span class="k">namespace</span> <span class="n">std</span><span class="p">;</span>
+
+<span class="cm">/*****************************************************************
+//  Function name: checkPokedex
+//  
+//  DESCRIPTION:   A polymorphic function which retrieves from the 
+//                 data the information that was stored in the map
+//                 and prints out each pokemon
+//
+//  Parameters:    Pokemon *pokemon: Each child class pokemon with
+//                 the given nickname
+//
+//  Return values:  none
+//  
+****************************************************************/</span>
+
+<span class="kt">void</span> <span class="nf">checkPokedex</span><span class="p">(</span><span class="n">Pokemon</span> <span class="o">*</span><span class="n">pokemon</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">pokemon</span><span class="o">-&gt;</span><span class="n">printData</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="cm">/*****************************************************************
+//  Function name: main
+//  
+//  DESCRIPTION:   The main function whose job is to create a vector of
+//                 names, store those names, give the corresponding names
+//                 to each child class pokemon and call them using
+//                 checkPokedex. For vector, push_back was used to insert
+//                 names in the vector and for map, string is the key and
+//                 pokemon pointer is the value, insert puts the names in the
+//                 map and make_pair links the pokemon pointer (nickname) and
+//                 the actual name of the pokemon.
+//
+//  Parameters:    none
+//
+//  Return values:  0: Success
+//  
+****************************************************************/</span>
+
+
+<span class="kt">int</span> <span class="n">main</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="n">vector</span> <span class="o">&lt;</span> <span class="n">string</span> <span class="o">&gt;</span> <span class="n">names</span><span class="p">;</span>
+    <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">"inserting names "</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>
+    <span class="n">names</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="s">"zappy"</span><span class="p">);</span>
+    <span class="n">names</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="s">"zack"</span><span class="p">);</span>
+    <span class="n">names</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="s">"jack"</span><span class="p">);</span>
+    <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>
+
+    <span class="n">map</span> <span class="o">&lt;</span> <span class="n">string</span><span class="p">,</span> <span class="n">Pokemon</span> <span class="o">*</span> <span class="o">&gt;</span> <span class="n">pokemons</span><span class="p">;</span>
+    
+    <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">"creating pokemon zappy the wartortle"</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>
+    <span class="n">Pokemon</span> <span class="o">*</span><span class="n">zappy</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Wartortle</span><span class="p">();</span>
+    <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>
+    <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">"creating pokemon zack the charmeleon"</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>
+    <span class="n">Pokemon</span> <span class="o">*</span><span class="n">zack</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Charmeleon</span><span class="p">();</span>
+    <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>
+    <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">"creating pokemon jack the caterpie"</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>
+    <span class="n">Pokemon</span> <span class="o">*</span><span class="n">jack</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Caterpie</span><span class="p">();</span>
+    <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>
+
+    <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">"inserting pokemons "</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span> 
+    <span class="n">pokemons</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">make_pair</span><span class="p">(</span><span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">zappy</span><span class="p">));</span>
+    <span class="n">pokemons</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">make_pair</span><span class="p">(</span><span class="n">names</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">zack</span><span class="p">));</span>
+    <span class="n">pokemons</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">make_pair</span><span class="p">(</span><span class="n">names</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">jack</span><span class="p">));</span>
+    <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>
+
+    <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">"iterating over the names "</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>
+    <span class="k">for</span><span class="p">(</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">string</span><span class="o">&gt;::</span><span class="n">iterator</span> <span class="n">it</span> <span class="o">=</span> <span class="n">names</span><span class="p">.</span><span class="n">begin</span><span class="p">();</span> <span class="n">it</span> <span class="o">!=</span> <span class="n">names</span><span class="p">.</span><span class="n">end</span><span class="p">();</span> <span class="n">it</span><span class="o">++</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">"using key: '"</span> <span class="o">&lt;&lt;</span> <span class="o">*</span><span class="n">it</span> <span class="o">&lt;&lt;</span> <span class="s">"'"</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>
+        <span class="n">Pokemon</span> <span class="o">*</span><span class="n">pokemon</span> <span class="o">=</span> <span class="n">pokemons</span><span class="p">.</span><span class="n">find</span><span class="p">(</span><span class="o">*</span><span class="n">it</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">second</span><span class="p">;</span>
+
+        <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">"calling the 'checkPokedex()' function"</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>
+        <span class="n">checkPokedex</span><span class="p">(</span><span class="n">pokemon</span><span class="p">);</span>
+        <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>
+
+        <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">"deleting pokemon '"</span> <span class="o">&lt;&lt;</span> <span class="o">*</span><span class="n">it</span> <span class="o">&lt;&lt;</span> <span class="s">"'"</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>
+        <span class="k">delete</span> <span class="n">pokemon</span><span class="p">;</span>
+        <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>
+
+    <span class="n">pokemons</span><span class="p">.</span><span class="n">clear</span><span class="p">();</span>
+
+
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+</div>
+
+<footer class="navbar navbar-expand navbar-light bg-light bg-gradient border-top">
+  <div class="container-fluid">
+    <div class="ms-auto">
+      <ul class="navbar-nav mb-2 mb-lg-0">
+        <small><a class="nav-link" href="https://techfolios.github.io">Made with Techfolios</a></small>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+  </body>
+</html>
