@@ -10,6 +10,7 @@ labels:
   - Common LISP
   - Blender / Assets
   - Socket and JSON Encapsulation
+---
 
 Overview
 --------
@@ -205,3 +206,8 @@ Check your Blender Scene
 Choice: 16
 Goodbye.
 NIL
+
+Download the file links here:
+[Blender CLI File](/assets/files/blender-cli.lisp)
+[Blender IPC File](/assets/files/blender-ipc.lisp)
+[Blender-Python Integration and API Source Code](/assets/files/blender-python-lloyd.txt)
