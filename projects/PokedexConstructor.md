@@ -4,7 +4,7 @@ type: project
 image: img/Pokedex.png
 title: "Pokédex Construction"
 date: 2022
-published: false
+published: true
 labels:
   - C++
   - Constructors
