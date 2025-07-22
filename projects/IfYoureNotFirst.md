@@ -29,7 +29,7 @@ lose the race.
   <img
     src="{{ '/img/IfYoureNotFirstDemo.png' | relative_url }}"
     alt="If You're Not First"
-    style="max-width: 1000px; width: 100%; height: auto; display: block; margin: 0 auto;"
+    style="max-width: 5000px; width: 100%; height: auto; display: block; margin: 0 auto;"
   />
 </div>
 
