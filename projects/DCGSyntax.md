@@ -2,7 +2,7 @@
 layout: project
 type: project
 image: img/ProjectReap.png
-title: "Project Reap"
+title: "Star Wars Database / Question-Answering Machine"
 date: 2025
 published: true
 labels:
