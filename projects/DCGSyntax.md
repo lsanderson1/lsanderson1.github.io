@@ -16,12 +16,14 @@ summary: "A small database driven project that accepts user inquiries and output
 ---
 **Overview**
 ---
+
 A DCG‑powered question‑answering engine implemented in Prolog, using DCGs to parse natural-language queries into semantic predicates.
 
 A built-in Star Wars movie database comprising `plays/3`, `directs/2`, and `title_of/2` facts, with `formatname/2` for human-readable output.
 
-**Key Features**
+**Key Features:**
 ---
+
 ### DCG‑Based Parser
 
 Recognizes yes/no queries `(yesno/1)`, Who‑questions `(who/1)`, and What‑questions `(what/1)`.
@@ -58,7 +60,7 @@ On yes/no failures, `hint/1` and `hint_fact/1` analyze failed facts and suggest 
 
 Entry point: top/1 takes a token list (e.g., `["who","plays","as","luke","skywalker","in","a","new","hope","?"]`).
 
-Parsing: DCG rules `(yesno/1, who/1, what/1)` produce a semantic term (e.g., `plays(mark_hamill,luke_skywalker,star_wars_iv)`).
+Parsing: DCG rules `(yesno/1 `, `who/1`, `what/1`) produce a semantic term (e.g., `plays(mark_hamill,luke_skywalker,star_wars_iv)`).
 
 ## Evaluation:
 
@@ -70,6 +72,7 @@ Hints: `hint_fact/1` inspects failures to guide corrections.
 
 **Usage Example**
 ---
+
 ```txt
 Grammatical Queries:
 ?- top([did, mark, hamill, play, luke, skywalker, ?]).
