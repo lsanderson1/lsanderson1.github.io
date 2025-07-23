@@ -53,6 +53,6 @@ able to defeat all the enemies in sight.
 </div>
   
 <div style="text-align: center; margin-top: 1.5em;">
-  The website along with the playable demo and project references can be found
+  The website along with the demo drive and executable along with project references can be found
   <a href="https://ics485-project-reap.github.io/">here</a>.
 </div>
