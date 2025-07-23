@@ -30,14 +30,14 @@ Fast and quick paced, but also a puzzle in how you defeat all your enemies is pr
 able to defeat all the enemies in sight.
 
 <div style="display: flex; justify-content: center; margin: 0 auto; flex-wrap: wrap;">
-  <div style="text-align: center; width: 300px">
+  <div style="text-align: center; width: 700px">
     <div style="margin-bottom: 0.5em; font-weight: bold;">
   The Beginning of the Adventure
   </div>
   <img
     src="{{ 'img/BeginningShot.png' | relative_url }}"
     alt="Beginning Shot"
-    style="max-width: 700px; width: 100%; height: auto; display: block; margin: 0 auto;"
+    style="width: 100%; height: auto; display: block; margin: 0 auto;"
   />
 </div>
 <div style="text-align: center; width: 300px">
@@ -47,7 +47,7 @@ able to defeat all the enemies in sight.
   <img
     src="{{ 'img/FlowState.png' | relative_url }}"
     alt="Flow State"
-    style="max-width: 700px; width: 100%; height: auto; display: block; margin: 0 auto;"
+    style="width: 100%; height: auto; display: block; margin: 0 auto;"
   />
 </div>
 </div>
