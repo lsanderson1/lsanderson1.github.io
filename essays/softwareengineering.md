@@ -1,7 +1,7 @@
 ---
 layout: essay
 type: essay
-title: "The Journey Through ICS 314"
+title: "The Journey Through Software Engineering"
 # All dates must be YYYY-MM-DD format!
 date: 2023-12-12
 published: true
@@ -16,7 +16,7 @@ labels:
 
 ## Fundamental Software Engineering Concepts
 ---
-Throughout the course of ICS 314 a fundamental topic presented was on web application and design, however it was not through the case that this was the only thing that was taught. In navigating the intricacies of web application development within the framework of this technology’s stack, it’s easy for some to perceive the primary focus as exclusively honed on the skills required for crafting web-based solutions. While mastering web development is undoubtedly a pivotal focus on the curriculum, it serves as a conduit to a broader and more profound exploration, fundamental software engineering concepts. This course has been a journey into the core principles that underpin software engineering. Of the many concepts that were learned I will focus on 3 concepts, Development Environments, Agile Project Management, and Design Patterns, unraveling their significance beyond the confines of web application development, aiming to understand their implications within the web development sphere but also to envision their applicability in a diverse array of software engineering endeavors.
+Throughout the course of Software Engineering, a fundamental topic presented was on web application and design, however it was not through the case that this was the only thing that was taught. In navigating the intricacies of web application development within the framework of this technology’s stack, it’s easy for some to perceive the primary focus as exclusively honed on the skills required for crafting web-based solutions. While mastering web development is undoubtedly a pivotal focus on the curriculum, it serves as a conduit to a broader and more profound exploration, fundamental software engineering concepts. This course has been a journey into the core principles that underpin software engineering. Of the many concepts that were learned I will focus on 3 concepts, Development Environments, Agile Project Management, and Design Patterns, unraveling their significance beyond the confines of web application development, aiming to understand their implications within the web development sphere but also to envision their applicability in a diverse array of software engineering endeavors.
 
 ## Integrated Development Environment: The Intelligence of IntelliJ
 ---
@@ -40,6 +40,6 @@ Furthermore, IDPM's flexibility extends to non-software projects. Imagine a team
 
 ## Concluding Thoughts with ICS 314
 ---
-The topics covered through ICS 314 has been a revelatory exploration of the fundamental principles that underpin software engineering. While web application development provided a tangible and engaging platform to practice our newfound skills, the course ventured far beyond, unveiling a vast landscape of essential concepts applicable to diverse projects and domains. As we conclude this odyssey, three key concepts stand out as pillars that transcend the limitations of web development, empowering us to tackle a broader spectrum of challenges with greater understanding and sophistication.
+The topics covered through Software Engineering has been a revelatory exploration of the fundamental principles that underpin software engineering. While web application development provided a tangible and engaging platform to practice our newfound skills, the course ventured far beyond, unveiling a vast landscape of essential concepts applicable to diverse projects and domains. As we conclude this odyssey, three key concepts stand out as pillars that transcend the limitations of web development, empowering us to tackle a broader spectrum of challenges with greater understanding and sophistication.
 
-The journey through ICS 314 has been a transformative experience, not just in mastering the technical skills of web application development, but also in acquiring a deeper understanding of the core principles that drive software engineering. Through the lens of development environments, design patterns, and agile project management, we have gained valuable tools and frameworks that empower us to tackle challenges in diverse domains. This newfound understanding serves as a springboard, propelling us forward as we continue to navigate through the complex world and realm of software development.
+The journey through Software Engineering has been a transformative experience, not just in mastering the technical skills of web application development, but also in acquiring a deeper understanding of the core principles that drive software engineering. Through the lens of development environments, design patterns, and agile project management, we have gained valuable tools and frameworks that empower us to tackle challenges in diverse domains. This newfound understanding serves as a springboard, propelling us forward as we continue to navigate through the complex world and realm of software development.
