@@ -105,7 +105,7 @@ Core Lisp Functions
 
 **Usage Example**
 -----------------
-```lisp
+```txt
 CL-USER> (blender-menu)
 ==== BLENDER-CLI MENU =====
 Reminder: Please open your Blender Host and Port to connection before running payloads
