@@ -40,7 +40,7 @@ lose the race.
         src="{{ '/img/IfYoureNotFirstDemo.png' | relative_url }}"
         alt="If Youre Not First"
         style="
-          max-width: 500px;
+          max-width: 300px;
           width: 100%;
           height: auto;
           display: block;
@@ -55,7 +55,7 @@ lose the race.
         src="{{ '/img/Prototype.png' | relative_url }}"
         alt="Prototype Model"
         style="
-          max-width: 500px;
+          max-width: 300px;
           width: 100%;
           height: auto;
           display: block;
