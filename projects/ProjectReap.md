@@ -8,7 +8,7 @@ published: true
 labels:
   - C#
   - Unity Game Engine
-  - Blender / Assets
+  - Aseprite / Assets
   - Animation and Design
 summary: "A collaboration team project that incorporates Unity Engine to create a platformer game with a Post-War Japanese Feel."
 ---
@@ -40,7 +40,7 @@ able to defeat all the enemies in sight.
     style="width: 100%; height: auto; display: block; margin: 0 auto;"
   />
 </div>
-<div style="text-align: center; width: 300px">
+<div style="text-align: center; width: 700px">
     <div style="margin-bottom: 0.5em; font-weight: bold;">
   Entering the Flow State
   </div>
