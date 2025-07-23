@@ -41,11 +41,13 @@
 <div class="container py-4">
   <h1 class="display-4">Star Wars Database / Question-Answering Machine</h1>
  <h2 id="overview"><strong>Overview</strong></h2>
+
 <p>A DCG‑powered question‑answering engine implemented in Prolog, using DCGs to parse natural-language queries into semantic predicates.</p>
 
 <p>A built-in Star Wars movie database comprising <code class="language-plaintext highlighter-rouge">plays/3</code>, <code class="language-plaintext highlighter-rouge">directs/2</code>, and <code class="language-plaintext highlighter-rouge">title_of/2</code> facts, with <code class="language-plaintext highlighter-rouge">formatname/2</code> for human-readable output.</p>
 
-<h2 id="key-features"><strong>Key Features</strong></h2>
+<h2 id="key-features"><strong>Key Features:</strong></h2>
+
 <h3 id="dcgbased-parser">DCG‑Based Parser</h3>
 
 <p>Recognizes yes/no queries <code class="language-plaintext highlighter-rouge">(yesno/1)</code>, Who‑questions <code class="language-plaintext highlighter-rouge">(who/1)</code>, and What‑questions <code class="language-plaintext highlighter-rouge">(what/1)</code>.</p>
@@ -82,7 +84,7 @@
 
 <p>Entry point: top/1 takes a token list (e.g., <code class="language-plaintext highlighter-rouge">["who","plays","as","luke","skywalker","in","a","new","hope","?"]</code>).</p>
 
-<p>Parsing: DCG rules <code class="language-plaintext highlighter-rouge">(yesno/1, who/1, what/1)</code> produce a semantic term (e.g., <code class="language-plaintext highlighter-rouge">plays(mark_hamill,luke_skywalker,star_wars_iv)</code>).</p>
+<p>Parsing: DCG rules <code class="language-plaintext highlighter-rouge">(yesno/1 </code>, <code class="language-plaintext highlighter-rouge">who/1</code>, <code class="language-plaintext highlighter-rouge">what/1</code>) produce a semantic term (e.g., <code class="language-plaintext highlighter-rouge">plays(mark_hamill,luke_skywalker,star_wars_iv)</code>).</p>
 
 <h2 id="evaluation">Evaluation:</h2>
 
@@ -93,6 +95,7 @@
 <p>Hints: <code class="language-plaintext highlighter-rouge">hint_fact/1</code> inspects failures to guide corrections.</p>
 
 <h2 id="usage-example"><strong>Usage Example</strong></h2>
+
 <pre><code class="language-txt">Grammatical Queries:
 ?- top([did, mark, hamill, play, luke, skywalker, ?]).
 Yes, that is true.
