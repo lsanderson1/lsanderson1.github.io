@@ -38,7 +38,7 @@ Extending the application of IDPM beyond software development, let's consider a 
 
 Furthermore, IDPM's flexibility extends to non-software projects. Imagine a team planning a large community event. Using IDPM, the team could identify and prioritize logistical challenges, such as venue availability, catering needs, and volunteer recruitment. Each sprint would focus on resolving specific issues, with regular meetings to assess progress and adjust priorities as needed. This approach ensures efficient resource allocation, timely issue resolution, and a successful event outcome. The versatility of IDPM makes it applicable not only in software development but also in various project management scenarios, showcasing its adaptability and effectiveness.
 
-## Concluding Thoughts with ICS 314
+## Concluding Thoughts with Software Engineering
 ---
 The topics covered through Software Engineering has been a revelatory exploration of the fundamental principles that underpin software engineering. While web application development provided a tangible and engaging platform to practice our newfound skills, the course ventured far beyond, unveiling a vast landscape of essential concepts applicable to diverse projects and domains. As we conclude this odyssey, three key concepts stand out as pillars that transcend the limitations of web development, empowering us to tackle a broader spectrum of challenges with greater understanding and sophistication.
 
