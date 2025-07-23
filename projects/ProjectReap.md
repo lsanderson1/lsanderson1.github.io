@@ -37,7 +37,7 @@ able to defeat all the enemies in sight.
   <img
     src="{{ 'img/BeginningShot.png' | relative_url }}"
     alt="Beginning Shot"
-    style="width: 100%; height: auto; display: block; margin: 0 auto;"
+    style="max-width: 700px; width: 100%; height: auto; display: block; margin: 0 auto;"
   />
 </div>
 <div style="text-align: center; width: 300px">
@@ -47,8 +47,9 @@ able to defeat all the enemies in sight.
   <img
     src="{{ 'img/FlowState.png' | relative_url }}"
     alt="Flow State"
-    style="width: 100%; height: auto; display: block; margin: 0 auto;"
+    style="max-width: 700px; width: 100%; height: auto; display: block; margin: 0 auto;"
   />
+</div>
 </div>
   
 <div style="text-align: center; margin-top: 1.5em;">
