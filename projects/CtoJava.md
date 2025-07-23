@@ -4,7 +4,7 @@ type: project
 image: img/Javasquare.png
 title: "C to Java"
 date: 2022
-published: true
+published: false
 labels:
   - C
   - Java
