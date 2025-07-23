@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="title" content="Project Reap | Lloyd Sanderson | Professional Portfolio">
+    <meta name="description" content="">
+    <meta name="image" content="https://github.com/lsanderson1.png">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Lloyd Sanderson | Professional Portfolio">
+    <meta property="og:url" content="https://lsanderson1.github.io/projects/DCGSyntax.html">
+    <meta property="og:title" content="Project Reap | Lloyd Sanderson | Professional Portfolio">
+    <meta property="og:description" content="">
+    <meta property="og:image" content="https://github.com/lsanderson1.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+    <link rel="stylesheet" href="/css/techfolio-theme/skyblue.css">
+    <link rel="stylesheet" type="text/css" href="/css/rouge/github.css">
+    <!-- Load MathJax if 'mathjax: true' is found in your _config.yml. -->
+    
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-MML-AM_CHTML">
+    </script>
+    
+
+    <title>Project Reap | Lloyd Sanderson | Professional Portfolio</title>
+  </head>
+  <body>
+  <header class="navbar navbar-expand navbar-light bg-light bg-gradient border-bottom">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/">Lloyd Sanderson</a>
+    <div class="ms-auto">
+      <ul class="navbar-nav mb-2 mb-lg-0">
+        <a class="nav-link" href="/#projects">Projects</a>
+        <a class="nav-link" href="/#essays">Essays</a>
+        <a class="nav-link" href="/resume.html">Resume</a>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<div class="container py-4">
+  <h1 class="display-4">Project Reap</h1>
+ <p>Overview</p>
+
+<p>This Prolog library implements a natural‑language question‑answering engine using Definite Clause Grammars (DCGs). It parses user queries of two main forms—Who and What—into internal predicates, looks up facts in its built‑in Star Wars movie database, and then either returns a direct answer or, when the query is false, generates helpful hints.</p>
+
+<p>Key Features</p>
+
+<p>DCG‑Based Parser</p>
+
+<p>Recognizes yes/no questions (yesno/1), Who‑questions (who/1), and What‑questions (what/1).</p>
+
+<p>Handles optional introductory or trailing phrasing (e.g., “Is it true that…?”, question marks, “right?”).</p>
+
+<p>Semantic Mapping</p>
+
+<p>Translates English phrases into Prolog goals (actor_for/3, director_of/2, title_of/2).</p>
+
+<p>Uses helper predicates (actor_for/3, character_of/2, etc.) to structure queries and deliver human‑readable responses.</p>
+
+<p>Built‑in Star Wars Fact Database</p>
+
+<p>Contains plays/3, directs/2, and title_of/2 facts for Episodes I–IV.</p>
+
+<p>Converts internal atoms (e.g., mark_hamill) into display names (“Mark Hamill”) via formatname/2.</p>
+
+<p>Answer Generation</p>
+
+<p>Who queries invoke answer_who/1, printing lines like:Mark Hamill plays as Luke Skywalker in A New Hope.</p>
+
+<p>What queries invoke answer_what/1, e.g.:The title of Star Wars I is “The Phantom Menace.”</p>
+
+<p>Hint System</p>
+
+<p>On yes/no failures, hint/1 analyzes which semantic facts failed and issues targeted hints (e.g., “George Lucas is a director, not an actor.”).</p>
+
+<p>Covers misclassifications between actors, characters, directors, and movies.</p>
+
+<p>How It Works</p>
+
+<p>Entry point: top/1 accepts a list of tokens (e.g. [who,plays,as,luke,skywalker,in,a,new,hope,?]).</p>
+
+<p>Parsing: One of yesno/1, who/1, or what/1 DCG rules consumes tokens into a semantic term (e.g. plays(mark_hamill,luke_skywalker,star_wars_iv)).</p>
+
+<p>Evaluation:</p>
+
+<p>Yes/No: test/1 calls each fact; success prints “Yes, that is true.” or on failure “Sorry, that is false.” and hints.</p>
+
+<p>Who/What: answer_who/1 or answer_what/1 formats and prints the answer.</p>
+
+<p>Hints: hint_fact/1 inspects failed facts to suggest corrections (e.g., wrong movie title, character vs actor mix‑up).</p>
+
+</div>
+
+<footer class="navbar navbar-expand navbar-light bg-light bg-gradient border-top">
+  <div class="container-fluid">
+    <div class="ms-auto">
+      <ul class="navbar-nav mb-2 mb-lg-0">
+        <small><a class="nav-link" href="https://techfolios.github.io">Made with Techfolios</a></small>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+  </body>
+</html>
