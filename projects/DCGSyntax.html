@@ -40,55 +40,182 @@
 
 <div class="container py-4">
   <h1 class="display-4">Project Reap</h1>
- <p>Overview</p>
+ <h2 id="overview"><strong>Overview</strong></h2>
+<p>A DCG‑powered question‑answering engine implemented in Prolog, using DCGs to parse natural-language queries into semantic predicates.</p>
 
-<p>This Prolog library implements a natural‑language question‑answering engine using Definite Clause Grammars (DCGs). It parses user queries of two main forms—Who and What—into internal predicates, looks up facts in its built‑in Star Wars movie database, and then either returns a direct answer or, when the query is false, generates helpful hints.</p>
+<p>A built-in Star Wars movie database comprising <code class="language-plaintext highlighter-rouge">plays/3</code>, <code class="language-plaintext highlighter-rouge">directs/2</code>, and <code class="language-plaintext highlighter-rouge">title_of/2</code> facts, with <code class="language-plaintext highlighter-rouge">formatname/2</code> for human-readable output.</p>
 
-<p>Key Features</p>
+<h2 id="key-features"><strong>Key Features</strong></h2>
+<h3 id="dcgbased-parser">DCG‑Based Parser</h3>
 
-<p>DCG‑Based Parser</p>
+<p>Recognizes yes/no queries <code class="language-plaintext highlighter-rouge">(yesno/1)</code>, Who‑questions <code class="language-plaintext highlighter-rouge">(who/1)</code>, and What‑questions <code class="language-plaintext highlighter-rouge">(what/1)</code>.</p>
 
-<p>Recognizes yes/no questions (yesno/1), Who‑questions (who/1), and What‑questions (what/1).</p>
+<p>Handles optional phrasing <code class="language-plaintext highlighter-rouge">(is it true that..., right?, ?)</code>.</p>
 
-<p>Handles optional introductory or trailing phrasing (e.g., “Is it true that…?”, question marks, “right?”).</p>
+<h2 id="semantic-mapping">Semantic Mapping</h2>
+<hr />
+<p>Maps tokens to Prolog goals <code class="language-plaintext highlighter-rouge">(actor_for/3, director_of/2, title_of/2)</code>.</p>
 
-<p>Semantic Mapping</p>
+<p>Uses helper predicates for clean response formatting.</p>
 
-<p>Translates English phrases into Prolog goals (actor_for/3, director_of/2, title_of/2).</p>
+<h2 id="star-wars-fact-database">Star Wars Fact Database</h2>
 
-<p>Uses helper predicates (actor_for/3, character_of/2, etc.) to structure queries and deliver human‑readable responses.</p>
+<p>Stores facts for Episodes I–IV.</p>
 
-<p>Built‑in Star Wars Fact Database</p>
+<p>Converts internal atoms (e.g., <code class="language-plaintext highlighter-rouge">mark_hamill</code>) to display names (e.g., <code class="language-plaintext highlighter-rouge">"Mark Hamill"</code>).</p>
 
-<p>Contains plays/3, directs/2, and title_of/2 facts for Episodes I–IV.</p>
+<h2 id="answer-generation">Answer Generation</h2>
 
-<p>Converts internal atoms (e.g., mark_hamill) into display names (“Mark Hamill”) via formatname/2.</p>
+<p>Who queries <code class="language-plaintext highlighter-rouge">(answer_who/1)</code>:</p>
 
-<p>Answer Generation</p>
+<p>Mark Hamill plays as Luke Skywalker in A New Hope.</p>
 
-<p>Who queries invoke answer_who/1, printing lines like:Mark Hamill plays as Luke Skywalker in A New Hope.</p>
+<p>What queries <code class="language-plaintext highlighter-rouge">(answer_what/1)</code>:</p>
 
-<p>What queries invoke answer_what/1, e.g.:The title of Star Wars I is “The Phantom Menace.”</p>
+<p>The title of Star Wars I is “The Phantom Menace.”</p>
 
-<p>Hint System</p>
+<h2 id="hint-system">Hint System</h2>
 
-<p>On yes/no failures, hint/1 analyzes which semantic facts failed and issues targeted hints (e.g., “George Lucas is a director, not an actor.”).</p>
+<p>On yes/no failures, <code class="language-plaintext highlighter-rouge">hint/1</code> and <code class="language-plaintext highlighter-rouge">hint_fact/1</code> analyze failed facts and suggest corrections (e.g., “George Lucas is a director, not an actor.”).</p>
 
-<p>Covers misclassifications between actors, characters, directors, and movies.</p>
+<p><strong>How It Works</strong></p>
 
-<p>How It Works</p>
+<p>Entry point: top/1 takes a token list (e.g., <code class="language-plaintext highlighter-rouge">["who","plays","as","luke","skywalker","in","a","new","hope","?"]</code>).</p>
 
-<p>Entry point: top/1 accepts a list of tokens (e.g. [who,plays,as,luke,skywalker,in,a,new,hope,?]).</p>
+<p>Parsing: DCG rules <code class="language-plaintext highlighter-rouge">(yesno/1, who/1, what/1)</code> produce a semantic term (e.g., <code class="language-plaintext highlighter-rouge">plays(mark_hamill,luke_skywalker,star_wars_iv)</code>).</p>
 
-<p>Parsing: One of yesno/1, who/1, or what/1 DCG rules consumes tokens into a semantic term (e.g. plays(mark_hamill,luke_skywalker,star_wars_iv)).</p>
+<h2 id="evaluation">Evaluation:</h2>
 
-<p>Evaluation:</p>
+<p>Yes/No: <code class="language-plaintext highlighter-rouge">test/1</code> prints “Yes, that is true.” or “Sorry, that is false.” + hints.</p>
 
-<p>Yes/No: test/1 calls each fact; success prints “Yes, that is true.” or on failure “Sorry, that is false.” and hints.</p>
+<p>Who/What: Calls <code class="language-plaintext highlighter-rouge">answer_who/1</code> or <code class="language-plaintext highlighter-rouge">answer_what/1</code> for direct answers.</p>
 
-<p>Who/What: answer_who/1 or answer_what/1 formats and prints the answer.</p>
+<p>Hints: <code class="language-plaintext highlighter-rouge">hint_fact/1</code> inspects failures to guide corrections.</p>
 
-<p>Hints: hint_fact/1 inspects failed facts to suggest corrections (e.g., wrong movie title, character vs actor mix‑up).</p>
+<h2 id="usage-example"><strong>Usage Example</strong></h2>
+<pre><code class="language-txt">Grammatical Queries:
+?- top([did, mark, hamill, play, luke, skywalker, ?]).
+Yes, that is true.
+true.
+
+?- top([mark, hamill, plays, luke, skywalker, ',', right, ?]).
+Yes, that is true.
+true.
+
+?- top([frank, oz, plays, yoda, ',', right, ?]).
+Yes, that is true.
+true.
+
+?- top([did, mark, hamill, play, han, solo, in, star, wars, iii, ?]).
+Sorry, that is false.
+Han Solo is a character in Star Wars IV.
+true.
+
+?- top([did, mark, hamill, direct, star, wars, i, ?]).
+Sorry, that is false.
+You might be looking for George Lucas who directed Star Wars I.
+true.
+
+?- top([is, it, true, that, liam, neeson, is, an, actor, ?]).
+Yes, that is true.
+true.
+
+?- top([is, it, true, that, han, solo, is, a, character, in, star, wars, iii]).
+Sorry, that is false.
+Han Solo is a character in Star Wars IV.
+true.
+
+?- top([is, it, true, that, obi, wan, kenobi, is, an, actor, and, natalie, portman, is, a, director, ?]).
+Sorry, that is false.
+Obi Wan Kenobi is a character, not an actor or director.
+Natalie Portman is an actor, not a director.
+true.
+
+?- top([george, lucas, is, a, director, ',', mark, hamill, is, an, actor, ',', padme, amidala, is, a, character, ',', liam, neeson, is, an, actor, and, mace, windu, is, a, character, ',', right, ?]).
+Yes, that is true.
+true.
+
+?- top([who, is, the, actor, for, anakin, skywalker, ?]).
+Jake Lloyd plays as Anakin Skywalker in Star Wars I.
+true ;
+Hayden Christensen plays as Anakin Skywalker in Star Wars II.
+true ;
+Hayden Christensen plays as Anakin Skywalker in Star Wars III.
+true.
+
+?- ?- top([what, is, the, title, of, star, wars, i, ?]).
+The title of Star Wars I is "The Phantom Menace".
+true.
+
+?- top([who, is, the, character, of, ewan, mcgregor, ?]).
+Ewan McGregor is the character of Obi Wan Kenobi in Star Wars I.
+true ;
+Ewan McGregor is the character of Obi Wan Kenobi in Star Wars II.
+true ;
+Ewan McGregor is the character of Obi Wan Kenobi in Star Wars III.
+true.
+
+?- top([who, is, the, character, of, samuel, l, jackson, ?]).
+Samuel L. Jackson is the character of Mace Windu in Star Wars II.
+true.
+
+?- top([who, is, the, director, of, star, wars, i, ?]).
+The director of Star Wars I is George Lucas.
+true.
+
+?- top([who, acts, in, star, wars, iii, ?]).
+Hayden Christensen acts in Star Wars III.
+true ;
+Jimmy Smits acts in Star Wars III.
+true ;
+Frank Oz acts in Star Wars III.
+true ;
+Kenny Baker acts in Star Wars III.
+true ;
+Ewan McGregor acts in Star Wars III.
+true.
+
+?- top([george, lucas, is, a, character, ',', right, ?]).
+Sorry, that is false.
+George Lucas is a director, not a character
+true.
+
+?- top([george, lucas, is, an, actor, ',', right, ?]).
+Sorry, that is false.
+George Lucas is a director, not an actor.
+true.
+
+?- top([mark, hamill, is, a, director, ',', right, ?]).
+Sorry, that is false.
+Mark Hamill is an actor, not a director.
+true.
+
+Ungrammatical Queries:
+?- top([did, mark, hamill, plays, luke, skywalker, ?]).
+I dont get it.
+true.
+
+?-  top([is, it, true, that, liam, neeson, is, a, actor, ?]).
+I dont get it.
+true.
+
+?-  top([frank, oz, play, yoda, ',', right, ?]).
+I dont get it.
+true.
+
+?- top([george, lucas, is, an, director, ',', right, ?]).
+I dont get it.
+true.
+
+Bogus Query: (shows negative response, but offers hint)
+?- top([did, star, wars, iv, play, r2d2, ?]).
+Sorry, that is false.
+You might be looking for Kenny Baker who played R2-D2 in Star Wars III.
+true.
+</code></pre>
+
+<p>Downloadable files:
+<a href="/assets/files/dcglloyd.pl">The Full DCG Syntax Source Code</a></p>
 
 </div>
 
