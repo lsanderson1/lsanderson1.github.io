@@ -57,6 +57,12 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
     color: #ffebaa;
     text-decoration: underline;
   }
+  h1.page-title {
+    font-weight: 900;
+    font-size: 2.5rem;
+    color: #fff;
+    text-shadow: 1px, 1px, 2px, rgba(0,0,0,0,8);
+  }
 </style>
 
 <div class="dark-wrapper">
