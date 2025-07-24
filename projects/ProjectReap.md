@@ -17,6 +17,7 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
   /* Sakura background */
   body {
     position: relative; /* establish stacking content */
+    z-index:0;
   }
   body::before {
     content: "";
@@ -28,7 +29,7 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
     background-attachment: fixed;
     background-position: center center;
     background-size: cover;
-    filter: brightness(120%) contrast(120%) saturate(90%);
+    filter: brightness(100%) contrast(100%) saturate(90%);
     z-index:-2;
   }
   /* Translucent dark overlay on another layer, so able to change the background without any child elements */
