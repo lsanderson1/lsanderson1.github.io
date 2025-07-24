@@ -99,7 +99,7 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
         />
       </div>
     </div>
-  <div style="padding: 2rem;">
+  <div style="padding: 1rem;">
     
   </div>
     Flow is what guides us all, what gives us power, unleash it upon your foes to devastate their forces and drive back the rebellion as you carve your new future and your new life.
