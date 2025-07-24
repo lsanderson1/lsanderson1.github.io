@@ -14,7 +14,7 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
 ---
 
 <style>
-  <!-- Filter Tames the overall image -->
+  /* Darken and Enhance the Background*/
   body { 
     background-image: url('{{ "/img/Sakura.jpg" | relative_url }}');
     background-repeat: no-repeat;
@@ -23,7 +23,7 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
     background-size: cover;
     filter: brightness(80%) contrast(120%) saturate(90%)
   }
-  <!-- Adds a uniform dimmer -->
+  /* Translucent overly for better clarity */
   body::before {
     content: "";
     position: fixed;
@@ -32,7 +32,7 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
     background-color: rgba(0, 0, 0, 0.4);
     z-index: -1;
   }
-  <!-- Gives its own text brightness -->
+  /* Light "paper" background for content */
   .content {
     rgba(255, 255, 255, 0.85);
     margin: 2rem, auto;
@@ -40,7 +40,7 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
     padding: 2rem;
     border-radius: 8px;
   }
-  <!-- Gives the text a deeper hue, sharpening each character -->
+  /* Gives text deeper hue, sharpening each character */
   h2, h3, p, li {
     text-shadow: 1px, 1px, 2px, rgba(0, 0, 0, 0.7);
   }
