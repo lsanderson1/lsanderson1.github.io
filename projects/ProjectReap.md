@@ -13,6 +13,17 @@ labels:
 summary: "A collaboration team project that incorporates Unity Engine to create a platformer game with a Post-War Japanese Feel."
 ---
 
+<style>
+  body { 
+    background-image: url('{{ "/img/Sakura.jpg" | relative_url }}');
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center cover;
+    background-size: cover;
+  }
+</style>
+
+
 ## Overview
 ---
 This project is a was in collaboration with a group of peers to create a functional 2D Platformer. 
