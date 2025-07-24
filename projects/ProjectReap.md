@@ -50,7 +50,7 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
 </style>
 
 
-<div class="content-wrapper">
+<div class="content-wrapper" markdown="1">
   <div class="content">
     ## Overview
     ---
