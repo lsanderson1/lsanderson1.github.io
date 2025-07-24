@@ -14,16 +14,25 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
 ---
 
 <style>
-  /* Fixed Sakura background */
+  /* Sakura background */
   body {
+    position: relative; /* establish stacking content */
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0;
+    width:100%; height:100%;
     background-image: url('{{ "/img/Sakura.jpg" | relative_url }}');
     background-repeat: no-repeat;
     background-attachment: fixed;
     background-position: center center;
     background-size: cover;
-    filter: brightness(200%) contrast(120%) saturate(90%);
+    filter: brightness(120%) contrast(120%) saturate(90%);
+    z-index:-2;
   }
-  body::before {
+  /* Translucent dark overlay on another layer, so able to change the background without any child elements */
+  body::after {
     content: "";
     position: fixed;
     top: 0; left: 0;
