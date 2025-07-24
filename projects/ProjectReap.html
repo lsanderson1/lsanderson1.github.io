@@ -41,12 +41,35 @@
 <div class="container py-4">
   <h1 class="display-4">Project Reap</h1>
  <style>
+  <!-- Filter Tames the overall image -->
   body { 
     background-image: url('/img/Sakura.jpg');
     background-repeat: no-repeat;
     background-attachment: fixed;
-    background-position: center cover;
+    background-position: center center;
     background-size: cover;
+    filter: brightness(80%) contrast(120%) saturate(90%)
+  }
+  <!-- Adds a uniform dimmer -->
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0;
+    width:100%; height:100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: -1;
+  }
+  <!-- Gives its own text brightness -->
+  .content {
+    rgba(255, 255, 255, 0.85);
+    margin: 2rem, auto;
+    max-width: 900px;
+    padding: 2rem;
+    border-radius: 8px;
+  }
+  <!-- Gives the text a deeper hue, sharpening each character -->
+  h2, h3, p, li {
+    text-shadow: 1px, 1px, 2px, rgba(0, 0, 0, 0.7);
   }
 </style>
 
