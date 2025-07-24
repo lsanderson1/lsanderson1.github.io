@@ -15,7 +15,6 @@ rouge-theme: github.css
 # DON'T CHANGE THE FOLLOWING (unless you know what you're doing)
 markdown: kramdown
 kramdown:
-  parse_block_html: true
   hard_wrap: false
   input: GFM
   syntax_highlighter: rouge
