@@ -21,7 +21,7 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
     background-attachment: fixed;
     background-position: center center;
     background-size: cover;
-    filter: brightness(120%) contrast(120%) saturate(90%);
+    filter: brightness(200%) contrast(120%) saturate(90%);
   }
   body::before {
     content: "";
