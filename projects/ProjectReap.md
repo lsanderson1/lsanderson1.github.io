@@ -14,7 +14,7 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
 ---
 
 <style>
-  /* Background setup */
+  /* Background & contrast tweaks */
   body {
     background-image: url('{{ "/img/Sakura.jpg" | relative_url }}');
     background-repeat: no-repeat;
@@ -23,23 +23,27 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
     background-size: cover;
     filter: brightness(80%) contrast(120%) saturate(90%);
   }
-
-  /* Force white, bold text */
-  .content, 
-  .content h2, .content h3, 
-  .content p, .content li, 
-  .content div, .content span {
-    color: white !important;
-    font-weight: bold !important;
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0;
+    width:100%; height:100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: -1;
   }
 
-  /* Text shadow for clarity */
-  .content h2, .content h3, 
-  .content p, .content li {
+  /* Force white, bold text with subtle shadow */
+  .content-wrapper *,
+  .content-wrapper h2,
+  .content-wrapper h3,
+  .content-wrapper p,
+  .content-wrapper li {
+    color: white !important;
+    font-weight: bold !important;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
   }
 
-  /* Optional dark box behind text */
+  /* Dark semi‑opaque box behind all content */
   .content-wrapper {
     background-color: rgba(0, 0, 0, 0.6);
     padding: 2rem;
@@ -52,7 +56,6 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
 
 <div class="content-wrapper" markdown="1">
   
-  <div class="content">
     ## Overview
     ---
     This project is a was in collaboration with a group of peers to create a functional 2D Platformer. 
@@ -93,4 +96,3 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
       <a href="https://ics485-project-reap.github.io/">here</a>.
     </div>
   </div>
-</div>
