@@ -10,7 +10,7 @@ labels:
   - Unity Game Engine
   - Aseprite / Assets
   - Animation and Design
-summary: "A collaboration team project that incorporates Unity Engine to create a platformer game in Post-War Japan era."
+summary: "A collaboration team project that incorporates Unity Engine to create a platformer game in Post-War era Japan."
 ---
 
 <style>
