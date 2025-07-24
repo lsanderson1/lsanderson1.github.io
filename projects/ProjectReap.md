@@ -41,7 +41,7 @@ able to defeat all the enemies in sight.
 </div>
 <div style="text-align: center; width: 700px">
     <div style="margin-bottom: 0.5em; font-weight: bold;">
-  Pressing **K** will activate your flow state, which will allow you to ruthlessly slaughter any enemies in your path until you run out of enemies!
+  Pressing 'K' will activate your flow state, which will allow you to ruthlessly slaughter any enemies in your path until you run out of enemies!
   </div>
   <img
     src="{{ 'img/FlowStateExampleGif.gif' | relative_url }}"
