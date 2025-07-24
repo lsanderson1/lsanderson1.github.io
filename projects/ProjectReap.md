@@ -11,12 +11,10 @@ labels:
   - Aseprite / Assets
   - Animation and Design
 summary: "A collaboration team project that incorporates Unity Engine to create a platformer game with a Post-War Japanese Feel."
-kramdown:
-  parse_block_html: true
 ---
 
 <style>
-  /* Background & contrast tweaks */
+  /* Fixed Sakura background */
   body {
     background-image: url('{{ "/img/Sakura.jpg" | relative_url }}');
     background-repeat: no-repeat;
@@ -30,14 +28,12 @@ kramdown:
     position: fixed;
     top: 0; left: 0;
     width:100%; height:100%;
-    background-color: rgba(0, 0, 0, 0.4);
-    z-index: -1;
+    background-color: rgba(0,0,0,0.4);
+    z-index:-1;
   }
-</style>
-
-
-<div markdown="1" style="
-    background-color: rgba(0,0,0,0.6);
+  /* Dark box + white bold text + shadow */
+  .dark-wrapper {
+    background: rgba(0,0,0,0.6);
     padding: 2rem;
     border-radius: 8px;
     max-width: 900px;
@@ -45,8 +41,15 @@ kramdown:
     color: white;
     font-weight: bold;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-  ">
+  }
+  /* Ensure links stand out */
+  .dark-wrapper a {
+    color: #ffebaa;
+    text-decoration: underline;
+  }
+</style>
 
+<div class="dark-wrapper">
     ## Overview
     ---
     This project is a was in collaboration with a group of peers to create a functional 2D Platformer. 
@@ -86,5 +89,4 @@ kramdown:
       The demo, executable, and project references can be found
       <a href="https://ics485-project-reap.github.io/">here</a>.
     </div>
-  
   </div>
