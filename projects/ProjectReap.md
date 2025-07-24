@@ -46,7 +46,7 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
   }
 </style>
 
-
+<div class="content"> 
 ## Overview
 ---
 This project is a was in collaboration with a group of peers to create a functional 2D Platformer. 
@@ -89,4 +89,5 @@ Will you succeed and be granted the amnesty you deserve, or fall victim to the r
 <div style="text-align: center; margin-top: 1.5em;">
   The website along with the demo drive and executable along with project references can be found
   <a href="https://ics485-project-reap.github.io/">here</a>.
+</div>
 </div>
