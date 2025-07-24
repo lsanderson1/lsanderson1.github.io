@@ -10,7 +10,7 @@ labels:
   - Unity Game Engine
   - Aseprite / Assets
   - Animation and Design
-summary: "A collaboration team project that incorporates Unity Engine to create a platformer game with a Post-War Japanese era."
+summary: "A collaboration team project that incorporates Unity Engine to create a platformer game in a Post-War Japanese era."
 ---
 
 <style>
@@ -57,11 +57,11 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
     color: #ffebaa;
     text-decoration: underline;
   }
-  .dark-wrapper h1 {
+  h1.display-4 {
     font-weight: 900;
-    font-size: 2.5rem;
-    color: #fff;
-    text-shadow: 1px, 1px, 2px, rgba(0,0,0,0,8);
+    font-size: 3rem;
+    color: #fff !important;
+    text-shadow: 2px, 2px, 4px, rgba(0,0,0,0,8);
   }
 </style>
 
