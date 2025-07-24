@@ -23,9 +23,6 @@ places the player in second. Also health and boost were implemented for a better
 lose the race.
 
 <div style="text-align: center;">
-  <h3 style="margin-bottom: 0.5em;">Start screen to the game</h3>
-  <h3 style="margin-bottom: 1.5em;">Prototype Model in Blender</h3>
-
   <div style="
     display: flex;
     justify-content: center;
@@ -33,7 +30,7 @@ lose the race.
     flex-wrap: wrap;
   ">
     <div style="text-align: center;">
-      <div style="margin-bottom: 0.5em; font-weight: bold;">
+      <div style="margin-bottom: 0.5em; font-weight: bold; font-size: 3rem; color: blue;">
         Start Screen
       </div>
       <img
@@ -48,7 +45,7 @@ lose the race.
       />
     </div>
     <div style="text-align: center;">
-      <div style="margin-bottom: 0.5em; font-weight: bold;">
+      <div style="margin-bottom: 0.5em; font-weight: bold; font-size: 3rem; color: blue;">
         Prototype Model
       </div>
       <img
