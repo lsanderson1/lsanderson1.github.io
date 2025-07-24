@@ -10,7 +10,7 @@ labels:
   - Unity Game Engine
   - Aseprite / Assets
   - Animation and Design
-summary: "A collaboration team project that incorporates Unity Engine to create a platformer game with a Post-War Japanese Feel."
+summary: "A collaboration team project that incorporates Unity Engine to create a platformer game with a Post-War Japanese feel."
 ---
 
 <style>
@@ -21,7 +21,7 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
     background-attachment: fixed;
     background-position: center center;
     background-size: cover;
-    filter: brightness(80%) contrast(120%) saturate(90%);
+    filter: brightness(120%) contrast(120%) saturate(90%);
   }
   body::before {
     content: "";
@@ -64,16 +64,16 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
     Fast and quick paced, but also a puzzle in how you defeat all your enemies is presented to the player, granting a replayability factor as to how efficient, fast (or how sloppily) one is
     able to defeat all the enemies in sight.
     <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 1rem;">
-      <div style="text-align: center; width: 45%; max-width: 700px;">
-        <div style="margin-bottom: 0.5em;">The Beginning of the Adventure</div>
+      <div style="text-align: center; width: 60%; max-width: 900px;">
+        <div style="margin-bottom: 0.5em; color: red;">The Beginning of the Adventure</div>
         <img
           src="{{ 'img/BeginningShot.png' | relative_url }}"
           alt="Beginning Shot"
           style="width: 100%; height: auto; display: block; margin: 0 auto;"
         />
       </div>
-      <div style="text-align: center; width: 45%; max-width: 700px;">
-        <div style="margin-bottom: 0.5em;">
+      <div style="text-align: center; width: 60%; max-width: 900px;">
+        <div style="margin-bottom: 0.5em; color: red;">
           Pressing ‘K’ activates your flow state to chain through enemies!
         </div>
         <img
