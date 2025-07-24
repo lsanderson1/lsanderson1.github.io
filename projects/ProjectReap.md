@@ -11,6 +11,8 @@ labels:
   - Aseprite / Assets
   - Animation and Design
 summary: "A collaboration team project that incorporates Unity Engine to create a platformer game with a Post-War Japanese Feel."
+kramdown:
+  parse_block_html: true
 ---
 
 <style>
@@ -31,30 +33,20 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
     background-color: rgba(0, 0, 0, 0.4);
     z-index: -1;
   }
+</style>
 
-  /* Force white, bold text with subtle shadow */
-  .content-wrapper *,
-  .content-wrapper h2,
-  .content-wrapper h3,
-  .content-wrapper p,
-  .content-wrapper li {
-    color: white !important;
-    font-weight: bold !important;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-  }
 
-  /* Dark semi‑opaque box behind all content */
-  .content-wrapper {
-    background-color: rgba(0, 0, 0, 0.6);
+<div markdown="1" style="
+    background-color: rgba(0,0,0,0.6);
     padding: 2rem;
     border-radius: 8px;
     max-width: 900px;
     margin: 2rem auto;
-  }
-</style>
+    color: white;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+  ">
 
-
-<div class="content-wrapper">
     ## Overview
     ---
     This project is a was in collaboration with a group of peers to create a functional 2D Platformer. 
@@ -94,4 +86,5 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
       The demo, executable, and project references can be found
       <a href="https://ics485-project-reap.github.io/">here</a>.
     </div>
+  
   </div>
