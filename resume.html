@@ -111,6 +111,43 @@ layout: home
     </div>
     {% endif %}
 
+    {% if site.data.bio.projects %}
+    <div class="row pt-4 align-items-start">
+      <div class="col-lg-3">
+        <h1 class="display-6 text-start m-0">Projects</h1>
+      </div>
+      <div class="col-lg-9">
+        {% for entry in site.data.bio.projects %}
+          <div class="mb-4">
+            <p class="mb-1">
+              <b>{{ entry.name }}</b>
+              {% if entry.url %}
+                — <a href="{{ entry.url }}">View project</a>
+              {% endif %}
+            </p>
+            {% if entry.description %}
+              <p class="mb-1">{{ entry.description }}</p>
+            {% endif %}
+            {% if entry.highlights %}
+              <ul class="mb-1">
+                {% for highlight in entry.highlights %}
+                  <li>{{ highlight }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+            {% if entry.keywords %}
+              <p class="m-0">
+                {% for keyword in entry.keywords %}
+                  <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">{{ keyword }}</span>
+                {% endfor %}
+              </p>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
     {% if site.data.bio.work %}
     <div class="row pt-4 align-items-start">
       <div class="col-lg-3">
