@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="title" content="Interactable Museum Room | Lloyd Sanderson | Professional Portfolio">
+    <meta name="description" content="">
+    <meta name="image" content="https://github.com/lsanderson1.png">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Lloyd Sanderson | Professional Portfolio">
+    <meta property="og:url" content="https://lsanderson1.github.io/unreal-journey/project-1-interactable-museum.html">
+    <meta property="og:title" content="Interactable Museum Room | Lloyd Sanderson | Professional Portfolio">
+    <meta property="og:description" content="">
+    <meta property="og:image" content="https://github.com/lsanderson1.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+    <link rel="stylesheet" href="/css/techfolio-theme/skyblue.css">
+    <link rel="stylesheet" type="text/css" href="/css/rouge/github.css">
+    <!-- Load MathJax if 'mathjax: true' is found in your _config.yml. -->
+    
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-MML-AM_CHTML">
+    </script>
+    
+
+    <title>Interactable Museum Room | Lloyd Sanderson | Professional Portfolio</title>
+  </head>
+  <body>
+  <header class="navbar navbar-expand navbar-light bg-light bg-gradient border-bottom">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/">Lloyd Sanderson</a>
+    <div class="ms-auto">
+      <ul class="navbar-nav mb-2 mb-lg-0">
+        <a class="nav-link" href="/#projects">Projects</a>
+        <a class="nav-link" href="/unreal-journey/">Unreal Engine Journey</a>
+        <a class="nav-link" href="/#essays">Essays</a>
+        <a class="nav-link" href="/resume.html">Resume</a>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<main style="background-color: var(--tf-page-bg-color)" class="bg-gradient py-4">
+  <article class="container">
+    <a href="/unreal-journey/" class="d-inline-block mb-3">&larr; Back to Unreal Engine Journey</a>
+
+    <header class="mb-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+          <p class="text-uppercase text-muted fw-bold mb-1">Project 1 · Days 1-10</p>
+          <h1 class="display-4 mb-2">Interactable Museum Room</h1>
+          <p class="lead mb-0">My first Unreal Engine portfolio project: a reusable museum interaction system with object-specific prompts, inspection UI, centralized input, and safe cleanup.</p>
+        </div>
+        <span class="badge bg-success fs-6">Complete</span>
+      </div>
+
+      <div class="mt-3">
+        
+          <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">Unreal Engine 5.8</span>
+        
+          <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">Blueprints</span>
+        
+          <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">UMG</span>
+        
+          <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">Blueprint Interfaces</span>
+        
+          <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">Interaction Systems</span>
+        
+      </div>
+    </header>
+
+    <img src="/img/unreal-journey/project-1-museum-room.png"
+         class="img-fluid rounded border mb-4 w-100"
+         alt="Overhead Unreal Editor view of the completed interactable museum room">
+
+    <div class="unreal-journey-content">
+      <h2 id="final-walkthrough">Final walkthrough</h2>
+
+<video class="w-100 rounded border mb-4" controls="" preload="metadata" poster="/img/unreal-journey/project-1-museum-room.png">
+  <source src="/assets/video/unreal-journey/project-1-interactable-museum.mp4" type="video/mp4" />
+  Your browser does not support embedded video.
+</video>
+
+<h2 id="project-goal">Project goal</h2>
+
+<p>The goal was to move from a blank Unreal project to a small museum room where every display object could share one interaction system while presenting its own name, description, and prompt. The final loop lets the player approach an artifact, see a contextual prompt, press E to inspect it, and safely clear the interface when leaving.</p>
+
+<h2 id="what-i-built">What I built</h2>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">BP_DisplayObject_Base</code>, a reusable Blueprint for museum artifacts.</li>
+  <li>Collision-based proximity detection and stored near/far state.</li>
+  <li>Instance-editable text for each artifact’s name, description, and interaction prompt.</li>
+  <li><code class="language-plaintext highlighter-rouge">WBP_InteractionPrompt</code> and <code class="language-plaintext highlighter-rouge">WBP_InspectionPanel</code> UMG widgets.</li>
+  <li><code class="language-plaintext highlighter-rouge">BP_MuseumPlayerController</code> as the single owner of interaction input.</li>
+  <li><code class="language-plaintext highlighter-rouge">BPI_Interactable</code> so the controller can communicate through a reusable interface.</li>
+  <li>Reference validation, duplicate-widget prevention, and safe UI cleanup.</li>
+</ul>
+
+<h2 id="development-journey">Development journey</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Milestone</th>
+      <th>Progress</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Days 1-3</td>
+      <td>Built the room and reusable display actor, added collision overlap detection, and stored whether the player was in interaction range.</td>
+    </tr>
+    <tr>
+      <td>Days 4-5</td>
+      <td>Added E-key interaction and moved artifact-specific names and descriptions into instance-editable data.</td>
+    </tr>
+    <tr>
+      <td>Days 6-7</td>
+      <td>Replaced debug output with an inspection panel and contextual interaction prompt.</td>
+    </tr>
+    <tr>
+      <td>Days 8-9</td>
+      <td>Centralized input in the PlayerController and introduced a Blueprint Interface for reusable communication.</td>
+    </tr>
+    <tr>
+      <td>Day 10</td>
+      <td>Added dynamic prompt text, validated references, prevented duplicate widgets, tested multiple objects, and completed final QA.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="key-lessons">Key lessons</h2>
+
+<p>This project established the foundation of my Unreal workflow. I learned how Actor Blueprints, PlayerControllers, Blueprint Interfaces, and Widget Blueprints divide responsibility. The largest architectural improvement was moving input out of each artifact and into one controller, allowing display objects to focus on their own data and interaction behavior.</p>
+
+<p>I also learned why object references need deliberate cleanup. A prompt or inspection panel is not only something visible on screen; it is a live widget reference that must be validated, removed, and cleared at the correct time.</p>
+
+<h2 id="result">Result</h2>
+
+<p>The completed room supports multiple display objects using the same Blueprint logic. Each object can provide unique player-facing information without duplicating the interaction system, making the result suitable for reuse in later pickups, puzzle objects, dialogue targets, and inspectable items.</p>
+
+<p class="text-muted small mt-4">Documented from the Project 1 master lesson notebook, project README, final gameplay capture, and archived Unreal Engine 5.8 project files.</p>
+
+    </div>
+  </article>
+</main>
+
+<footer class="navbar navbar-expand navbar-light bg-light bg-gradient border-top">
+  <div class="container-fluid">
+    <div class="ms-auto">
+      <ul class="navbar-nav mb-2 mb-lg-0">
+        <small><a class="nav-link" href="https://techfolios.github.io">Made with Techfolios</a></small>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+  </body>
+</html>

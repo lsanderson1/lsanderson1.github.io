@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="title" content="Prop Showcase Gallery | Lloyd Sanderson | Professional Portfolio">
+    <meta name="description" content="">
+    <meta name="image" content="https://github.com/lsanderson1.png">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Lloyd Sanderson | Professional Portfolio">
+    <meta property="og:url" content="https://lsanderson1.github.io/unreal-journey/project-2-prop-showcase-gallery.html">
+    <meta property="og:title" content="Prop Showcase Gallery | Lloyd Sanderson | Professional Portfolio">
+    <meta property="og:description" content="">
+    <meta property="og:image" content="https://github.com/lsanderson1.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+    <link rel="stylesheet" href="/css/techfolio-theme/skyblue.css">
+    <link rel="stylesheet" type="text/css" href="/css/rouge/github.css">
+    <!-- Load MathJax if 'mathjax: true' is found in your _config.yml. -->
+    
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-MML-AM_CHTML">
+    </script>
+    
+
+    <title>Prop Showcase Gallery | Lloyd Sanderson | Professional Portfolio</title>
+  </head>
+  <body>
+  <header class="navbar navbar-expand navbar-light bg-light bg-gradient border-bottom">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/">Lloyd Sanderson</a>
+    <div class="ms-auto">
+      <ul class="navbar-nav mb-2 mb-lg-0">
+        <a class="nav-link" href="/#projects">Projects</a>
+        <a class="nav-link" href="/unreal-journey/">Unreal Engine Journey</a>
+        <a class="nav-link" href="/#essays">Essays</a>
+        <a class="nav-link" href="/resume.html">Resume</a>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<main style="background-color: var(--tf-page-bg-color)" class="bg-gradient py-4">
+  <article class="container">
+    <a href="/unreal-journey/" class="d-inline-block mb-3">&larr; Back to Unreal Engine Journey</a>
+
+    <header class="mb-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+          <p class="text-uppercase text-muted fw-bold mb-1">Project 2 · Days 11-16</p>
+          <h1 class="display-4 mb-2">Prop Showcase Gallery</h1>
+          <p class="lead mb-0">A Blender-to-Unreal prop pipeline and reusable gallery presentation system with material variants, Blueprint families, cinematic cameras, lighting, and UMG controls.</p>
+        </div>
+        <span class="badge bg-success fs-6">Complete</span>
+      </div>
+
+      <div class="mt-3">
+        
+          <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">Unreal Engine 5.8</span>
+        
+          <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">Blender</span>
+        
+          <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">Blueprints</span>
+        
+          <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">Materials</span>
+        
+          <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">Cinematic Cameras</span>
+        
+          <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">UMG</span>
+        
+      </div>
+    </header>
+
+    <img src="/img/unreal-journey/project-2-gallery-hero.png"
+         class="img-fluid rounded border mb-4 w-100"
+         alt="Hero camera view of three finished relic showcases in Unreal Engine">
+
+    <div class="unreal-journey-content">
+      <h2 id="final-walkthrough">Final walkthrough</h2>
+
+<video class="w-100 rounded border mb-4" controls="" preload="metadata" poster="/img/unreal-journey/project-2-gallery-hero.png">
+  <source src="/assets/video/unreal-journey/project-2-prop-showcase.mp4" type="video/mp4" />
+  Your browser does not support embedded video.
+</video>
+
+<h2 id="project-goal">Project goal</h2>
+
+<p>Project 2 expanded the museum foundation into a focused asset and presentation pipeline. I modeled props in Blender, imported and validated them in Unreal, built reusable material and showcase systems, and finished with an interactive camera tour of three relic variants.</p>
+
+<h2 id="what-i-built">What I built</h2>
+
+<ul>
+  <li>A Blender-to-Unreal workflow covering scale, rotation, pivot placement, FBX export, collision, and import validation.</li>
+  <li>Parameterized material instances for stone, metal, frame, and emissive core treatments.</li>
+  <li><code class="language-plaintext highlighter-rouge">BP_PropShowcase_Base</code>, with editable mesh, material, label, height, rotation, and presentation-light settings.</li>
+  <li>Three reusable child Blueprint presets for the Recovered Stone Relic, Archive Beacon, and Forged Archive Relic.</li>
+  <li>Key, fill, rim, and optional accent lights with controlled exposure.</li>
+  <li>One hero Cine Camera and three detail cameras.</li>
+  <li><code class="language-plaintext highlighter-rouge">BP_GalleryCameraDirector</code>, which caches player references and switches views with a reusable blend function.</li>
+  <li><code class="language-plaintext highlighter-rouge">WBP_GalleryCameraControls</code>, including a timed fade animation and one-time viewport creation.</li>
+</ul>
+
+<h2 id="development-journey">Development journey</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Milestone</th>
+      <th>Progress</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Day 11</td>
+      <td>Modeled the first relic in Blender, corrected scale and pivot, exported it, and established a clean Unreal gallery baseline.</td>
+    </tr>
+    <tr>
+      <td>Day 12</td>
+      <td>Tested UV behavior, created reusable material instances, and introduced the base showcase Blueprint.</td>
+    </tr>
+    <tr>
+      <td>Day 13</td>
+      <td>Built the Archive Beacon, added a second material path, emissive core, and optional cyan accent light.</td>
+    </tr>
+    <tr>
+      <td>Day 14</td>
+      <td>Added controlled gallery lighting, fixed exposure, performance checks, and cinematic composition.</td>
+    </tr>
+    <tr>
+      <td>Day 15</td>
+      <td>Refactored the display system into a parent-and-child Blueprint family with three specialized presets.</td>
+    </tr>
+    <tr>
+      <td>Day 16</td>
+      <td>Completed the four-camera tour, reusable view-target blending, walking-view return, hidden pawn cleanup, controls widget, timed fade, and final QA.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="gallery">Gallery</h2>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <img class="img-fluid rounded border" src="/img/unreal-journey/project-2-recovered-stone.png" alt="Recovered Stone Relic detail camera view" />
+  </div>
+  <div class="col-md-6">
+    <img class="img-fluid rounded border" src="/img/unreal-journey/project-2-archive-beacon.png" alt="Archive Beacon detail camera view" />
+  </div>
+  <div class="col-md-6">
+    <img class="img-fluid rounded border" src="/img/unreal-journey/project-2-forged-relic.png" alt="Forged Archive Relic detail camera view" />
+  </div>
+  <div class="col-md-6">
+    <img class="img-fluid rounded border" src="/img/unreal-journey/project-2-day-13-progress.png" alt="Archive Beacon gallery progress during Day 13" />
+  </div>
+</div>
+
+<h2 id="key-lessons">Key lessons</h2>
+
+<p>This project connected asset creation with maintainable gameplay architecture. A successful prop was not only a model; it needed correct scale, pivot, UVs, collision, materials, import settings, and a reusable way to present variations in Unreal.</p>
+
+<p>The Blueprint family became the central design decision. Shared behavior remained in the parent while child classes stored presentation defaults for each relic. The same separation carried into the camera system: the showcase Blueprints controlled content, Cine Cameras controlled composition, the Director controlled view changes, and UMG controlled player guidance.</p>
+
+<h2 id="result">Result</h2>
+
+<p>The completed gallery presents three distinct relics using one reusable system. Keyboard controls switch smoothly among a hero view, three detail views, and the normal walking camera. The controls panel appears once, remains readable, fades without blocking interaction, and the project passes final movement, lighting, rotation, reference, and cleanup checks.</p>
+
+<p class="text-muted small mt-4">Documented from the Project 2 living master, project README, final gameplay capture, screenshots, Blender assets, and archived Unreal Engine 5.8 project files.</p>
+
+    </div>
+  </article>
+</main>
+
+<footer class="navbar navbar-expand navbar-light bg-light bg-gradient border-top">
+  <div class="container-fluid">
+    <div class="ms-auto">
+      <ul class="navbar-nav mb-2 mb-lg-0">
+        <small><a class="nav-link" href="https://techfolios.github.io">Made with Techfolios</a></small>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+  </body>
+</html>
