@@ -1,0 +1,31 @@
+<section style="background-color: var(--tf-projects-bg-color)" class="bg-gradient py-4" id="unreal-journey">
+  <div class="container">
+    <div class="row mb-4">
+      <div class="col-lg-9">
+        <p class="text-uppercase text-muted fw-bold mb-1">Learning in public</p>
+        <h1 class="display-4 text-start">Unreal Engine Journey</h1>
+        <p class="lead mb-0">
+          A project-by-project record of the systems, tools, experiments, and lessons behind my Unreal Engine development work.
+        </p>
+      </div>
+    </div>
+
+    <div>
+      {% assign journey_pages = site.pages | where: "type", "unreal-journey" | sort: "journey_order" %}
+      {% for page in journey_pages %}
+        {% unless page.draft %}
+          {% include unreal-journey/journey-card.html page=page %}
+        {% endunless %}
+        {% if include.limit and forloop.index == include.limit %}
+          {% break %}
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    {% if include.limit and journey_pages.size > include.limit %}
+      <p class="text-center pt-2 mb-0">
+        <a href="{{ site.baseurl }}/unreal-journey/">See the complete Unreal Engine Journey</a>
+      </p>
+    {% endif %}
+  </div>
+</section>
