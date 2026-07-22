@@ -1,91 +1,173 @@
 {
   "basics": {
     "name": "Lloyd Sanderson",
-    "label": "Student",
+    "label": "Computer Science and Japanese Graduate",
     "picture": "https://github.com/lsanderson1.png",
     "email": "llsanderson98@gmail.com",
-    "phone": "909-633-3893",
+    "phone": "+1 (909) 633-3893",
     "website": "https://lsanderson1.github.io",
-    "summary": "I am studying for a B.S. in Computer Science and a B.A. in Japanese at the University of Hawaii at Manoa. My expected graduation period is December 2025",
-    "location": { "address": "", "postalCode": "96822", "city": "Honolulu", "countryCode": "USA", "region": "Hawaii" },
+    "summary": "Computer Science and Japanese graduate with hands-on experience in software development, game development, artificial intelligence, procedural systems, and 3D content creation. Proficient in C++, C#, Python, Java, Unity, Unreal Engine, and Blender through individual and collaborative technical projects. Combines technical problem-solving, creative development, Japanese language proficiency, and cross-cultural communication.",
+    "location": {
+      "address": "",
+      "postalCode": "96822",
+      "city": "Honolulu",
+      "countryCode": "US",
+      "region": "Hawaii"
+    },
     "profiles": [
-      { "network": "github", "username": "lsanderson1", "url": "http://github.com/lsanderson1" },
-      { "network": "linkedin", "username": "lloyd-sanderson", "url": "https://www.linkedin.com/in/lloyd-sanderson-4b48b0289/" }
+      {
+        "network": "GitHub",
+        "username": "lsanderson1",
+        "url": "https://github.com/lsanderson1"
+      },
+      {
+        "network": "LinkedIn",
+        "username": "lloyd-sanderson",
+        "url": "https://www.linkedin.com/in/lloyd-sanderson-4b48b0289/"
+      }
     ]
   },
   "interests": [
-    { "name": "AI Design and Procedural Implementation" },
-    { "name": "Game Development" },
-    { "name": "C++" },
-    { "name": "C#" },
-    { "name": "Java" },
-    { "name": "Robotics" },
-    { "name": "3D Graphics and Design / Animation" }
+    {
+      "name": "Artificial Intelligence and Procedural Systems"
+    },
+    {
+      "name": "Game Development"
+    },
+    {
+      "name": "Unreal Engine Development"
+    },
+    {
+      "name": "Unity Development"
+    },
+    {
+      "name": "Software Engineering"
+    },
+    {
+      "name": "Robotics"
+    },
+    {
+      "name": "3D Modeling and Animation"
+    }
   ],
   "skills": [
     {
-      "name": "Languages and Frameworks",
-      "keywords": [ "C", "C++", "C#", "Java", "Javascript", "Python", "Common LISP", "Prolog" ]
+      "name": "Programming Languages",
+      "keywords": [
+        "C",
+        "C++",
+        "C#",
+        "Java",
+        "JavaScript",
+        "Python",
+        "Common Lisp",
+        "Prolog"
+      ]
     },
     {
-      "name": "Alternate Language",
-      "keywords": [ "Japanese" ]
+      "name": "Game Development",
+      "keywords": [
+        "Unreal Engine",
+        "Unity",
+        "Gameplay Programming",
+        "Artificial Intelligence",
+        "Procedural Systems",
+        "Object-Oriented Programming"
+      ]
+    },
+    {
+      "name": "3D and Creative Tools",
+      "keywords": [
+        "Blender",
+        "Aseprite",
+        "3D Modeling",
+        "Asset Creation",
+        "Animation",
+        "Visual Design"
+      ]
+    },
+    {
+      "name": "Software Development",
+      "keywords": [
+        "Object-Oriented Design",
+        "Data Structures",
+        "Socket Programming",
+        "JSON",
+        "Database Retrieval",
+        "Logic Programming",
+        "Version Control",
+        "Collaborative Development"
+      ]
+    },
+    {
+      "name": "Language",
+      "keywords": [
+        "Japanese"
+      ]
     }
   ],
   "education": [
     {
-      "institution": "University of Hawaii, Honolulu, HI",
-      "area": "Computer Science (expected December, 2025)",
-      "studyType": "B.S.",
+      "institution": "University of Hawaiʻi at Mānoa",
+      "area": "Computer Science",
+      "studyType": "Bachelor of Science",
       "startDate": "2021-09-01",
-      "endDate": "Present"
+      "endDate": "2025-12-14",
+      "location": "Honolulu, Hawaii"
     },
     {
-      "institution": "University of Hawaii, Honolulu, HI",
-      "area": "Japanese (expected December, 2025)",
-      "studyType": "B.A.",
+      "institution": "University of Hawaiʻi at Mānoa",
+      "area": "Japanese",
+      "studyType": "Bachelor of Arts",
       "startDate": "2021-09-01",
-      "endDate": "Present",
+      "endDate": "2025-12-14",
+      "location": "Honolulu, Hawaii"
     }
   ],
-  "work": [
+  "projects": [
     {
-      "company": "Sushi Love Boat",
-      "position": "Waiter",
-      "website": "",
-      "startDate": "2021-04-16",
-      "endDate": "2021-11-26",
-      "summary": "Work as server for a sushi restaurant.",
+      "name": "Project Reap",
+      "description": "Collaborative 2D action-platformer developed in Unity and set in a stylized post-war Japanese environment.",
       "highlights": [
-        "Developed skill in customer service as well as interactions between customers and employees",
-        "Was able to multitask with various things, and keep time management in check"
-      ]
+        "Collaborated with a multidisciplinary team to develop a functional game prototype.",
+        "Implemented player movement, combat interactions, enemy behavior, and a chain-based Flow ability.",
+        "Contributed to gameplay design, animation, asset integration, testing, and debugging."
+      ],
+      "keywords": [ "C#", "Unity", "Gameplay Programming", "Aseprite", "Animation", "Team Collaboration" ],
+      "url": "https://lsanderson1.github.io/projects/ProjectReap.html"
     },
     {
-      "company": "Pizza Hut",
-      "position": "Sales Representative",
-      "website": "",
-      "startDate": "2019-08-30",
-      "endDate": "2021-04-15",
-      "summary": "Delivered exemplary customer service, as well as making pizzas and delivering.",
+      "name": "If You're Not First",
+      "description": "Checkpoint-based racing prototype featuring player-versus-AI competition, lap tracking, vehicle health, and boost mechanics.",
       "highlights": [
-        "Learned fast-paced restaurant environment, helping and assisting with kitchen staff and in the front counter.",
-        "Made pizzas, delivered, took orders, maintained the cleanliness of the store."
-      ]
-    }
-  ],
-  "volunteer": [
+        "Developed checkpoint, lap-order, and distance-comparison systems using object-oriented C#.",
+        "Implemented opponent AI, vehicle movement, health, and boost functionality.",
+        "Created and integrated Blender assets into a playable Unity WebGL project."
+      ],
+      "keywords": [ "C#", "Unity", "Blender", "Artificial Intelligence", "Object-Oriented Programming", "WebGL" ],
+      "url": "https://lsanderson1.github.io/projects/IfYoureNotFirst.html"
+    },
     {
-      "organization": "Judson Church",
-      "website": "https://www.judsonsb.org/",
-      "position": "Organizer",
-      "startDate": "2012-10-31",
-      "endDate": "2016-10-31",
-      "summary": "A annual Halloween event which I would organize set up and carry out",
+      "name": "Star Wars Question-Answering System",
+      "description": "Natural-language question-answering application built in Prolog using a Definite Clause Grammar and structured fact database.",
       "highlights": [
-        "Teamwork exercises and organization were prevalent and described.",
-        "Helping maintain and carry out events and plans according to what was provided."
-      ]
+        "Designed grammar rules capable of interpreting yes-or-no, who, and what questions.",
+        "Mapped natural-language input to semantic Prolog predicates and database queries.",
+        "Implemented structured answer formatting and contextual feedback for unsupported queries."
+      ],
+      "keywords": [ "Prolog", "Artificial Intelligence", "Definite Clause Grammar", "Natural-Language Processing", "Logic Programming" ],
+      "url": "https://lsanderson1.github.io/projects/DCGSyntax.html"
+    },
+    {
+      "name": "Blender Command-Line Integration",
+      "description": "Cross-language automation system connecting a Common Lisp command-line client to a Python socket server embedded in Blender.",
+      "highlights": [
+        "Designed a TCP socket interface for exchanging structured JSON commands.",
+        "Implemented commands for object creation, transformations, materials, lighting, cameras, particles, and animation.",
+        "Created an interactive Common Lisp client for remotely controlling Blender operations."
+      ],
+      "keywords": [ "Python", "Common Lisp", "Blender", "Socket Programming", "JSON", "Automation" ],
+      "url": "https://lsanderson1.github.io/projects/BlenderCLI.html"
     }
   ],
   "references": [
