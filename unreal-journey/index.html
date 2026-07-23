@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://github.com/lsanderson1.png">
     <link rel="shortcut icon" href="/favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
-    <link rel="stylesheet" href="/css/techfolio-theme/skyblue.css">
+    <link rel="stylesheet" href="/css/techfolio-theme/sakura-tech.css">
     <link rel="stylesheet" type="text/css" href="/css/rouge/github.css">
     <!-- Load MathJax if 'mathjax: true' is found in your _config.yml. -->
     
@@ -25,137 +25,77 @@
     <title>Unreal Engine Journey | Lloyd Sanderson | Professional Portfolio</title>
   </head>
   <body>
-  <header class="navbar navbar-expand navbar-light bg-light bg-gradient border-bottom">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="/">Lloyd Sanderson</a>
-    <div class="ms-auto">
-      <ul class="navbar-nav mb-2 mb-lg-0">
-        <a class="nav-link" href="/#projects">Projects</a>
-        <a class="nav-link" href="/unreal-journey/">Unreal Engine Journey</a>
-        <a class="nav-link" href="/#essays">Essays</a>
-        <a class="nav-link" href="/resume.html">Resume</a>
-      </ul>
-    </div>
-  </div>
+  <header class="fp-nav">
+  <a class="fp-brand" href="/" aria-label="Lloyd Sanderson home">
+    Lloyd Sanderson
+  </a>
+  <nav aria-label="Primary navigation">
+    <a href="/projects/">Projects <small>作品</small></a>
+    <a class="is-active" aria-current="page" href="/unreal-journey/">Unreal Journey <small>開発記録</small></a>
+    <a href="/essays/">Essays <small>文章</small></a>
+    <a href="/resume.html">Resume <small>履歴</small></a>
+  </nav>
 </header>
 
-<section style="background-color: var(--tf-projects-bg-color)" class="bg-gradient py-4" id="unreal-journey">
-  <div class="container">
-    <div class="row mb-4">
-      <div class="col-lg-9">
-        <p class="text-uppercase text-muted fw-bold mb-1">Solo Learning</p>
-        <h1 class="display-4 text-start">Unreal Engine Journey</h1>
-        <p class="lead mb-0">
-          A project-by-project record of the systems, tools, experiments, and lessons behind my Unreal Engine development work.
-        </p>
-      </div>
-    </div>
+<main class="fp-main">
+  <section class="fp-page-hero fp-journey-hero" id="unreal-journey">
+  <p class="fp-kicker">開発記録 / Solo learning</p>
+  <h1>Unreal Engine Journey</h1>
+  <p>A visual development record connecting each milestone to functions and reusable systems that gradually progress through each project, expanding Modeling, Animation, Story, and Coding to a final capstone that combines everything that was learned here.</p>
+</section>
 
-    <div>
-      
-      
-        
-          <article class="card mb-4 overflow-hidden">
-  <div class="row g-0">
-    <div class="col-lg-5">
-      <img src="/img/unreal-journey/project-1-museum-room.png"
-           class="w-100 h-100"
-           style="min-height: 260px; object-fit: cover;"
-           alt="Overhead Unreal Editor view of the completed interactable museum room">
+<section class="fp-timeline" aria-label="Unreal Engine milestones">
+  
+  
+    
+      <article>
+  <div class="fp-timeline-marker"><span>01</span></div>
+  <a class="fp-journey-art" href="/unreal-journey/project-1-interactable-museum.html" aria-label="Explore Interactable Museum Room">
+    <img src="/img/unreal-journey/project-1-museum-room.png" alt="Overhead Unreal Editor view of the completed interactable museum room">
+  </a>
+  <div class="fp-timeline-copy">
+    <p class="fp-kicker">Project 1 · Days 1-10 · Complete</p>
+    <h2><a href="/unreal-journey/project-1-interactable-museum.html">Interactable Museum Room</a></h2>
+    <p>My first Unreal Engine portfolio project: a reusable museum interaction system with object-specific prompts, inspection UI, centralized input, and safe cleanup.</p>
+    <div class="fp-tags">
+      <span>Unreal Engine 5.8</span><span>Blueprints</span><span>UMG</span><span>Blueprint Interfaces</span><span>Interaction Systems</span>
     </div>
-    <div class="col-lg-7">
-      <div class="card-body p-4">
-        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
-          <div>
-            <p class="text-uppercase text-muted small fw-bold mb-1">Project 1 · Days 1-10</p>
-            <h2 class="card-title h3 mb-0">Interactable Museum Room</h2>
-          </div>
-          <span class="badge bg-success">Complete</span>
-        </div>
-        <p class="card-text mt-3">My first Unreal Engine portfolio project: a reusable museum interaction system with object-specific prompts, inspection UI, centralized input, and safe cleanup.</p>
-        <p class="mb-3">
-          
-            <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">Unreal Engine 5.8</span>
-          
-            <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">Blueprints</span>
-          
-            <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">UMG</span>
-          
-            <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">Blueprint Interfaces</span>
-          
-            <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">Interaction Systems</span>
-          
-        </p>
-        <a href="/unreal-journey/project-1-interactable-museum.html" class="btn btn-outline-dark">Explore this milestone</a>
-      </div>
-    </div>
+    <a class="btn fp-project-open" href="/unreal-journey/project-1-interactable-museum.html">Explore this milestone</a>
   </div>
 </article>
-
-        
-        
-      
-        
-          <article class="card mb-4 overflow-hidden">
-  <div class="row g-0">
-    <div class="col-lg-5">
-      <img src="/img/unreal-journey/project-2-gallery-hero.png"
-           class="w-100 h-100"
-           style="min-height: 260px; object-fit: cover;"
-           alt="Hero camera view of three finished relic showcases in Unreal Engine">
-    </div>
-    <div class="col-lg-7">
-      <div class="card-body p-4">
-        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
-          <div>
-            <p class="text-uppercase text-muted small fw-bold mb-1">Project 2 · Days 11-16</p>
-            <h2 class="card-title h3 mb-0">Prop Showcase Gallery</h2>
-          </div>
-          <span class="badge bg-success">Complete</span>
-        </div>
-        <p class="card-text mt-3">A Blender-to-Unreal prop pipeline and reusable gallery presentation system with material variants, Blueprint families, cinematic cameras, lighting, and UMG controls.</p>
-        <p class="mb-3">
-          
-            <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">Unreal Engine 5.8</span>
-          
-            <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">Blender</span>
-          
-            <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">Blueprints</span>
-          
-            <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">Materials</span>
-          
-            <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">Cinematic Cameras</span>
-          
-            <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">UMG</span>
-          
-        </p>
-        <a href="/unreal-journey/project-2-prop-showcase-gallery.html" class="btn btn-outline-dark">Explore this milestone</a>
-      </div>
-    </div>
-  </div>
-</article>
-
-        
-        
-      
-    </div>
 
     
+  
+    
+      <article>
+  <div class="fp-timeline-marker"><span>02</span></div>
+  <a class="fp-journey-art" href="/unreal-journey/project-2-prop-showcase-gallery.html" aria-label="Explore Prop Showcase Gallery">
+    <img src="/img/unreal-journey/project-2-gallery-hero.png" alt="Hero camera view of three finished relic showcases in Unreal Engine">
+  </a>
+  <div class="fp-timeline-copy">
+    <p class="fp-kicker">Project 2 · Days 11-16 · Complete</p>
+    <h2><a href="/unreal-journey/project-2-prop-showcase-gallery.html">Prop Showcase Gallery</a></h2>
+    <p>A Blender-to-Unreal prop pipeline and reusable gallery presentation system with material variants, Blueprint families, cinematic cameras, lighting, and UMG controls.</p>
+    <div class="fp-tags">
+      <span>Unreal Engine 5.8</span><span>Blender</span><span>Blueprints</span><span>Materials</span><span>Cinematic Cameras</span><span>UMG</span>
+    </div>
+    <a class="btn fp-project-open" href="/unreal-journey/project-2-prop-showcase-gallery.html">Explore this milestone</a>
   </div>
+</article>
+
+    
+  
 </section>
 
 
-<footer class="navbar navbar-expand navbar-light bg-light bg-gradient border-top">
-  <div class="container-fluid">
-    <div class="ms-auto">
-      <ul class="navbar-nav mb-2 mb-lg-0">
-        <small><a class="nav-link" href="https://techfolios.github.io">Made with Techfolios</a></small>
-      </ul>
-    </div>
-  </div>
+</main>
+<footer class="fp-footer">
+  <span>&copy; Lloyd Sanderson</span>
+  <span>Designed for motion, clarity, and personality.</span>
 </footer>
 
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+  <script src="/assets/js/portfolio.js"></script>
   </body>
 </html>

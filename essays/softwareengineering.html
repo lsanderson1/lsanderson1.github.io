@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://github.com/lsanderson1.png">
     <link rel="shortcut icon" href="/favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
-    <link rel="stylesheet" href="/css/techfolio-theme/skyblue.css">
+    <link rel="stylesheet" href="/css/techfolio-theme/sakura-tech.css">
     <link rel="stylesheet" type="text/css" href="/css/rouge/github.css">
     <!-- Load MathJax if 'mathjax: true' is found in your _config.yml. -->
     
@@ -25,25 +25,30 @@
     <title>The Journey Through Software Engineering | Lloyd Sanderson | Professional Portfolio</title>
   </head>
   <body>
-  <header class="navbar navbar-expand navbar-light bg-light bg-gradient border-bottom">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="/">Lloyd Sanderson</a>
-    <div class="ms-auto">
-      <ul class="navbar-nav mb-2 mb-lg-0">
-        <a class="nav-link" href="/#projects">Projects</a>
-        <a class="nav-link" href="/unreal-journey/">Unreal Engine Journey</a>
-        <a class="nav-link" href="/#essays">Essays</a>
-        <a class="nav-link" href="/resume.html">Resume</a>
-      </ul>
-    </div>
-  </div>
+  <header class="fp-nav">
+  <a class="fp-brand" href="/" aria-label="Lloyd Sanderson home">
+    Lloyd Sanderson
+  </a>
+  <nav aria-label="Primary navigation">
+    <a href="/projects/">Projects <small>作品</small></a>
+    <a href="/unreal-journey/">Unreal Journey <small>開発記録</small></a>
+    <a class="is-active" aria-current="page" href="/essays/">Essays <small>文章</small></a>
+    <a href="/resume.html">Resume <small>履歴</small></a>
+  </nav>
 </header>
 
-<div class="container py-4">
-  <h1 class="display-4">The Journey Through Software Engineering</h1>
-  <span class="date">12 Dec 2023</span>
-  <hr>
-  <h2 id="fundamental-software-engineering-concepts">Fundamental Software Engineering Concepts</h2>
+<main class="fp-main">
+  <article class="fp-project-reader fp-essay-reader">
+  <div class="fp-project-reader-bar">
+    <a class="btn" href="/essays/">← All essays</a>
+    <span>12 Dec 2023</span>
+  </div>
+  <header class="fp-project-reader-head fp-essay-reader-head">
+    <p class="fp-kicker">Design Patterns · Agile Project Management · Development Environments · Learning Integration · Fundamental Concepts · Web Development</p>
+    <h1>The Journey Through Software Engineering</h1>
+  </header>
+  <div class="fp-project-reader-body fp-essay-reader-body">
+    <h2 id="fundamental-software-engineering-concepts">Fundamental Software Engineering Concepts</h2>
 <hr />
 <p>Throughout the course of Software Engineering, a fundamental topic presented was on web application and design, however it was not through the case that this was the only thing that was taught. In navigating the intricacies of web application development within the framework of this technology’s stack, it’s easy for some to perceive the primary focus as exclusively honed on the skills required for crafting web-based solutions. While mastering web development is undoubtedly a pivotal focus on the curriculum, it serves as a conduit to a broader and more profound exploration, fundamental software engineering concepts. This course has been a journey into the core principles that underpin software engineering. Of the many concepts that were learned I will focus on 3 concepts, Development Environments, Agile Project Management, and Design Patterns, unraveling their significance beyond the confines of web application development, aiming to understand their implications within the web development sphere but also to envision their applicability in a diverse array of software engineering endeavors.</p>
 
@@ -73,19 +78,17 @@
 
 <p>The journey through Software Engineering has been a transformative experience, not just in mastering the technical skills of web application development, but also in acquiring a deeper understanding of the core principles that drive software engineering. Through the lens of development environments, design patterns, and agile project management, we have gained valuable tools and frameworks that empower us to tackle challenges in diverse domains. This newfound understanding serves as a springboard, propelling us forward as we continue to navigate through the complex world and realm of software development.</p>
 
-</div>
-
-<footer class="navbar navbar-expand navbar-light bg-light bg-gradient border-top">
-  <div class="container-fluid">
-    <div class="ms-auto">
-      <ul class="navbar-nav mb-2 mb-lg-0">
-        <small><a class="nav-link" href="https://techfolios.github.io">Made with Techfolios</a></small>
-      </ul>
-    </div>
   </div>
+</article>
+
+</main>
+<footer class="fp-footer">
+  <span>&copy; Lloyd Sanderson</span>
+  <span>Designed for motion, clarity, and personality.</span>
 </footer>
 
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+  <script src="/assets/js/portfolio.js"></script>
   </body>
 </html>

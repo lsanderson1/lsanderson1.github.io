@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://github.com/lsanderson1.png">
     <link rel="shortcut icon" href="/favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
-    <link rel="stylesheet" href="/css/techfolio-theme/skyblue.css">
+    <link rel="stylesheet" href="/css/techfolio-theme/sakura-tech.css">
     <link rel="stylesheet" type="text/css" href="/css/rouge/github.css">
     <!-- Load MathJax if 'mathjax: true' is found in your _config.yml. -->
     
@@ -25,25 +25,30 @@
     <title>Coding Standards: Pleasure or Pain | Lloyd Sanderson | Professional Portfolio</title>
   </head>
   <body>
-  <header class="navbar navbar-expand navbar-light bg-light bg-gradient border-bottom">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="/">Lloyd Sanderson</a>
-    <div class="ms-auto">
-      <ul class="navbar-nav mb-2 mb-lg-0">
-        <a class="nav-link" href="/#projects">Projects</a>
-        <a class="nav-link" href="/unreal-journey/">Unreal Engine Journey</a>
-        <a class="nav-link" href="/#essays">Essays</a>
-        <a class="nav-link" href="/resume.html">Resume</a>
-      </ul>
-    </div>
-  </div>
+  <header class="fp-nav">
+  <a class="fp-brand" href="/" aria-label="Lloyd Sanderson home">
+    Lloyd Sanderson
+  </a>
+  <nav aria-label="Primary navigation">
+    <a href="/projects/">Projects <small>作品</small></a>
+    <a href="/unreal-journey/">Unreal Journey <small>開発記録</small></a>
+    <a class="is-active" aria-current="page" href="/essays/">Essays <small>文章</small></a>
+    <a href="/resume.html">Resume <small>履歴</small></a>
+  </nav>
 </header>
 
-<div class="container py-4">
-  <h1 class="display-4">Coding Standards: Pleasure or Pain</h1>
-  <span class="date">19 Sep 2023</span>
-  <hr>
-  <p><em>An Introduction on Coding Standards</em></p>
+<main class="fp-main">
+  <article class="fp-project-reader fp-essay-reader">
+  <div class="fp-project-reader-bar">
+    <a class="btn" href="/essays/">← All essays</a>
+    <span>19 Sep 2023</span>
+  </div>
+  <header class="fp-project-reader-head fp-essay-reader-head">
+    <p class="fp-kicker">IntelliJ · Software Engineering · Collaboration · Learning Tools · ESLint</p>
+    <h1>Coding Standards: Pleasure or Pain</h1>
+  </header>
+  <div class="fp-project-reader-body fp-essay-reader-body">
+    <p><em>An Introduction on Coding Standards</em></p>
 
 <p>Throughout many different languages, I have come across many different rules and regulations on which to apply code. Whether the indentation be one tab or two, exactly 5 spaces, or curly brace placement (if any at all), I have seen many in relation to this. Using ESLint for the first time with IntelliJ gave me a realization though that some coding practices can deviate from the norm. It was unusual at first how I experienced ESLint and its correctness in adherence to coding standards (such as having a newline at the end of the code, or instead of double quotes, use single quotes), I believe that even through all this these play a vital role in the world of software engineering as they encompass a set of guidelines and conventions that have a profound impact on the quality, readability, maintainability, and even the learning curve of a programming language.</p>
 
@@ -63,19 +68,17 @@
 
 <p>Coding standards in this sense are not trivial, they are important to the world of software engineering. They improve code quality, facilitate learning, and foster collaboration. Tools like ESLint, while initially challenging, contribute to better code and can accelerate the growth of developers, making them an essential component of modern software development. Along with ESLint, one should learn many different coding standards, and have a general idea of how each of them work and how to apply each one. As the importance of learning multiple languages is to the world of software engineering, having this tool set of coding standards can help simplify your code along with the comprehension of your team members as they assess your code or vice versa.</p>
 
-</div>
-
-<footer class="navbar navbar-expand navbar-light bg-light bg-gradient border-top">
-  <div class="container-fluid">
-    <div class="ms-auto">
-      <ul class="navbar-nav mb-2 mb-lg-0">
-        <small><a class="nav-link" href="https://techfolios.github.io">Made with Techfolios</a></small>
-      </ul>
-    </div>
   </div>
+</article>
+
+</main>
+<footer class="fp-footer">
+  <span>&copy; Lloyd Sanderson</span>
+  <span>Designed for motion, clarity, and personality.</span>
 </footer>
 
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+  <script src="/assets/js/portfolio.js"></script>
   </body>
 </html>

@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://github.com/lsanderson1.png">
     <link rel="shortcut icon" href="/favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
-    <link rel="stylesheet" href="/css/techfolio-theme/skyblue.css">
+    <link rel="stylesheet" href="/css/techfolio-theme/sakura-tech.css">
     <link rel="stylesheet" type="text/css" href="/css/rouge/github.css">
     <!-- Load MathJax if 'mathjax: true' is found in your _config.yml. -->
     
@@ -25,25 +25,30 @@
     <title>AI Utilization: Blessing or a Curse | Lloyd Sanderson | Professional Portfolio</title>
   </head>
   <body>
-  <header class="navbar navbar-expand navbar-light bg-light bg-gradient border-bottom">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="/">Lloyd Sanderson</a>
-    <div class="ms-auto">
-      <ul class="navbar-nav mb-2 mb-lg-0">
-        <a class="nav-link" href="/#projects">Projects</a>
-        <a class="nav-link" href="/unreal-journey/">Unreal Engine Journey</a>
-        <a class="nav-link" href="/#essays">Essays</a>
-        <a class="nav-link" href="/resume.html">Resume</a>
-      </ul>
-    </div>
-  </div>
+  <header class="fp-nav">
+  <a class="fp-brand" href="/" aria-label="Lloyd Sanderson home">
+    Lloyd Sanderson
+  </a>
+  <nav aria-label="Primary navigation">
+    <a href="/projects/">Projects <small>作品</small></a>
+    <a href="/unreal-journey/">Unreal Journey <small>開発記録</small></a>
+    <a class="is-active" aria-current="page" href="/essays/">Essays <small>文章</small></a>
+    <a href="/resume.html">Resume <small>履歴</small></a>
+  </nav>
 </header>
 
-<div class="container py-4">
-  <h1 class="display-4">AI Utilization: Blessing or a Curse</h1>
-  <span class="date">20 Nov 2023</span>
-  <hr>
-  <h2 id="introduction">Introduction</h2>
+<main class="fp-main">
+  <article class="fp-project-reader fp-essay-reader">
+  <div class="fp-project-reader-bar">
+    <a class="btn" href="/essays/">← All essays</a>
+    <span>20 Nov 2023</span>
+  </div>
+  <header class="fp-project-reader-head fp-essay-reader-head">
+    <p class="fp-kicker">AI Assistance Tools · Software Engineering · Collaboration · Learning Integration · ChatGPT · Practical Application</p>
+    <h1>AI Utilization: Blessing or a Curse</h1>
+  </header>
+  <div class="fp-project-reader-body fp-essay-reader-body">
+    <h2 id="introduction">Introduction</h2>
 <hr />
 <p>Software Engineering encompasses a wide range of topics to which one must wholly understand in order to succeed. I would not say that it is the easiest subject to comprehend, but it is something that must be dedicated time and effort into explaining, doing by example, and showcasing your work through various means. Though one might be able to fully comprehend the lesson taught through homework and personal example, AI tools such as ChatGPT can solidify a foundation to your knowledge on understanding a topic more clearly as well as even acting as a professor in assisting to change, modify and debug code. These examples that only need to be asked for by a prompt in AI services have gained a considerable amount of attention to the workspace environment whether it comes to jobs or schools. Due to its complex capabilities to render knowledge through thorough scrutinization of a database, one can find ChatGPT to be a lifesaver in some circumstances where it can do more than just research through a browser alone.</p>
 
@@ -89,19 +94,17 @@
 <hr />
 <p>Through the above points stated in AI usages, the integration of AI, particularly tools like ChatGPT, in software engineering presents both opportunities and challenges. The dynamic capabilities of AI have been instrumental in enhancing comprehension, skill development and problem-solving abilities. It has served as a valuable resource in various educational processes, from code-generation to autocompletion, to natural language processing and predictive analysis. The personalized learning experience facilitated by AI has impacted my understanding positively, providing contextual information, real-time feedback, and interactive coding challenges. However, a cautious approach is necessary, as relying solely on AI tools without grasping underlying principles can hinder foundational knowledge. Outside the classroom, AI applications are widespread, and include challenges such as the potential for inaccuracies, bias and limitations in interpreting complex code structure. Opportunities then in refinement, and feedback. Hitting a balance between AI and human guidance is paramount and the future for AI I believe holds promise for advancements that can potentially improve social education as a whole throughout the world.</p>
 
-</div>
-
-<footer class="navbar navbar-expand navbar-light bg-light bg-gradient border-top">
-  <div class="container-fluid">
-    <div class="ms-auto">
-      <ul class="navbar-nav mb-2 mb-lg-0">
-        <small><a class="nav-link" href="https://techfolios.github.io">Made with Techfolios</a></small>
-      </ul>
-    </div>
   </div>
+</article>
+
+</main>
+<footer class="fp-footer">
+  <span>&copy; Lloyd Sanderson</span>
+  <span>Designed for motion, clarity, and personality.</span>
 </footer>
 
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+  <script src="/assets/js/portfolio.js"></script>
   </body>
 </html>

@@ -14,7 +14,7 @@
     <meta property="og:image" content="https://github.com/lsanderson1.png">
     <link rel="shortcut icon" href="/favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
-    <link rel="stylesheet" href="/css/techfolio-theme/skyblue.css">
+    <link rel="stylesheet" href="/css/techfolio-theme/sakura-tech.css">
     <link rel="stylesheet" type="text/css" href="/css/rouge/github.css">
     <!-- Load MathJax if 'mathjax: true' is found in your _config.yml. -->
     
@@ -25,23 +25,37 @@
     <title>Star Wars Database / Question-Answering Machine | Lloyd Sanderson | Professional Portfolio</title>
   </head>
   <body>
-  <header class="navbar navbar-expand navbar-light bg-light bg-gradient border-bottom">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="/">Lloyd Sanderson</a>
-    <div class="ms-auto">
-      <ul class="navbar-nav mb-2 mb-lg-0">
-        <a class="nav-link" href="/#projects">Projects</a>
-        <a class="nav-link" href="/unreal-journey/">Unreal Engine Journey</a>
-        <a class="nav-link" href="/#essays">Essays</a>
-        <a class="nav-link" href="/resume.html">Resume</a>
-      </ul>
-    </div>
-  </div>
+  <header class="fp-nav">
+  <a class="fp-brand" href="/" aria-label="Lloyd Sanderson home">
+    Lloyd Sanderson
+  </a>
+  <nav aria-label="Primary navigation">
+    <a class="is-active" aria-current="page" href="/projects/">Projects <small>作品</small></a>
+    <a href="/unreal-journey/">Unreal Journey <small>開発記録</small></a>
+    <a href="/essays/">Essays <small>文章</small></a>
+    <a href="/resume.html">Resume <small>履歴</small></a>
+  </nav>
 </header>
 
-<div class="container py-4">
-  <h1 class="display-4">Star Wars Database / Question-Answering Machine</h1>
- <h2 id="overview"><strong>Overview</strong></h2>
+<main class="fp-main">
+  <article class="fp-project-reader">
+  <div class="fp-project-reader-bar">
+    <a class="btn" href="/projects/">← All projects</a>
+    <span>/projects/DCGSyntax.html</span>
+  </div>
+
+  <header class="fp-project-reader-head">
+    <p class="fp-kicker">2025 · Prolog · Database Retrieval · Definite Clause Grammar (DCG) · Star Wars · User Implemented Queries · AI</p>
+    <h1>Star Wars Database / Question-Answering Machine</h1>
+    <p>A small database driven project that accepts user inquiries and outputs an answer based on the facts of the database. Produces a right answer, if the query is right and wrong answer with a solution otherwise.</p>
+    <div class="fp-tags">
+      <span>Prolog</span><span>Database Retrieval</span><span>Definite Clause Grammar (DCG)</span><span>Star Wars</span><span>User Implemented Queries</span><span>AI</span>
+    </div>
+    <img class="fp-project-cover" src="/img/StarWars.webp" alt="Star Wars Database / Question-Answering Machine project cover">
+  </header>
+
+  <div class="fp-project-reader-body">
+    <h2 id="overview"><strong>Overview</strong></h2>
 
 <p>A DCG‑powered question‑answering engine implemented in Prolog, using DCGs to parse natural-language queries into semantic predicates.</p>
 
@@ -221,19 +235,17 @@ true.
 <p>Downloadable files:
 <a href="/assets/files/dcglloyd.pl">The Full DCG Syntax Source Code</a></p>
 
-</div>
-
-<footer class="navbar navbar-expand navbar-light bg-light bg-gradient border-top">
-  <div class="container-fluid">
-    <div class="ms-auto">
-      <ul class="navbar-nav mb-2 mb-lg-0">
-        <small><a class="nav-link" href="https://techfolios.github.io">Made with Techfolios</a></small>
-      </ul>
-    </div>
   </div>
+</article>
+
+</main>
+<footer class="fp-footer">
+  <span>&copy; Lloyd Sanderson</span>
+  <span>Designed for motion, clarity, and personality.</span>
 </footer>
 
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+  <script src="/assets/js/portfolio.js"></script>
   </body>
 </html>
