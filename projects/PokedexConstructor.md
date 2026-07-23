@@ -4,6 +4,7 @@ type: project
 image: img/Pokedex.png
 title: "Pokédex Construction"
 date: 2022
+project_order: 5
 published: true
 labels:
   - C++

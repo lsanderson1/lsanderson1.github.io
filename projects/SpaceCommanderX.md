@@ -4,6 +4,7 @@ type: project
 image: img/SpaceCommanderXcrop.png
 title: "Space Commander X"
 date: 2020
+project_order: 6
 published: true
 labels:
   - Game Development

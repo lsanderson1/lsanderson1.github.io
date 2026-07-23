@@ -1,28 +1,15 @@
-<article class="card mb-4 overflow-hidden">
-  <div class="row g-0">
-    <div class="col-lg-5">
-      <img src="{{ site.baseurl }}/{{ include.page.image }}"
-           class="w-100 h-100"
-           style="min-height: 260px; object-fit: cover;"
-           alt="{{ include.page.image_alt | default: include.page.title }}">
+<article>
+  <div class="fp-timeline-marker"><span>{% if include.number < 10 %}0{% endif %}{{ include.number }}</span></div>
+  <a class="fp-journey-art" href="{{ include.page.url | prepend: site.baseurl }}" aria-label="Explore {{ include.page.title }}">
+    <img src="{{ include.page.image | prepend: '/' | prepend: site.baseurl }}" alt="{{ include.page.image_alt | default: include.page.title }}">
+  </a>
+  <div class="fp-timeline-copy">
+    <p class="fp-kicker">{{ include.page.project_number }} · {{ include.page.days }} · {{ include.page.status }}</p>
+    <h2><a href="{{ include.page.url | prepend: site.baseurl }}">{{ include.page.title }}</a></h2>
+    <p>{{ include.page.summary }}</p>
+    <div class="fp-tags">
+      {% for label in include.page.labels %}<span>{{ label }}</span>{% endfor %}
     </div>
-    <div class="col-lg-7">
-      <div class="card-body p-4">
-        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
-          <div>
-            <p class="text-uppercase text-muted small fw-bold mb-1">{{ include.page.project_number }} · {{ include.page.days }}</p>
-            <h2 class="card-title h3 mb-0">{{ include.page.title }}</h2>
-          </div>
-          <span class="badge bg-success">{{ include.page.status }}</span>
-        </div>
-        <p class="card-text mt-3">{{ include.page.summary }}</p>
-        <p class="mb-3">
-          {% for label in include.page.labels %}
-            <span style="background-color: var(--tf-pill-bg)" class="badge rounded-pill">{{ label }}</span>
-          {% endfor %}
-        </p>
-        <a href="{{ site.baseurl }}{{ include.page.url }}" class="btn btn-outline-dark">Explore this milestone</a>
-      </div>
-    </div>
+    <a class="btn fp-project-open" href="{{ include.page.url | prepend: site.baseurl }}">Explore this milestone</a>
   </div>
 </article>

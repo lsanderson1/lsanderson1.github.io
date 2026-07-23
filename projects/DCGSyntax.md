@@ -4,6 +4,7 @@ type: project
 image: img/StarWars.webp
 title: "Star Wars Database / Question-Answering Machine"
 date: 2025
+project_order: 3
 published: true
 labels:
   - Prolog

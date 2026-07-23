@@ -4,12 +4,14 @@ type: project
 image: img/BlenderLogo.png
 title: "Blender CLI Integration"
 date: 2025
+project_order: 4
 published: true
 labels:
   - Python
   - Common LISP
   - Blender / Assets
   - Socket and JSON Encapsulation
+summary: "A Python socket server embedded in Blender connects to a Common Lisp client library and interactive command-line menu through structured JSON commands."
 ---
 
 Overview

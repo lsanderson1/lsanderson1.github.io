@@ -1,26 +1,34 @@
-<div style="background-color: var(--tf-projects-bg-color)" class="bg-gradient py-3" id="projects">
-  <div class="container">
-    <div class="row mb-3">
-      <div class="col-md-6">
-        <h1 class="display-4 text-start">Projects</h1>
-      </div>
-    </div>
+{% assign project_pages = site.pages | where: "type", "project" | where: "published", true | sort: "project_order" %}
 
-    <div class="vstack gap-3">
-      {% assign project_pages = site.pages | where: "type", "project" | sort: "date" | reverse %}
-      {% for page in project_pages %}
-        {% unless page.draft %}
-          {% include projects/project-card.html page=page %}
-        {% endunless %}
-        {% if forloop.index == include.limit %}
-          {% break %}
-        {% endif %}
+{% if include.limit %}
+<section class="fp-section" id="projects">
+  <div class="fp-section-head">
+    <div>
+      <p class="fp-kicker">Selected work</p>
+      <h2>Featured projects</h2>
+    </div>
+    <span class="fp-index" data-feature-position aria-live="polite">01 / 04</span>
+  </div>
+
+  <div class="fp-feature-carousel" data-feature-carousel aria-label="Featured projects carousel. Drag horizontally to move between projects.">
+    <div class="fp-feature-track" data-feature-track>
+      {% for project in project_pages limit: include.limit %}
+        {% include projects/project-card.html page=project featured=true %}
       {% endfor %}
     </div>
-
-    {% if project_pages.size > include.limit %}
-      <p class="text-center pt-4"><a href="{{ site.baseurl}}/projects/">See all {{ project_pages.size }} projects</a></p>
-    {% endif %}
-
   </div>
-</div>
+  <p class="fp-carousel-hint">Drag left or right across the projects to browse. <a href="{{ '/projects/' | prepend: site.baseurl }}">View all projects</a></p>
+</section>
+{% else %}
+<section class="fp-page-hero">
+  <p class="fp-kicker">作品アーカイブ / Code · Games · Interactive systems</p>
+  <h1>Project archive</h1>
+  <p>Focused case studies with the problem, process, tools, and result presented as one visual story.</p>
+</section>
+
+<section class="fp-project-list" aria-label="Project archive">
+  {% for project in project_pages %}
+    {% include projects/project-card.html page=project number=forloop.index %}
+  {% endfor %}
+</section>
+{% endif %}

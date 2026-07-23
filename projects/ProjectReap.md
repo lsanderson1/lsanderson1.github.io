@@ -4,6 +4,7 @@ type: project
 image: img/ProjectReap.png
 title: "Project Reap"
 date: 2025
+project_order: 1
 published: true
 labels:
   - C#
@@ -13,68 +14,13 @@ labels:
 summary: "A collaboration team project that incorporates Unity Engine to create a platformer game in Post-War era Japan."
 ---
 
-<style>
-  /* CSS Documentation */
-  /* To change the title font, located in _layouts: all titles are incorporated as h1 format in the class display-4 */
-  h1.display-4 {
-    font-weight: 900;
-    font-size: 3rem;                 
-    color: #fff !important;          /* pure white */
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-  }
-  /* Sakura background */
-  body {
-    position: relative; /* establish stacking content */
-    z-index:0;
-  }
-  body::before {
-    content: "";
-    position: fixed;
-    top: 0; left: 0;
-    width:100%; height:100%;
-    background-image: url('{{ "/img/Sakura.jpg" | relative_url }}');
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    background-position: center center;
-    background-size: cover;
-    filter: brightness(120%) contrast(100%) saturate(100%);
-    z-index:-2;
-  }
-  /* Translucent dark overlay on another layer, so able to change the background without any child elements */
-  body::after {
-    content: "";
-    position: fixed;
-    top: 0; left: 0;
-    width:100%; height:100%;
-    background-color: rgba(0,0,0,0.4);
-    z-index:-1;
-  }
-  /* Dark box + white bold text + shadow */
-  .dark-wrapper {
-    background: rgba(0,0,0,0.6);
-    padding: 2rem;
-    border-radius: 8px;
-    max-width: 900px;
-    margin: 2rem auto;
-    color: white;
-    font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-  }
-  /* Ensure links stand out */
-  .dark-wrapper a {
-    color: #ffebaa;
-    text-decoration: underline;
-  }
-</style>
-<!-- Everything needs to be in HTML after this -->
-<div class="dark-wrapper">
-    <h2> Overview </h2>
+<h2>Overview</h2>
     <hr>
     <p>  This project is a was in collaboration with a group of peers to create a functional 2D Platformer. 
     Players start off as a identured servant, armed with only your trusty scythe, one must navigate through the forces of the rebellion, which are planted in your way
     to stop your advances. Fight your way through multiple enemies to build up your power, to which upon maximum unleashes your inner potential; the power of flow.
     Within the flow you become unstoppable, a more powerful force than anyone can even fathom, use it wisely to your advantage!</p>
-    <h2> Gameplay </h2>
+    <h2>Gameplay</h2>
     <hr>
     <p>  Basic movement on both the player and enemies are scripted to move left and right and jump. Multiple actions can be taken to attack, whether it be the left or right mouse button and
     activate your flow state. As you defeat enemies, you build up your flow upon killing 5 enemies which the player is able to use flow. After activating flow, you will move to your next
@@ -103,7 +49,6 @@ summary: "A collaboration team project that incorporates Unity Engine to create 
     </div>
   <div style="padding: 1rem;">
     
-  </div>
     Flow is what guides us all, what gives us power, unleash it upon your foes to devastate their forces and drive back the rebellion as you carve your new future and your new life.
     Will you succeed and be granted the amnesty you deserve, or fall victim to the rebellion and become their next puppet? 
     <div style="text-align: center; margin-top: 1.5em;">

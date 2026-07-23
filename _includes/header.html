@@ -1,13 +1,11 @@
-<header class="navbar navbar-expand navbar-light bg-light bg-gradient border-bottom">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="{{ '/' | prepend: site.baseurl }}">{{ site.data.bio.basics.name }}</a>
-    <div class="ms-auto">
-      <ul class="navbar-nav mb-2 mb-lg-0">
-        <a class="nav-link" href="{{ '/#projects' | prepend: site.baseurl }}">Projects</a>
-        <a class="nav-link" href="{{ '/unreal-journey/' | prepend: site.baseurl }}">Unreal Engine Journey</a>
-        <a class="nav-link" href="{{ '/#essays' | prepend: site.baseurl }}">Essays</a>
-        <a class="nav-link" href="{{ '/resume.html' | prepend: site.baseurl }}">Resume</a>
-      </ul>
-    </div>
-  </div>
+<header class="fp-nav">
+  <a class="fp-brand{% if page.url == '/' %} is-active{% endif %}" href="{{ '/' | prepend: site.baseurl }}" aria-label="{{ site.data.bio.basics.name }} home">
+    {{ site.data.bio.basics.name }}
+  </a>
+  <nav aria-label="Primary navigation">
+    <a{% if page.url contains '/projects/' %} class="is-active" aria-current="page"{% endif %} href="{{ '/projects/' | prepend: site.baseurl }}">Projects <small>作品</small></a>
+    <a{% if page.url contains '/unreal-journey/' %} class="is-active" aria-current="page"{% endif %} href="{{ '/unreal-journey/' | prepend: site.baseurl }}">Unreal Journey <small>開発記録</small></a>
+    <a{% if page.url contains '/essays/' %} class="is-active" aria-current="page"{% endif %} href="{{ '/essays/' | prepend: site.baseurl }}">Essays <small>文章</small></a>
+    <a{% if page.url == '/resume.html' %} class="is-active" aria-current="page"{% endif %} href="{{ '/resume.html' | prepend: site.baseurl }}">Resume <small>履歴</small></a>
+  </nav>
 </header>
