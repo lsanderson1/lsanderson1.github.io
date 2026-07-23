@@ -119,12 +119,12 @@ h1, h2, h3 { line-height: 1.12; }
   --focus-shift: clamp(45px, 5vw, 100px);
   --portrait-size: clamp(220px, 15vw, 300px);
   --portrait-top: clamp(280px, 20vw, 320px);
-  --branch-width: clamp(560px, 56vw, 1120px);
-  --branch-top: clamp(-220px, -10vw, -140px);
+  --branch-width: clamp(560px, 45vw, 900px);
+  --branch-top: clamp(-260px, -12vw, -150px);
   --petal-width: clamp(10px, .7vw, 15px);
   --petal-height: clamp(7px, .5vw, 11px);
-  --petal-mid-fall: clamp(160px, 10vw, 220px);
-  --petal-full-fall: clamp(350px, 23vw, 490px);
+  --petal-mid-fall: clamp(260px, 18vw, 380px);
+  --petal-full-fall: clamp(520px, 38vw, 800px);
   position: relative;
   min-height: 500px;
   padding: clamp(44px, 8vw, 90px) var(--fp-gap) 32px;
