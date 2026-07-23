@@ -28,7 +28,7 @@ download:
     - "Exit: Alt+F4"
 ---
 
-## Final walkthrough
+## Final Walkthrough
 
 <video class="w-100 rounded border mb-4" controls preload="metadata" poster="{{ site.baseurl }}/img/unreal-journey/project-1-museum-room.png">
   <source src="{{ site.baseurl }}/assets/video/unreal-journey/project-1-interactable-museum.mp4" type="video/mp4">
