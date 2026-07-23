@@ -115,14 +115,14 @@ h1, h2, h3 { line-height: 1.12; }
 
 .fp-hero {
   --focus-width: clamp(260px, 17vw, 340px);
-  --focus-top: clamp(310px, 24vw, 360px);
+  --focus-top: clamp(250px, 18vw, 280px);
+  --focus-shift: clamp(45px, 5vw, 100px);
   --portrait-size: clamp(220px, 15vw, 300px);
   --portrait-top: clamp(280px, 20vw, 320px);
-  --branch-width: clamp(430px, 30vw, 620px);
-  --branch-offset: clamp(90px, 6vw, 125px);
-  --branch-top: clamp(4px, .5vw, 10px);
-  --petal-width: clamp(8px, .55vw, 12px);
-  --petal-height: clamp(6px, .4vw, 9px);
+  --branch-width: clamp(560px, 56vw, 1120px);
+  --branch-top: clamp(-220px, -10vw, -140px);
+  --petal-width: clamp(10px, .7vw, 15px);
+  --petal-height: clamp(7px, .5vw, 11px);
   --petal-mid-fall: clamp(160px, 10vw, 220px);
   --petal-full-fall: clamp(350px, 23vw, 490px);
   position: relative;
@@ -245,7 +245,7 @@ h1, h2, h3 { line-height: 1.12; }
 .fp-sakura-canopy {
   position: absolute;
   top: var(--branch-top);
-  left: calc(50% - var(--branch-offset));
+  right: -8px;
   z-index: 3;
   width: min(var(--branch-width), 98%);
   aspect-ratio: 514 / 343;
@@ -302,7 +302,7 @@ h1, h2, h3 { line-height: 1.12; }
 .fp-focus-panel {
   position: absolute;
   top: var(--focus-top);
-  left: 50%;
+  left: calc(50% + var(--focus-shift));
   z-index: 3;
   width: var(--focus-width);
   padding: 18px;
@@ -504,17 +504,17 @@ h1, h2, h3 { line-height: 1.12; }
 .fp-timeline-copy h2 { margin-bottom: 10px; font-weight: 500; }
 .fp-timeline-copy h2 a { text-decoration: none; }
 .fp-timeline-copy > p:not(.fp-kicker) { color: var(--muted-foreground); }
-.fp-journey-reader-head {
+.fp-project-reader:not(.fp-essay-reader) .fp-project-reader-head {
   display: flex;
   align-items: center;
   flex-direction: column;
-  background: linear-gradient(118deg, color-mix(in srgb, var(--accent) 28%, transparent), transparent 68%);
   text-align: center;
 }
-.fp-journey-reader-head h1,
-.fp-journey-reader-head > p { margin-right: auto; margin-left: auto; }
-.fp-journey-reader-head .fp-tags { justify-content: center; }
-.fp-journey-reader-head .fp-project-cover { margin-right: auto; margin-left: auto; }
+.fp-project-reader:not(.fp-essay-reader) .fp-project-reader-head h1,
+.fp-project-reader:not(.fp-essay-reader) .fp-project-reader-head > p { margin-right: auto; margin-left: auto; }
+.fp-project-reader:not(.fp-essay-reader) .fp-project-reader-head .fp-tags { justify-content: center; }
+.fp-project-reader:not(.fp-essay-reader) .fp-project-reader-head .fp-project-cover { margin-right: auto; margin-left: auto; }
+.fp-journey-reader-head { background: linear-gradient(118deg, color-mix(in srgb, var(--accent) 28%, transparent), transparent 68%); }
 
 .fp-essays-hero { background: linear-gradient(115deg, color-mix(in srgb, var(--sakura-pink) 14%, transparent), transparent 68%); }
 .fp-essay-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; padding: 10px var(--fp-gap) 48px; }
@@ -574,6 +574,8 @@ h1, h2, h3 { line-height: 1.12; }
 
 @media (max-width: 760px) {
   .fp-hero {
+    --branch-top: 4px;
+    --branch-width: clamp(280px, 72vw, 430px);
     --portrait-size: clamp(132px, 34vw, 160px);
   }
 
