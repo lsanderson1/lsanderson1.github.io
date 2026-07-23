@@ -31,18 +31,18 @@ download:
     - "Exit: Alt+F4"
 ---
 
-## Final walkthrough
+## Final Walkthrough
 
 <video class="w-100 rounded border mb-4" controls preload="metadata" poster="{{ site.baseurl }}/img/unreal-journey/project-2-gallery-hero.png">
   <source src="{{ site.baseurl }}/assets/video/unreal-journey/project-2-prop-showcase.mp4" type="video/mp4">
   Your browser does not support embedded video.
 </video>
 
-## Project goal
+## Project Goal
 
 Project 2 expanded the museum foundation into a focused asset and presentation pipeline. I modeled props in Blender, imported and validated them in Unreal, built reusable material and showcase systems, and finished with an interactive camera tour of three relic variants.
 
-## What I built
+## What I Built
 
 - A Blender-to-Unreal workflow covering scale, rotation, pivot placement, FBX export, collision, and import validation.
 - Parameterized material instances for stone, metal, frame, and emissive core treatments.
@@ -53,7 +53,7 @@ Project 2 expanded the museum foundation into a focused asset and presentation p
 - `BP_GalleryCameraDirector`, which caches player references and switches views with a reusable blend function.
 - `WBP_GalleryCameraControls`, including a timed fade animation and one-time viewport creation.
 
-## Development journey
+## Development Journey
 
 | Milestone | Progress |
 | --- | --- |
@@ -81,7 +81,7 @@ Project 2 expanded the museum foundation into a focused asset and presentation p
   </div>
 </div>
 
-## Key lessons
+## Key Lessons
 
 This project connected asset creation with maintainable gameplay architecture. A successful prop was not only a model; it needed correct scale, pivot, UVs, collision, materials, import settings, and a reusable way to present variations in Unreal.
 
