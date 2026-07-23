@@ -382,6 +382,9 @@ h1, h2, h3 { line-height: 1.12; }
 .fp-project-reader-body li { color: var(--muted-foreground); }
 .fp-project-reader-body img,
 .fp-project-reader-body video { height: auto; border: 1px solid var(--border); }
+.fp-project-media { width: min(720px, 100%); margin: 28px auto; }
+.fp-project-media img { display: block; width: 100%; }
+.fp-project-media figcaption { margin-bottom: 8px; color: var(--muted-foreground); }
 .fp-project-reader-body pre { padding: 16px; overflow-wrap: anywhere; white-space: pre-wrap; border-left: 3px solid var(--primary); background: var(--muted); color: var(--foreground); }
 .fp-project-reader-body code { overflow-wrap: anywhere; }
 .fp-project-reader-body table { width: 100%; margin: 22px 0; border-collapse: collapse; }
