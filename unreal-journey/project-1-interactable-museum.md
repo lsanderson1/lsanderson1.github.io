@@ -35,11 +35,11 @@ download:
   Your browser does not support embedded video.
 </video>
 
-## Project goal
+## Project Goal
 
 The goal was to move from a blank Unreal project to a small museum room where every display object could share one interaction system while presenting its own name, description, and prompt. The final loop lets the player approach an artifact, see a contextual prompt, press E to inspect it, and safely clear the interface when leaving.
 
-## What I built
+## What I Built
 
 - `BP_DisplayObject_Base`, a reusable Blueprint for museum artifacts.
 - Collision-based proximity detection and stored near/far state.
@@ -49,7 +49,7 @@ The goal was to move from a blank Unreal project to a small museum room where ev
 - `BPI_Interactable` so the controller can communicate through a reusable interface.
 - Reference validation, duplicate-widget prevention, and safe UI cleanup.
 
-## Development journey
+## Development Journey
 
 | Milestone | Progress |
 | --- | --- |
@@ -59,7 +59,7 @@ The goal was to move from a blank Unreal project to a small museum room where ev
 | Days 8-9 | Centralized input in the PlayerController and introduced a Blueprint Interface for reusable communication. |
 | Day 10 | Added dynamic prompt text, validated references, prevented duplicate widgets, tested multiple objects, and completed final QA. |
 
-## Key lessons
+## Key Lessons
 
 This project established the foundation of my Unreal workflow. I learned how Actor Blueprints, PlayerControllers, Blueprint Interfaces, and Widget Blueprints divide responsibility. The largest architectural improvement was moving input out of each artifact and into one controller, allowing display objects to focus on their own data and interaction behavior.
 
