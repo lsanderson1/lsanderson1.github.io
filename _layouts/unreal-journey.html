@@ -14,9 +14,52 @@ layout: home
     <div class="fp-tags">
       {% for label in page.labels %}<span>{{ label }}</span>{% endfor %}
     </div>
+    {% if page.download.url %}
+      <section class="fp-build-card" aria-labelledby="playable-build-title">
+        <div>
+          <p class="fp-build-label">Playable Windows build</p>
+          <h2 id="playable-build-title">Experience this project firsthand</h2>
+          <p>Download the standalone portfolio build. Unreal Engine is not required.</p>
+          <ul class="fp-build-meta" aria-label="Build details">
+            <li>{{ page.download.platform }}</li>
+            <li>ZIP · {{ page.download.size }}</li>
+            <li>{{ page.download.version }}</li>
+          </ul>
+        </div>
+        <a class="btn btn-primary fp-build-download" href="{{ page.download.url }}" aria-label="Download the playable Windows build for {{ page.title }}">
+          Download playable build
+        </a>
+      </section>
+    {% endif %}
     <img class="fp-project-cover" src="{{ page.image | prepend: '/' | prepend: site.baseurl }}" alt="{{ page.image_alt | default: page.title }}">
   </header>
   <div class="fp-project-reader-body fp-journey-reader-body">
+    {% if page.download.url %}
+      <section class="fp-build-guide" aria-labelledby="play-this-project">
+        <p class="fp-kicker">Standalone demonstration</p>
+        <h2 id="play-this-project">Play this project</h2>
+        <p>Download the ZIP, extract the complete folder, and run <code>{{ page.download.executable }}</code>. Keep the executable and its accompanying folders together.</p>
+        <div class="fp-build-guide-grid">
+          <div>
+            <h3>Start the build</h3>
+            <ol>
+              <li>Download and extract the ZIP file.</li>
+              <li>Open the extracted project folder.</li>
+              <li>Double-click <code>{{ page.download.executable }}</code>.</li>
+            </ol>
+          </div>
+          <div>
+            <h3>Controls</h3>
+            <ul>
+              {% for control in page.download.controls %}
+                <li>{{ control }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+        <p class="fp-build-notice"><strong>Windows notice:</strong> Microsoft Defender SmartScreen may appear because this independent portfolio executable is not digitally signed. Only run a build downloaded from this official GitHub release.</p>
+      </section>
+    {% endif %}
     {{ content }}
   </div>
 </article>

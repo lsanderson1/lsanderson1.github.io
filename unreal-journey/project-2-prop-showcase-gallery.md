@@ -16,6 +16,19 @@ labels:
   - Materials
   - Cinematic Cameras
   - UMG
+download:
+  url: "https://github.com/lsanderson1/lsanderson1.github.io/releases/download/unreal-projects-v1.0.0/Lloyd-Sanderson-Prop-Showcase-Gallery-Windows.zip"
+  platform: "Windows 10/11 · 64-bit"
+  size: "365 MB"
+  version: "Portfolio build 1.0"
+  executable: "Project02.exe"
+  controls:
+    - "Move: W, A, S, D"
+    - "Look: Mouse"
+    - "Walking view: 0"
+    - "Hero camera: 1"
+    - "Detail cameras: 2, 3, and 4"
+    - "Exit: Alt+F4"
 ---
 
 ## Final walkthrough

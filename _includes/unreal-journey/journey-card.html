@@ -8,6 +8,7 @@
     <h2><a href="{{ include.page.url | prepend: site.baseurl }}">{{ include.page.title }}</a></h2>
     <p>{{ include.page.summary }}</p>
     <div class="fp-tags">
+      {% if include.page.download.url %}<span class="fp-playable-tag">Playable build</span>{% endif %}
       {% for label in include.page.labels %}<span>{{ label }}</span>{% endfor %}
     </div>
     <a class="btn fp-project-open" href="{{ include.page.url | prepend: site.baseurl }}">Explore this milestone</a>

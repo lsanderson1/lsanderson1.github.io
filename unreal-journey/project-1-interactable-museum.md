@@ -15,6 +15,17 @@ labels:
   - UMG
   - Blueprint Interfaces
   - Interaction Systems
+download:
+  url: "https://github.com/lsanderson1/lsanderson1.github.io/releases/download/unreal-projects-v1.0.0/Lloyd-Sanderson-Interactable-Museum-Windows.zip"
+  platform: "Windows 10/11 · 64-bit"
+  size: "364 MB"
+  version: "Portfolio build 1.0"
+  executable: "Project01.exe"
+  controls:
+    - "Move: W, A, S, D"
+    - "Look: Mouse"
+    - "Inspect or close an artifact: E"
+    - "Exit: Alt+F4"
 ---
 
 ## Final walkthrough
