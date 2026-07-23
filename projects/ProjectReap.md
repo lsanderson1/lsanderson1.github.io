@@ -14,45 +14,26 @@ labels:
 summary: "A collaboration team project that incorporates Unity Engine to create a platformer game in Post-War era Japan."
 ---
 
-<h2>Overview</h2>
-    <hr>
-    <p>  This project is a was in collaboration with a group of peers to create a functional 2D Platformer. 
-    Players start off as a identured servant, armed with only your trusty scythe, one must navigate through the forces of the rebellion, which are planted in your way
-    to stop your advances. Fight your way through multiple enemies to build up your power, to which upon maximum unleashes your inner potential; the power of flow.
-    Within the flow you become unstoppable, a more powerful force than anyone can even fathom, use it wisely to your advantage!</p>
-    <h2>Gameplay</h2>
-    <hr>
-    <p>  Basic movement on both the player and enemies are scripted to move left and right and jump. Multiple actions can be taken to attack, whether it be the left or right mouse button and
-    activate your flow state. As you defeat enemies, you build up your flow upon killing 5 enemies which the player is able to use flow. After activating flow, you will move to your next
-    target upon defeating the last one in a chain until there are no more enemies in sight. When that happens, the flow state is canceled and the player will have to regain their flow again. </p>
-    Fast and quick paced, but also a puzzle in how you defeat all your enemies is presented to the player, granting a replayability factor as to how efficient, fast (or how sloppily) one is
-    able to defeat all enemies in sight.
-    <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 1rem;">
-      <div style="text-align: center; width: 60%; max-width: 900px;">
-        <div style="margin-bottom: 0.5em; color: red;">The Beginning of the Adventure</div>
-        <img
-          src="{{ 'img/BeginningShot.png' | relative_url }}"
-          alt="Beginning Shot"
-          style="width: 100%; height: auto; display: block; margin: 0 auto;"
-        />
-      </div>
-      <div style="text-align: center; width: 60%; max-width: 900px;">
-        <div style="margin-bottom: 0.5em; color: red;">
-          Pressing ‘K’ activates your flow state to chain through enemies!
-        </div>
-        <img
-          src="{{ 'img/FlowStateExampleGif.gif' | relative_url }}"
-          alt="Flow State"
-          style="width: 100%; height: auto; display: block; margin: 0 auto;"
-        />
-      </div>
-    </div>
-  <div style="padding: 1rem;">
-    
-    Flow is what guides us all, what gives us power, unleash it upon your foes to devastate their forces and drive back the rebellion as you carve your new future and your new life.
-    Will you succeed and be granted the amnesty you deserve, or fall victim to the rebellion and become their next puppet? 
-    <div style="text-align: center; margin-top: 1.5em;">
-      The demo, executable, and project references can be found
-      <a href="https://ics485-project-reap.github.io/">here</a>.
-    </div>
-  </div>
+## Overview
+
+This project was created in collaboration with a group of peers to build a functional 2D platformer. Players start as an indentured servant armed with a scythe and navigate through the forces of a rebellion that stands in the way. Fighting multiple enemies builds power until the player can unleash Flow, a state that makes the character an unstoppable force when used wisely.
+
+## Gameplay
+
+Basic movement for the player and enemies supports moving left and right and jumping. The player can attack with the left or right mouse button and activate the Flow state. Defeating five enemies fills the Flow meter. Once activated, Flow moves the player from one defeated target to the next until no enemies remain in sight. The state then ends, and the player must earn it again.
+
+The experience is fast-paced while also presenting a puzzle about the order in which enemies should be defeated. This gives each encounter replayability based on how efficiently, quickly, or creatively the player clears the area.
+
+<figure class="fp-project-media">
+  <figcaption>The Beginning of the Adventure</figcaption>
+  <img src="{{ 'img/BeginningShot.png' | relative_url }}" alt="Beginning shot from Project Reap">
+</figure>
+
+<figure class="fp-project-media">
+  <figcaption>Pressing ‘K’ activates the Flow state to chain through enemies.</figcaption>
+  <img src="{{ 'img/FlowStateExampleGif.gif' | relative_url }}" alt="Project Reap Flow state demonstration">
+</figure>
+
+Flow guides the player and provides the power to devastate enemy forces, drive back the rebellion, and carve out a new future. The player must succeed to earn amnesty or risk falling victim to the rebellion.
+
+The demo, executable, and project references can be found on the [Project Reap website](https://ics485-project-reap.github.io/).
