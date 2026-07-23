@@ -117,7 +117,8 @@ h1, h2, h3 { line-height: 1.12; }
   --focus-width: clamp(260px, 17vw, 340px);
   --focus-top: clamp(250px, 18vw, 280px);
   --focus-shift: clamp(45px, 5vw, 100px);
-  --portrait-size: clamp(220px, 15vw, 300px);
+  --portrait-size: clamp(250px, 18vw, 360px);
+  --portrait-center-offset: clamp(99px, 6.75vw, 135px);
   --portrait-top: clamp(280px, 20vw, 320px);
   --branch-width: clamp(560px, 45vw, 900px);
   --branch-top: clamp(-260px, -12vw, -150px);
@@ -282,12 +283,13 @@ h1, h2, h3 { line-height: 1.12; }
 .fp-profile-card {
   position: absolute;
   top: var(--portrait-top);
-  right: clamp(20px, 5vw, 52px);
+  left: calc(75% + var(--portrait-center-offset));
   z-index: 1;
   display: grid;
   justify-items: center;
   width: calc(var(--portrait-size) + 8px);
   text-align: center;
+  transform: translateX(-50%);
 }
 
 .fp-profile-card img {
@@ -591,7 +593,7 @@ h1, h2, h3 { line-height: 1.12; }
   .fp-resume-grid { grid-template-columns: 1fr; }
   .fp-feature { flex-basis: 88%; }
   .fp-hero-copy { max-width: none; }
-  .fp-profile-card { position: relative; top: auto; right: auto; z-index: 1; margin: 0 0 22px; }
+  .fp-profile-card { position: relative; top: auto; right: auto; left: auto; z-index: 1; margin: 0 0 22px; transform: none; }
   .fp-project-list article { grid-template-columns: 28px 1fr auto; }
   .fp-project-list .fp-thumb { display: none; }
   .fp-timeline article { grid-template-columns: 34px 1fr; }
