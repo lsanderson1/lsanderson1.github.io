@@ -164,6 +164,48 @@ h1, h2, h3 { line-height: 1.12; }
 .fp-alive {
   position: relative;
   display: inline-block;
+  color: var(--primary);
+  -webkit-text-stroke: .8px color-mix(in srgb, var(--primary) 72%, white);
+  paint-order: stroke fill;
+  text-shadow:
+    0 0 3px color-mix(in srgb, var(--primary) 82%, transparent),
+    0 0 10px color-mix(in srgb, var(--primary) 52%, transparent),
+    0 0 24px color-mix(in srgb, var(--primary) 32%, transparent);
+  animation:
+    fp-alive-neon-glitch 5.4s steps(1, end) infinite,
+    fp-alive-neon-pulse 3.6s ease-in-out infinite;
+  will-change: color, filter, text-shadow, transform;
+}
+
+.fp-alive::before,
+.fp-alive::after {
+  position: absolute;
+  inset: 0;
+  color: var(--sakura-pink-soft);
+  -webkit-text-stroke: .8px color-mix(in srgb, var(--sakura-pink) 70%, white);
+  opacity: 0;
+  pointer-events: none;
+  text-shadow:
+    0 0 3px color-mix(in srgb, var(--sakura-pink) 90%, transparent),
+    0 0 10px color-mix(in srgb, var(--sakura-pink) 62%, transparent),
+    0 0 24px color-mix(in srgb, var(--sakura-pink) 38%, transparent);
+  content: attr(data-text);
+  will-change: opacity, transform;
+}
+
+.fp-alive::before {
+  clip-path: inset(0 0 54% 0);
+  animation: fp-alive-glitch-top 5.4s steps(1, end) infinite;
+}
+
+.fp-alive::after {
+  clip-path: inset(52% 0 0 0);
+  animation: fp-alive-glitch-bottom 5.4s steps(1, end) infinite;
+}
+
+.fp-jp-line { margin-bottom: 12px; font-size: clamp(17px, 2vw, 22px); }
+.fp-sakura-shimmer {
+  display: inline-block;
   color: transparent;
   background: linear-gradient(90deg,
     var(--primary) 0%, var(--primary) 34%,
@@ -174,11 +216,9 @@ h1, h2, h3 { line-height: 1.12; }
   background-size: 300% 100%;
   background-clip: text;
   -webkit-background-clip: text;
-  animation: fp-alive-shimmer 3.6s linear infinite;
+  animation: fp-sakura-shimmer 3.6s linear infinite;
 }
-
-.fp-jp-line { margin-bottom: 12px; font-size: clamp(17px, 2vw, 22px); }
-.fp-jp-line span { margin-left: 10px; color: var(--muted-foreground); font-size: .76em; }
+.fp-jp-line .fp-jp-translation { margin-left: 10px; color: var(--muted-foreground); font-size: .76em; }
 .fp-title-line { margin-bottom: 13px; font-weight: 700; }
 .fp-lede { max-width: 620px; color: var(--muted-foreground); }
 
@@ -359,7 +399,7 @@ h1, h2, h3 { line-height: 1.12; }
   display: flex;
   gap: 18px;
   transform: translate3d(0, 0, 0);
-  transition: transform 280ms ease;
+  transition: transform 440ms cubic-bezier(.22, 1, .36, 1);
   will-change: transform;
 }
 .fp-feature-carousel.is-dragging .fp-feature-track { transition: none; }
@@ -628,9 +668,82 @@ h1, h2, h3 { line-height: 1.12; }
   100% { transform: translate3d(0, var(--petal-full-fall), 0) rotate(430deg); opacity: 0; }
 }
 
-@keyframes fp-alive-shimmer {
+@keyframes fp-alive-neon-glitch {
+  0%, 64%, 86%, 100% {
+    color: var(--primary);
+    -webkit-text-stroke-color: color-mix(in srgb, var(--primary) 72%, white);
+    text-shadow:
+      0 0 3px color-mix(in srgb, var(--primary) 82%, transparent),
+      0 0 10px color-mix(in srgb, var(--primary) 52%, transparent),
+      0 0 24px color-mix(in srgb, var(--primary) 32%, transparent);
+    transform: none;
+  }
+  65% {
+    color: var(--sakura-pink-soft);
+    -webkit-text-stroke-color: var(--sakura-pink);
+    text-shadow:
+      0 0 3px var(--sakura-pink),
+      0 0 11px color-mix(in srgb, var(--sakura-pink) 72%, transparent),
+      0 0 28px color-mix(in srgb, var(--sakura-pink) 46%, transparent);
+    transform: translateX(-2px) skewX(-5deg);
+  }
+  66%, 70%, 81%, 84% {
+    color: var(--primary);
+    -webkit-text-stroke-color: color-mix(in srgb, var(--primary) 72%, white);
+    text-shadow:
+      0 0 4px var(--primary),
+      0 0 12px color-mix(in srgb, var(--primary) 62%, transparent),
+      0 0 26px color-mix(in srgb, var(--primary) 38%, transparent);
+    transform: translateX(2px) skewX(2deg);
+  }
+  67%, 69%, 71%, 80%, 82%, 85% {
+    color: var(--sakura-pink-soft);
+    -webkit-text-stroke-color: var(--sakura-pink);
+    text-shadow:
+      0 0 3px var(--sakura-pink),
+      0 0 11px color-mix(in srgb, var(--sakura-pink) 72%, transparent),
+      0 0 28px color-mix(in srgb, var(--sakura-pink) 46%, transparent);
+    transform: none;
+  }
+  68%, 83% {
+    color: var(--sakura-pink-soft);
+    -webkit-text-stroke-color: var(--sakura-pink);
+    text-shadow:
+      -3px 0 0 color-mix(in srgb, var(--primary) 58%, transparent),
+      3px 0 0 color-mix(in srgb, var(--sakura-pink) 76%, transparent),
+      0 0 18px color-mix(in srgb, var(--sakura-pink) 58%, transparent);
+    transform: translateX(-1px) skewX(-7deg);
+  }
+}
+
+@keyframes fp-alive-neon-pulse {
+  0%, 100% {
+    filter: brightness(.86) drop-shadow(0 0 .5px currentColor);
+  }
+  50% {
+    filter: brightness(1.13) drop-shadow(0 0 6px currentColor);
+  }
+}
+
+@keyframes fp-sakura-shimmer {
   0%, 12% { background-position: 100% center; }
   88%, 100% { background-position: 0% center; }
+}
+
+@keyframes fp-alive-glitch-top {
+  0%, 64%, 70%, 80%, 86%, 100% { opacity: 0; transform: none; }
+  65%, 68% { opacity: .95; transform: translate(5px, -1px); }
+  66%, 69% { opacity: .68; transform: translate(-4px, 1px); }
+  81%, 83% { opacity: .88; transform: translate(4px, -1px); }
+  82%, 85% { opacity: .55; transform: translate(-3px, 1px); }
+}
+
+@keyframes fp-alive-glitch-bottom {
+  0%, 64%, 71%, 80%, 86%, 100% { opacity: 0; transform: none; }
+  65%, 67% { opacity: .72; transform: translate(-5px, 1px); }
+  68%, 70% { opacity: 1; transform: translate(4px, 2px); }
+  81%, 84% { opacity: .65; transform: translate(-4px, 1px); }
+  82%, 85% { opacity: .92; transform: translate(3px, 2px); }
 }
 
 @media (max-width: 760px) {
@@ -692,8 +805,11 @@ h1, h2, h3 { line-height: 1.12; }
   html { scroll-behavior: auto; }
   .fp-sakura-canopy,
   .fp-petal,
-  .fp-alive { animation: none; }
+  .fp-alive,
+  .fp-sakura-shimmer { animation: none; }
   .fp-petal { display: none; }
-  .fp-alive { background-position: 0 center; }
+  .fp-alive::before,
+  .fp-alive::after { animation: none; opacity: 0; }
+  .fp-sakura-shimmer { background-position: 0 center; }
   .fp-feature-track { transition: none; }
 }
