@@ -9,7 +9,7 @@
   const next = document.querySelector('[data-feature-next]');
   if (!track || cards.length < 2) return;
 
-  const dragThreshold = 10;
+  const dragThreshold = 6;
   let index = 0;
   let offset = 0;
   let startX = 0;
@@ -18,6 +18,9 @@
   let activePointer = null;
   let dragged = false;
   let suppressClick = false;
+  let dragFrame = null;
+  let pendingOffset = 0;
+  let settleFrame = null;
 
   const cardStep = () => {
     const gap = Number.parseFloat(window.getComputedStyle(track).gap) || 18;
@@ -48,13 +51,44 @@
     setOffset(-index * cardStep(), animate);
   };
 
+  const queueDragOffset = (value) => {
+    pendingOffset = value;
+    if (dragFrame !== null) return;
+
+    dragFrame = window.requestAnimationFrame(() => {
+      dragFrame = null;
+      setOffset(pendingOffset, false);
+    });
+  };
+
+  const flushDragOffset = () => {
+    if (dragFrame === null) return;
+    window.cancelAnimationFrame(dragFrame);
+    dragFrame = null;
+    setOffset(pendingOffset, false);
+  };
+
+  const settleTo = (targetIndex) => {
+    carousel.classList.remove('is-dragging');
+    track.style.transition = '';
+    settleFrame = window.requestAnimationFrame(() => {
+      settleFrame = null;
+      goTo(targetIndex, true);
+    });
+  };
+
   carousel.addEventListener('dragstart', (event) => event.preventDefault());
 
   carousel.addEventListener('pointerdown', (event) => {
     if (event.button !== 0) return;
+    if (settleFrame !== null) {
+      window.cancelAnimationFrame(settleFrame);
+      settleFrame = null;
+    }
     activePointer = event.pointerId;
     startX = event.clientX;
     startOffset = offset;
+    pendingOffset = offset;
     startIndex = index;
     dragged = false;
   });
@@ -68,13 +102,14 @@
       carousel.classList.add('is-dragging');
       carousel.setPointerCapture(activePointer);
     }
-    setOffset(startOffset + distance, false);
+    queueDragOffset(startOffset + distance);
   });
 
   const finishDrag = (event) => {
     if (event.pointerId !== activePointer) return;
 
     if (dragged) {
+      flushDragOffset();
       const distance = event.clientX - startX;
       let targetIndex = Math.round(Math.abs(clamp(startOffset + distance)) / cardStep());
       if (Math.abs(distance) > 48 && targetIndex === startIndex) {
@@ -82,7 +117,7 @@
       }
       suppressClick = true;
       window.setTimeout(() => { suppressClick = false; }, 0);
-      goTo(targetIndex, true);
+      settleTo(targetIndex);
     } else {
       setOffset(startOffset, true);
     }
@@ -90,7 +125,7 @@
     if (carousel.hasPointerCapture(activePointer)) carousel.releasePointerCapture(activePointer);
     activePointer = null;
     dragged = false;
-    carousel.classList.remove('is-dragging');
+    if (settleFrame === null) carousel.classList.remove('is-dragging');
   };
 
   carousel.addEventListener('pointerup', finishDrag);
