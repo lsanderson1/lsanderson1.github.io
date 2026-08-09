@@ -1,6 +1,7 @@
 {% assign project_pages = site.pages | where: "type", "project" | where: "published", true | sort: "project_order" %}
 
 {% if include.limit %}
+{% assign featured_projects = project_pages | slice: 0, include.limit %}
 <section class="fp-section" id="projects">
   <div class="fp-section-head">
     <div>
@@ -9,14 +10,14 @@
     </div>
     <div class="fp-carousel-controls" aria-label="Featured project controls">
       <button class="btn" type="button" data-feature-prev aria-label="Previous featured project">←</button>
-      <span class="fp-index" data-feature-position aria-live="polite">01 / 04</span>
+      <span class="fp-index" data-feature-position aria-live="polite">01 / {{ featured_projects.size }}</span>
       <button class="btn" type="button" data-feature-next aria-label="Next featured project">→</button>
     </div>
   </div>
 
   <div class="fp-feature-carousel" data-feature-carousel aria-label="Featured projects carousel. Drag horizontally to move between projects.">
     <div class="fp-feature-track" data-feature-track>
-      {% for project in project_pages limit: include.limit %}
+      {% for project in featured_projects %}
         {% include projects/project-card.html page=project featured=true %}
       {% endfor %}
     </div>

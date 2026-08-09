@@ -1,16 +1,17 @@
 {% assign essay_pages = site.pages | where: "type", "essay" | where: "published", true | sort: "date" | reverse %}
 
 {% if include.limit %}
+{% assign homepage_essays = essay_pages | slice: 0, include.limit %}
 <section class="fp-section fp-home-essays" id="essays">
   <div class="fp-section-head">
     <div>
       <p class="fp-kicker">Writing Archive</p>
       <h2>Essays</h2>
     </div>
-    <span class="fp-index">Homepage shows 6 of 8</span>
+    <span class="fp-index">Homepage shows {{ homepage_essays.size }} of {{ essay_pages.size }}</span>
   </div>
   <div class="fp-essay-mini-grid">
-    {% for essay in essay_pages limit: include.limit %}
+    {% for essay in homepage_essays %}
       {% include essays/essay-card.html page=essay compact=true %}
     {% endfor %}
   </div>

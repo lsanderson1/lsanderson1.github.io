@@ -1,3 +1,8 @@
+{% assign viewable_projects = site.pages | where: "type", "project" | where: "published", true %}
+{% assign written_essays = site.pages | where: "type", "essay" | where: "published", true %}
+{% assign unreal_milestones = site.pages | where: "type", "unreal-journey" | where_exp: "milestone", "milestone.draft != true" %}
+{% assign bachelor_degrees = site.data.bio.education | where_exp: "degree", "degree.studyType contains 'Bachelor'" %}
+
 <section class="fp-hero">
   <div class="fp-sakura-scene" aria-hidden="true">
     <div class="fp-sakura-canopy">
@@ -71,9 +76,9 @@
   </aside>
 
   <div class="fp-signal" aria-label="Portfolio totals">
-    <div><strong>06</strong><span>Viewable Projects</span></div>
-    <div><strong>02</strong><span>Unreal Milestones</span></div>
-    <div><strong>08</strong><span>Written Essays</span></div>
-    <div><strong>02</strong><span>Bachelor's Degrees</span></div>
+    <div><strong>{{ viewable_projects.size }}</strong><span>Viewable Projects</span></div>
+    <div><strong>{{ unreal_milestones.size }}</strong><span>Unreal Milestones</span></div>
+    <div><strong>{{ written_essays.size }}</strong><span>Written Essays</span></div>
+    <div><strong>{{ bachelor_degrees.size }}</strong><span>Bachelor's Degrees</span></div>
   </div>
 </section>

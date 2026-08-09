@@ -5,10 +5,8 @@
 </section>
 
 <section class="fp-timeline" aria-label="Unreal Engine milestones">
-  {% assign journey_pages = site.pages | where: "type", "unreal-journey" | sort: "journey_order" %}
+  {% assign journey_pages = site.pages | where: "type", "unreal-journey" | where_exp: "journey", "journey.draft != true" | sort: "journey_order" %}
   {% for journey in journey_pages %}
-    {% unless journey.draft %}
-      {% include unreal-journey/journey-card.html page=journey number=forloop.index %}
-    {% endunless %}
+    {% include unreal-journey/journey-card.html page=journey number=forloop.index %}
   {% endfor %}
 </section>
