@@ -3,9 +3,9 @@
     {{ site.data.bio.basics.name }}
   </a>
   <nav aria-label="Primary navigation">
-    <a{% if page.url contains '/projects/' %} class="is-active" aria-current="page"{% endif %} href="{{ '/projects/' | prepend: site.baseurl }}">Projects <small>作品</small></a>
+    <a{% if page.url == '/resume.html' %} class="is-active" aria-current="page"{% endif %} href="{{ '/resume.html' | prepend: site.baseurl }}">Resume <small>履歴</small></a>
     <a{% if page.url contains '/unreal-journey/' %} class="is-active" aria-current="page"{% endif %} href="{{ '/unreal-journey/' | prepend: site.baseurl }}">Unreal Journey <small>開発記録</small></a>
     <a{% if page.url contains '/essays/' %} class="is-active" aria-current="page"{% endif %} href="{{ '/essays/' | prepend: site.baseurl }}">Essays <small>文章</small></a>
-    <a{% if page.url == '/resume.html' %} class="is-active" aria-current="page"{% endif %} href="{{ '/resume.html' | prepend: site.baseurl }}">Resume <small>履歴</small></a>
+    <a{% if page.url contains '/projects/' %} class="is-active" aria-current="page"{% endif %} href="{{ '/projects/' | prepend: site.baseurl }}">Projects <small>作品</small></a>
   </nav>
 </header>
