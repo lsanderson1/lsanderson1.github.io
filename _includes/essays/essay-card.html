@@ -1,11 +1,11 @@
 <article>
-  <time datetime="{{ include.page.date | date: '%Y-%m-%d' }}">{{ include.page.date | date: '%b %-d, %Y' }}</time>
+  <time datetime="{{ include.page.date | date: '%Y-%m-%d' }}">{% include date.html date=include.page.date %}</time>
   {% if include.compact %}
     <h3>{{ include.page.title }}</h3>
   {% else %}
     <h2>{{ include.page.title }}</h2>
-    <p>{{ include.page.content | markdownify | strip_html | truncatewords: 34 }}</p>
+    <p>{% if lang == 'ja' %}{{ include.page.content | markdownify | strip_html | truncate: 140 }}{% else %}{{ include.page.content | markdownify | strip_html | truncatewords: 34 }}{% endif %}</p>
     <div class="fp-tags">{% for label in include.page.labels limit: 4 %}<span>{{ label }}</span>{% endfor %}</div>
   {% endif %}
-  <a class="btn fp-project-open" href="{{ include.page.url | prepend: site.baseurl }}">Read essay</a>
+  <a class="btn fp-project-open" href="{{ include.page.url | prepend: site.baseurl }}">{{ t.read_essay }}</a>
 </article>

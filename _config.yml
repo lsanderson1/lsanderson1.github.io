@@ -30,3 +30,16 @@ include:
   - _data
 plugins:
   - jekyll-gist
+
+# Original URLs stay English; translated pages mirror them under /ja/.
+defaults:
+  - scope:
+      path: ""
+      type: pages
+    values:
+      lang: en
+  - scope:
+      path: "ja"
+      type: pages
+    values:
+      lang: ja

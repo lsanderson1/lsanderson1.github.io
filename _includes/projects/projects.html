@@ -1,37 +1,38 @@
-{% assign project_pages = site.pages | where: "type", "project" | where: "published", true | sort: "project_order" %}
+{% include locale.html %}
+{% assign project_pages = site.pages | where: "lang", lang | where: "type", "project" | where: "published", true | sort: "project_order" %}
 
 {% if include.limit %}
 {% assign featured_projects = project_pages | slice: 0, include.limit %}
 <section class="fp-section" id="projects">
   <div class="fp-section-head">
     <div>
-      <p class="fp-kicker">Selected Work</p>
-      <h2>Featured Projects</h2>
+      <p class="fp-kicker">{{ t.selected }}</p>
+      <h2>{{ t.featured }}</h2>
     </div>
-    <div class="fp-carousel-controls" aria-label="Featured project controls">
-      <button class="btn" type="button" data-feature-prev aria-label="Previous featured project">←</button>
+    <div class="fp-carousel-controls" aria-label="{{ t.carousel_controls }}">
+      <button class="btn" type="button" data-feature-prev aria-label="{{ t.previous }}">←</button>
       <span class="fp-index" data-feature-position aria-live="polite">01 / {{ featured_projects.size }}</span>
-      <button class="btn" type="button" data-feature-next aria-label="Next featured project">→</button>
+      <button class="btn" type="button" data-feature-next aria-label="{{ t.next }}">→</button>
     </div>
   </div>
 
-  <div class="fp-feature-carousel" data-feature-carousel aria-label="Featured projects carousel. Drag horizontally to move between projects.">
+  <div class="fp-feature-carousel" data-feature-carousel aria-label="{{ t.carousel }}">
     <div class="fp-feature-track" data-feature-track>
       {% for project in featured_projects %}
         {% include projects/project-card.html page=project featured=true %}
       {% endfor %}
     </div>
   </div>
-  <p class="fp-carousel-hint">Drag left or right across the projects to browse. <a href="{{ '/projects/' | prepend: site.baseurl }}">View all Projects</a></p>
+  <p class="fp-carousel-hint">{{ t.drag_hint }} <a href="{{ '/projects/' | prepend: locale_prefix | prepend: site.baseurl }}">{{ t.all_projects }}</a></p>
 </section>
 {% else %}
 <section class="fp-page-hero">
-  <p class="fp-kicker">作品アーカイブ / Code · Games · Interactive Systems</p>
-  <h1>Varied Projects</h1>
-  <p>Focused case studies with the problem, process, tools, and result presented as one visual story.</p>
+  <p class="fp-kicker">{{ t.project_kicker }}</p>
+  <h1>{{ t.varied }}</h1>
+  <p>{{ t.project_intro }}</p>
 </section>
 
-<section class="fp-project-list" aria-label="Project archive">
+<section class="fp-project-list" aria-label="{{ t.project_archive }}">
   {% for project in project_pages %}
     {% include projects/project-card.html page=project number=forloop.index %}
   {% endfor %}

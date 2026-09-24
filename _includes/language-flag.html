@@ -1,0 +1,19 @@
+<svg class="fp-language-flag" viewBox="0 0 20 14" aria-hidden="true" focusable="false">
+  <rect width="20" height="14" fill="#fff"/>
+  {% if include.code == 'en' %}
+  <path stroke="#b22234" stroke-width="1.077" d="M0 .538h20M0 2.692h20M0 4.846h20M0 7h20M0 9.154h20M0 11.308h20M0 13.462h20"/>
+  <path fill="#3c3b6e" d="M0 0h8v7.538H0z"/>
+  <g fill="#fff">
+    {% for row in (0..8) %}
+      {% assign odd = row | modulo: 2 %}
+      {% assign y = row | times: 0.82 | plus: 0.48 %}
+      {% if odd == 0 %}{% assign last_star = 5 %}{% assign start_x = 0.67 %}{% else %}{% assign last_star = 4 %}{% assign start_x = 1.33 %}{% endif %}
+      {% for star in (0..last_star) %}
+      <path transform="translate({{ star | times: 1.33 | plus: start_x }} {{ y }})" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      {% endfor %}
+    {% endfor %}
+  </g>
+  {% else %}
+  <circle cx="10" cy="7" r="4.2" fill="#bc002d"/>
+  {% endif %}
+</svg>

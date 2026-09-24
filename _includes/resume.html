@@ -1,0 +1,71 @@
+{% include locale.html %}
+
+<section class="fp-resume-head">
+  <div>
+    <p class="fp-kicker">{{ t.resume_kicker }}</p>
+    <h1>{{ bio.basics.name }}</h1>
+    <p>{{ t.resume_intro }}</p>
+  </div>
+  <div class="fp-contact">
+    <a href="mailto:{{ site.data.bio.basics.email }}">{{ site.data.bio.basics.email }}</a>
+    <a href="{{ '/' | prepend: locale_prefix | relative_url }}">{{ site.data.bio.basics.website | remove: 'https://' }}</a>
+    {% for profile in site.data.bio.basics.profiles %}<a href="{{ profile.url }}" target="_blank" rel="noopener noreferrer">{{ profile.network }} / {{ profile.username }}</a>{% endfor %}
+    <span>{{ bio.basics.location.city }}, {{ bio.basics.location.region }} {{ bio.basics.location.postalCode }}</span>
+    <span>{{ site.data.bio.basics.phone }}</span>
+  </div>
+</section>
+
+<section class="fp-resume-grid">
+  <aside>
+    <div class="fp-resume-section">
+      <p class="fp-kicker">{{ t.skills }}</p>
+      {% for entry in bio.skills %}
+        <div class="fp-skill-group">
+          <h3>{{ entry.name }}</h3>
+          <p>{% for keyword in entry.keywords %}{{ keyword }}{% unless forloop.last %} · {% endunless %}{% endfor %}</p>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="fp-resume-section">
+      <p class="fp-kicker">{{ t.interests }}</p>
+      <ul>{% for entry in bio.interests %}<li>{{ entry.name }}</li>{% endfor %}</ul>
+    </div>
+  </aside>
+
+  <div class="fp-resume-main">
+    <div class="fp-resume-section">
+      <p class="fp-kicker">{{ t.education }}</p>
+      <h2>{{ t.university }}</h2>
+      {% for entry in bio.education %}
+        <div class="fp-education">
+          <div>
+            <strong>{{ entry.studyType }}, {{ entry.area }}</strong>
+            <span>{{ entry.location }}</span>
+          </div>
+          <time>{{ entry.startDate | slice: 0, 4 }}–{{ entry.endDate | slice: 0, 4 }}</time>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="fp-resume-section">
+      <p class="fp-kicker">{{ t.projects }}</p>
+      <h2>{{ t.technical_experience }}</h2>
+      {% for entry in bio.projects %}
+        <article class="fp-resume-project-full">
+          <div class="fp-resume-project">
+            <strong>{{ entry.name }}</strong>
+            <span>{% for keyword in entry.keywords %}{{ keyword }}{% unless forloop.last %} · {% endunless %}{% endfor %}</span>
+          </div>
+          <p>{{ entry.description }}</p>
+          <ul>{% for highlight in entry.highlights %}<li>{{ highlight }}</li>{% endfor %}</ul>
+          {% if entry.url %}<a href="{{ entry.url | remove: site.url | prepend: locale_prefix | relative_url }}">{{ t.view_project }}</a>{% endif %}
+        </article>
+      {% endfor %}
+    </div>
+
+    <div class="fp-resume-section">
+      <p class="fp-kicker">{{ t.references }}</p>
+      {% for entry in bio.references %}<h2>{{ entry.name }}</h2>{% endfor %}
+    </div>
+  </div>
+</section>

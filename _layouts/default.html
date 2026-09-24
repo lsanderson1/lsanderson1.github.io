@@ -1,13 +1,14 @@
-{%- assign url = '/' | prepend: site.baseurl | prepend: site.url -%}
-{%- assign title = site.title -%}
-{%- assign description = site.description -%}
+{% include locale.html %}
+{%- assign url = page.url | absolute_url -%}
+{%- assign title = t.site_title -%}
+{%- assign description = t.site_description -%}
 
-{%- if page.url != '/' -%}
+{%- if english_url != '/' -%}
   {%- if page.url -%}
     {%- assign url = page.url | prepend: site.baseurl | prepend: site.url -%}
   {%- endif -%}
   {%- if page.title -%}
-    {%- assign title = page.title | append: ' | ' | append: site.title  -%}
+    {%- assign title = page.title | append: ' | ' | append: t.site_title  -%}
   {%- endif -%}
   {%- if page.description -%}
     {%- assign description = page.description -%}
@@ -15,15 +16,19 @@
 {%- endif -%}
 
 <!doctype html>
-<html lang="en">
+<html lang="{{ lang }}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="canonical" href="{{ page.url | absolute_url }}">
+    {% if english_page %}<link rel="alternate" hreflang="en" href="{{ english_url | absolute_url }}"><link rel="alternate" hreflang="x-default" href="{{ english_url | absolute_url }}">{% endif %}
+    {% if japanese_page %}<link rel="alternate" hreflang="ja" href="{{ japanese_url | absolute_url }}">{% endif %}
+    <meta property="og:locale" content="{% if lang == 'ja' %}ja_JP{% else %}en_US{% endif %}">
     <meta name="title" content="{{ title | xml_escape }}">
     <meta name="description" content="{{ description | xml_escape }}">
     <meta name="image" content="{{ site.data.bio.basics.picture }}">
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="{{ site.title | xml_escape }}">
+    <meta property="og:site_name" content="{{ t.site_title | xml_escape }}">
     <meta property="og:url" content="{{ url }}">
     <meta property="og:title" content="{{ title | xml_escape }}">
     <meta property="og:description" content="{{ description | xml_escape }}">

@@ -1,11 +1,16 @@
+{% include locale.html %}
 <header class="fp-nav">
-  <a class="fp-brand{% if page.url == '/' %} is-active{% endif %}" href="{{ '/' | prepend: site.baseurl }}" aria-label="{{ site.data.bio.basics.name }} home">
+  <a class="fp-brand{% if english_url == '/' %} is-active{% endif %}" href="{{ '/' | prepend: locale_prefix | prepend: site.baseurl }}" aria-label="{{ t.home_label }}">
     {{ site.data.bio.basics.name }}
   </a>
-  <nav aria-label="Primary navigation">
-    <a{% if page.url == '/resume.html' %} class="is-active" aria-current="page"{% endif %} href="{{ '/resume.html' | prepend: site.baseurl }}">Resume <small>履歴</small></a>
-    <a{% if page.url contains '/unreal-journey/' %} class="is-active" aria-current="page"{% endif %} href="{{ '/unreal-journey/' | prepend: site.baseurl }}">Unreal Journey <small>開発記録</small></a>
-    <a{% if page.url contains '/projects/' %} class="is-active" aria-current="page"{% endif %} href="{{ '/projects/' | prepend: site.baseurl }}">Projects <small>作品</small></a>
-    <a{% if page.url contains '/essays/' %} class="is-active" aria-current="page"{% endif %} href="{{ '/essays/' | prepend: site.baseurl }}">Essays <small>文章</small></a>
+  <nav aria-label="{{ t.nav }}">
+    <a{% if english_url == '/resume.html' %} class="is-active" aria-current="page"{% endif %} href="{{ '/resume.html' | prepend: locale_prefix | prepend: site.baseurl }}">Resume <small>履歴</small></a>
+    <a{% if page.url contains '/unreal-journey/' %} class="is-active" aria-current="page"{% endif %} href="{{ '/unreal-journey/' | prepend: locale_prefix | prepend: site.baseurl }}">Unreal Journey <small>開発記録</small></a>
+    <a{% if page.url contains '/projects/' %} class="is-active" aria-current="page"{% endif %} href="{{ '/projects/' | prepend: locale_prefix | prepend: site.baseurl }}">Projects <small>作品</small></a>
+    <a{% if page.url contains '/essays/' %} class="is-active" aria-current="page"{% endif %} href="{{ '/essays/' | prepend: locale_prefix | prepend: site.baseurl }}">Essays <small>文章</small></a>
   </nav>
+  <div class="fp-language-switch" role="group" aria-label="{{ t.language }}">
+    {% if english_page %}<a href="{{ english_url | relative_url }}" lang="en" hreflang="en"{% if lang == 'en' %} class="is-active" aria-current="true"{% endif %}>{% include language-flag.html code='en' %}English</a>{% else %}<span lang="en" title="{{ t.unavailable }}">{% include language-flag.html code='en' %}English</span>{% endif %}
+    {% if japanese_page %}<a href="{{ japanese_url | relative_url }}" lang="ja" hreflang="ja"{% if lang == 'ja' %} class="is-active" aria-current="true"{% endif %}>{% include language-flag.html code='ja' %}日本語</a>{% else %}<span lang="ja" title="{{ t.unavailable }}">{% include language-flag.html code='ja' %}日本語</span>{% endif %}
+  </div>
 </header>

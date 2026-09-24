@@ -1,11 +1,12 @@
+{% include locale.html %}
 <section class="fp-page-hero fp-journey-hero" id="unreal-journey">
-  <p class="fp-kicker">開発記録 / Solo learning</p>
-  <h1>Unreal Engine Journey</h1>
-  <p>A visual development record connecting each milestone to functions and reusable systems that gradually progress through each project, expanding Modeling, Animation, Story, and Coding to a final capstone that combines everything that was learned here.</p>
+  <p class="fp-kicker">{{ t.journey_kicker }}</p>
+  <h1>{{ t.journey_title }}</h1>
+  <p>{{ t.journey_intro }}</p>
 </section>
 
-<section class="fp-timeline" aria-label="Unreal Engine milestones">
-  {% assign journey_pages = site.pages | where: "type", "unreal-journey" | where_exp: "journey", "journey.draft != true" | sort: "journey_order" %}
+<section class="fp-timeline" aria-label="{{ t.journey_archive }}">
+  {% assign journey_pages = site.pages | where: "lang", lang | where: "type", "unreal-journey" | where_exp: "journey", "journey.draft != true" | sort: "journey_order" %}
   {% for journey in journey_pages %}
     {% include unreal-journey/journey-card.html page=journey number=forloop.index %}
   {% endfor %}

@@ -1,0 +1,13 @@
+{%- assign lang = page.lang | default: 'en' -%}
+{%- assign t = site.data.i18n[lang] -%}
+{%- assign bio = site.data.bio -%}
+{%- assign locale_prefix = '' -%}
+{%- assign english_url = page.url -%}
+{%- if lang == 'ja' -%}
+  {%- assign bio = site.data.bio_ja -%}
+  {%- assign locale_prefix = '/ja' -%}
+  {%- assign english_url = page.url | remove_first: '/ja' -%}
+{%- endif -%}
+{%- assign japanese_url = english_url | prepend: '/ja' -%}
+{%- assign english_page = site.pages | where: 'url', english_url | first -%}
+{%- assign japanese_page = site.pages | where: 'url', japanese_url | first -%}

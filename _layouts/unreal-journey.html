@@ -1,10 +1,11 @@
 ---
 layout: home
 ---
+{% include locale.html %}
 
 <article class="fp-project-reader fp-journey-reader">
   <div class="fp-project-reader-bar">
-    <a class="btn" href="{{ '/unreal-journey/' | prepend: site.baseurl }}">← Unreal Engine Journey</a>
+    <a class="btn" href="{{ '/unreal-journey/' | prepend: locale_prefix | prepend: site.baseurl }}">{{ t.back_journey }}</a>
     <span>{{ page.project_number }} · {{ page.days }} · {{ page.status }}</span>
   </div>
   <header class="fp-project-reader-head fp-journey-reader-head">
@@ -17,17 +18,17 @@ layout: home
     {% if page.download.url %}
       <section class="fp-build-card" aria-labelledby="playable-build-title">
         <div>
-          <p class="fp-build-label">Playable Windows build</p>
-          <h2 id="playable-build-title">Experience this project firsthand</h2>
-          <p>Download the standalone portfolio build. Unreal Engine is not required.</p>
-          <ul class="fp-build-meta" aria-label="Build details">
+          <p class="fp-build-label">{{ t.windows_build }}</p>
+          <h2 id="playable-build-title">{{ t.experience }}</h2>
+          <p>{{ t.download_intro }}</p>
+          <ul class="fp-build-meta" aria-label="{{ t.build_details }}">
             <li>{{ page.download.platform }}</li>
             <li>ZIP · {{ page.download.size }}</li>
             <li>{{ page.download.version }}</li>
           </ul>
         </div>
-        <a class="btn btn-primary fp-build-download" href="{{ page.download.url }}" aria-label="Download the playable Windows build for {{ page.title }}">
-          Download playable build
+        <a class="btn btn-primary fp-build-download" href="{{ page.download.url }}" aria-label="{{ t.download_label | replace: '%title%', page.title | escape }}">
+          {{ t.download }}
         </a>
       </section>
     {% endif %}
@@ -36,20 +37,20 @@ layout: home
   <div class="fp-project-reader-body fp-journey-reader-body">
     {% if page.download.url %}
       <section class="fp-build-guide" aria-labelledby="play-this-project">
-        <p class="fp-kicker">Standalone demonstration</p>
-        <h2 id="play-this-project">Play this project</h2>
-        <p>Download the ZIP, extract the complete folder, and run <code>{{ page.download.executable }}</code>. Keep the executable and its accompanying folders together.</p>
+        <p class="fp-kicker">{{ t.standalone }}</p>
+        <h2 id="play-this-project">{{ t.play_project }}</h2>
+        <p>{{ t.run_intro | replace: '%exe%', page.download.executable }}</p>
         <div class="fp-build-guide-grid">
           <div>
-            <h3>Start the build</h3>
+            <h3>{{ t.start_build }}</h3>
             <ol>
-              <li>Download and extract the ZIP file.</li>
-              <li>Open the extracted project folder.</li>
-              <li>Double-click <code>{{ page.download.executable }}</code>.</li>
+              <li>{{ t.step_download }}</li>
+              <li>{{ t.step_open }}</li>
+              <li>{{ t.step_run | replace: '%exe%', page.download.executable }}</li>
             </ol>
           </div>
           <div>
-            <h3>Controls</h3>
+            <h3>{{ t.controls }}</h3>
             <ul>
               {% for control in page.download.controls %}
                 <li>{{ control }}</li>
@@ -57,7 +58,7 @@ layout: home
             </ul>
           </div>
         </div>
-        <p class="fp-build-notice"><strong>Windows notice:</strong> Microsoft Defender SmartScreen may appear because this independent portfolio executable is not digitally signed. Only run a build downloaded from this official GitHub release.</p>
+        <p class="fp-build-notice"><strong>{{ t.windows_notice }}</strong> {{ t.windows_warning }}</p>
       </section>
     {% endif %}
     {{ content }}

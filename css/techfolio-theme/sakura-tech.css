@@ -813,3 +813,27 @@ h1, h2, h3 { line-height: 1.12; }
   .fp-sakura-shimmer { background-position: 0 center; }
   .fp-feature-track { transition: none; }
 }
+
+/* Language links share the existing palette and work without JavaScript. */
+.fp-nav { flex-wrap: wrap; gap: 0 16px; }
+.fp-language-switch { display: inline-flex; align-items: center; flex-shrink: 0; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 999px; font-size: 12px; }
+.fp-language-switch a, .fp-language-switch span { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; text-decoration: none; white-space: nowrap; }
+.fp-language-flag { width: 18px; height: 13px; flex: 0 0 auto; border-radius: 2px; box-shadow: 0 0 0 1px rgba(127, 127, 127, .25); }
+.fp-language-switch .is-active { color: var(--primary-foreground); background: var(--primary); }
+.fp-language-switch span { color: var(--muted-foreground); opacity: .65; }
+.fp-language-switch a:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.fp-project-reader-body { overflow-wrap: anywhere; }
+@media (min-width: 1251px) {
+  /* Leave room for the existing focus panel when either language wraps. */
+  .fp-hero-copy { max-width: min(620px, calc(50vw + var(--focus-shift) - var(--focus-width) / 2 - var(--fp-gap) - 24px)); }
+}
+html:lang(ja) body { font-family: "Noto Sans JP", "Yu Gothic", "Hiragino Kaku Gothic ProN", "Meiryo", system-ui, sans-serif; line-height: 1.85; line-break: strict; overflow-wrap: anywhere; }
+html:lang(ja) h1, html:lang(ja) h2, html:lang(ja) h3 { line-height: 1.4; letter-spacing: .01em; }
+html:lang(ja) .fp-kicker, html:lang(ja) .fp-build-label { letter-spacing: .06em; }
+html:lang(ja) .fp-hero-copy h1 { font-size: clamp(34px, 5.2vw, 66px); }
+html:lang(ja) code, html:lang(ja) pre { line-break: auto; }
+@media (max-width: 760px) {
+  .fp-nav { flex-direction: row; align-items: center; }
+  .fp-nav nav { order: 3; }
+  .fp-language-switch { margin-left: auto; }
+}

@@ -1,29 +1,30 @@
-{% assign essay_pages = site.pages | where: "type", "essay" | where: "published", true | sort: "date" | reverse %}
+{% include locale.html %}
+{% assign essay_pages = site.pages | where: "lang", lang | where: "type", "essay" | where: "published", true | sort: "date" | reverse %}
 
 {% if include.limit %}
 {% assign homepage_essays = essay_pages | slice: 0, include.limit %}
 <section class="fp-section fp-home-essays" id="essays">
   <div class="fp-section-head">
     <div>
-      <p class="fp-kicker">Writing Archive</p>
-      <h2>Essays</h2>
+      <p class="fp-kicker">{{ t.writing_archive }}</p>
+      <h2>{{ t.essays }}</h2>
     </div>
-    <span class="fp-index">Homepage shows {{ homepage_essays.size }} of {{ essay_pages.size }}</span>
+    <span class="fp-index">{{ t.shown | replace: '%shown%', homepage_essays.size | replace: '%total%', essay_pages.size }}</span>
   </div>
   <div class="fp-essay-mini-grid">
     {% for essay in homepage_essays %}
       {% include essays/essay-card.html page=essay compact=true %}
     {% endfor %}
   </div>
-  <p class="fp-section-link"><a href="{{ '/essays/' | prepend: site.baseurl }}">View all Essays</a></p>
+  <p class="fp-section-link"><a href="{{ '/essays/' | prepend: locale_prefix | prepend: site.baseurl }}">{{ t.all_essays }}</a></p>
 </section>
 {% else %}
 <section class="fp-page-hero fp-essays-hero">
-  <p class="fp-kicker">文章 / Ideas · Methods · Reflection</p>
-  <h1>Essays</h1>
-  <p>Topics in software engineering explored throughout these essays include design patterns, Agile project management, development environments, web development, AI-assisted learning, UI frameworks, coding standards, technical communication, and JavaScript.</p>
+  <p class="fp-kicker">{{ t.essay_kicker }}</p>
+  <h1>{{ t.essays }}</h1>
+  <p>{{ t.essay_intro }}</p>
 </section>
-<section class="fp-essay-list" aria-label="Essay archive">
+<section class="fp-essay-list" aria-label="{{ t.essay_archive }}">
   {% for essay in essay_pages %}
     {% include essays/essay-card.html page=essay %}
   {% endfor %}

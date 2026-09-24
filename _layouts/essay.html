@@ -1,11 +1,12 @@
 ---
 layout: home
 ---
+{% include locale.html %}
 
 <article class="fp-project-reader fp-essay-reader">
   <div class="fp-project-reader-bar">
-    <a class="btn" href="{{ '/essays/' | prepend: site.baseurl }}">← All Essays</a>
-    <span>{{ page.date | date_to_string }}</span>
+    <a class="btn" href="{{ '/essays/' | prepend: locale_prefix | prepend: site.baseurl }}">{{ t.back_essays }}</a>
+    <span>{% include date.html date=page.date format='%d %b %Y' %}</span>
   </div>
   <header class="fp-project-reader-head fp-essay-reader-head">
     <p class="fp-kicker">{% for label in page.labels %}{{ label }}{% unless forloop.last %} · {% endunless %}{% endfor %}</p>

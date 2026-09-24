@@ -1,6 +1,6 @@
 <article>
   <div class="fp-timeline-marker"><span>{% if include.number < 10 %}0{% endif %}{{ include.number }}</span></div>
-  <a class="fp-journey-art" href="{{ include.page.url | prepend: site.baseurl }}" aria-label="Explore {{ include.page.title }}">
+  <a class="fp-journey-art" href="{{ include.page.url | prepend: site.baseurl }}" aria-label="{{ t.explore | replace: '%title%', include.page.title | escape }}">
     <img src="{{ include.page.image | prepend: '/' | prepend: site.baseurl }}" alt="{{ include.page.image_alt | default: include.page.title }}">
   </a>
   <div class="fp-timeline-copy">
@@ -8,9 +8,9 @@
     <h2><a href="{{ include.page.url | prepend: site.baseurl }}">{{ include.page.title }}</a></h2>
     <p>{{ include.page.summary }}</p>
     <div class="fp-tags">
-      {% if include.page.download.url %}<span class="fp-playable-tag">Playable build</span>{% endif %}
+      {% if include.page.download.url %}<span class="fp-playable-tag">{{ t.playable }}</span>{% endif %}
       {% for label in include.page.labels %}<span>{{ label }}</span>{% endfor %}
     </div>
-    <a class="btn fp-project-open" href="{{ include.page.url | prepend: site.baseurl }}">Explore this milestone</a>
+    <a class="btn fp-project-open" href="{{ include.page.url | prepend: site.baseurl }}">{{ t.explore_milestone }}</a>
   </div>
 </article>

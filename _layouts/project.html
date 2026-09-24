@@ -1,10 +1,11 @@
 ---
 layout: home
 ---
+{% include locale.html %}
 
 <article class="fp-project-reader{% if page.title == 'Project Reap' %} has-visual-background{% endif %}"{% if page.title == 'Project Reap' %} style="--project-background:url('{{ '/img/Sakura.jpg' | prepend: site.baseurl }}')"{% endif %}>
   <div class="fp-project-reader-bar">
-    <a class="btn" href="{{ '/projects/' | prepend: site.baseurl }}">← All Projects</a>
+    <a class="btn" href="{{ '/projects/' | prepend: locale_prefix | prepend: site.baseurl }}">{{ t.back_projects }}</a>
     <span>{{ page.url }}</span>
   </div>
 
@@ -15,7 +16,7 @@ layout: home
     <div class="fp-tags">
       {% for label in page.labels %}<span>{{ label }}</span>{% endfor %}
     </div>
-    {% if page.image %}<img class="fp-project-cover" src="{{ page.image | prepend: '/' | prepend: site.baseurl }}" alt="{{ page.title }} project cover">{% endif %}
+    {% if page.image %}<img class="fp-project-cover" src="{{ page.image | prepend: '/' | prepend: site.baseurl }}" alt="{{ t.project_cover | replace: '%title%', page.title | escape }}">{% endif %}
   </header>
 
   <div class="fp-project-reader-body">
