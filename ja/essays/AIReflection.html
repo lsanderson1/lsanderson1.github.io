@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="canonical" href="https://lsanderson1.github.io/ja/essays/AIReflection.html">
+    <link rel="alternate" hreflang="en" href="https://lsanderson1.github.io/essays/AIReflection.html"><link rel="alternate" hreflang="x-default" href="https://lsanderson1.github.io/essays/AIReflection.html">
+    <link rel="alternate" hreflang="ja" href="https://lsanderson1.github.io/ja/essays/AIReflection.html">
+    <meta property="og:locale" content="ja_JP">
+    <meta name="title" content="AI の活用は、学びを助けるのか | Lloyd Sanderson | ポートフォリオ">
+    <meta name="description" content="ソフトウェア開発・ゲーム制作・日本語を軸に活動する Lloyd Sanderson のポートフォリオ。制作実績、技術記事、学歴・スキルをご紹介します。">
+    <meta name="image" content="https://github.com/lsanderson1.png">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Lloyd Sanderson | ポートフォリオ">
+    <meta property="og:url" content="https://lsanderson1.github.io/ja/essays/AIReflection.html">
+    <meta property="og:title" content="AI の活用は、学びを助けるのか | Lloyd Sanderson | ポートフォリオ">
+    <meta property="og:description" content="ソフトウェア開発・ゲーム制作・日本語を軸に活動する Lloyd Sanderson のポートフォリオ。制作実績、技術記事、学歴・スキルをご紹介します。">
+    <meta property="og:image" content="https://github.com/lsanderson1.png">
+    <link rel="icon" href="/favicon.svg?v=11" type="image/svg+xml" sizes="any">
+    <link rel="icon" href="/favicon.ico?v=11" type="image/x-icon" sizes="16x16 32x32 48x48">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+    <link rel="stylesheet" href="/css/techfolio-theme/sakura-tech.css">
+    <link rel="stylesheet" type="text/css" href="/css/rouge/github.css">
+    <!-- Load MathJax if 'mathjax: true' is found in your _config.yml. -->
+    
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-MML-AM_CHTML">
+    </script>
+    
+
+    <title>AI の活用は、学びを助けるのか | Lloyd Sanderson | ポートフォリオ</title>
+  </head>
+  <body>
+  
+<header class="fp-nav">
+  <a class="fp-brand" href="/ja/" aria-label="Lloyd Sanderson のホームページ">
+    Lloyd Sanderson
+  </a>
+  <nav aria-label="メインナビゲーション">
+    <a href="/ja/resume.html">Resume <small>履歴</small></a>
+    <a href="/ja/unreal-journey/">Unreal Journey <small>開発記録</small></a>
+    <a href="/ja/projects/">Projects <small>作品</small></a>
+    <a class="is-active" aria-current="page" href="/ja/essays/">Essays <small>文章</small></a>
+  </nav>
+  <div class="fp-language-switch" role="group" aria-label="表示言語">
+    <a href="/essays/AIReflection.html" lang="en" hreflang="en"><svg class="fp-language-flag" viewBox="0 0 20 14" aria-hidden="true" focusable="false">
+  <rect width="20" height="14" fill="#fff"/>
+  
+  <path stroke="#b22234" stroke-width="1.077" d="M0 .538h20M0 2.692h20M0 4.846h20M0 7h20M0 9.154h20M0 11.308h20M0 13.462h20"/>
+  <path fill="#3c3b6e" d="M0 0h8v7.538H0z"/>
+  <g fill="#fff">
+    
+      
+      
+      
+      
+      <path transform="translate(0.67 0.48)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(2.0 0.48)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(3.33 0.48)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(4.66 0.48)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(5.99 0.48)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(7.32 0.48)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+    
+      
+      
+      
+      
+      <path transform="translate(1.33 1.3)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(2.66 1.3)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(3.99 1.3)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(5.32 1.3)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(6.65 1.3)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+    
+      
+      
+      
+      
+      <path transform="translate(0.67 2.12)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(2.0 2.12)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(3.33 2.12)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(4.66 2.12)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(5.99 2.12)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(7.32 2.12)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+    
+      
+      
+      
+      
+      <path transform="translate(1.33 2.94)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(2.66 2.94)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(3.99 2.94)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(5.32 2.94)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(6.65 2.94)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+    
+      
+      
+      
+      
+      <path transform="translate(0.67 3.76)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(2.0 3.76)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(3.33 3.76)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(4.66 3.76)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(5.99 3.76)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(7.32 3.76)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+    
+      
+      
+      
+      
+      <path transform="translate(1.33 4.58)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(2.66 4.58)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(3.99 4.58)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(5.32 4.58)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(6.65 4.58)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+    
+      
+      
+      
+      
+      <path transform="translate(0.67 5.4)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(2.0 5.4)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(3.33 5.4)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(4.66 5.4)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(5.99 5.4)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(7.32 5.4)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+    
+      
+      
+      
+      
+      <path transform="translate(1.33 6.22)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(2.66 6.22)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(3.99 6.22)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(5.32 6.22)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(6.65 6.22)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+    
+      
+      
+      
+      
+      <path transform="translate(0.67 7.04)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(2.0 7.04)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(3.33 7.04)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(4.66 7.04)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(5.99 7.04)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+      <path transform="translate(7.32 7.04)" d="M0-.32.075-.10.31-.10.12.04.19.27 0 .13-.19.27-.12.04-.31-.10-.075-.10z"/>
+      
+    
+  </g>
+  
+</svg>
+English</a>
+    <a href="/ja/essays/AIReflection.html" lang="ja" hreflang="ja" class="is-active" aria-current="true"><svg class="fp-language-flag" viewBox="0 0 20 14" aria-hidden="true" focusable="false">
+  <rect width="20" height="14" fill="#fff"/>
+  
+  <circle cx="10" cy="7" r="4.2" fill="#bc002d"/>
+  
+</svg>
+日本語</a>
+  </div>
+</header>
+
+<main class="fp-main">
+  
+
+<article class="fp-project-reader fp-essay-reader">
+  <div class="fp-project-reader-bar">
+    <a class="btn" href="/ja/essays/">← 記事一覧</a>
+    <span>2023年11月20日</span>
+  </div>
+  <header class="fp-project-reader-head fp-essay-reader-head">
+    <p class="fp-kicker">AI 支援ツール · ソフトウェア工学 · 協働 · 学習への活用 · ChatGPT · 実践</p>
+    <h1>AI の活用は、学びを助けるのか</h1>
+  </header>
+  <div class="fp-project-reader-body fp-essay-reader-body">
+    <h2 id="はじめに">はじめに</h2>
+
+<p>ソフトウェア工学には、時間をかけて理解し、実際に手を動かして身につける必要のある内容が数多くあります。授業や課題だけでは理解しきれなかった部分に対し、ChatGPT のような AI ツールは、別の説明やコード例を示す補助役になります。コードの修正やデバッグについて相談できる点も、学習や仕事の場で注目される理由だと思います。</p>
+
+<p>AI とソフトウェア工学の関わりは幅広く、たとえば次のような用途があります。</p>
+
+<ul>
+  <li><strong>コードの生成と補完</strong>：短いコード例の作成や、繰り返しの多い処理の記述を支援します。</li>
+  <li><strong>テストの支援</strong>：テストケースの案や、見落としている可能性のある不具合を検討する助けになります。</li>
+  <li><strong>自然言語処理</strong>：説明文や文書の作成・理解を補助し、技術情報を伝えやすくします。</li>
+  <li><strong>予測や分析</strong>：過去のデータから、問題や保守の必要性を検討するために利用されます。</li>
+</ul>
+
+<p>こうした用途を適切に組み合わせれば、開発の作業を効率化できます。ただし、便利さと、結果を検証する必要性の両方を理解して使うことが大切です。</p>
+
+<h2 id="授業で-ai-を使った経験">授業で AI を使った経験</h2>
+
+<p>ICS 314 の授業では、演習、WOD、プロジェクトなど、AI を使える場面がありました。私が主に利用したのは、教材とは違う角度から説明してもらいたいときです。動画で課題の進め方を理解した後に、なぜその方法で動くのか、別の書き方はあるか、動画で扱われていない問題にはどう対処するかを確認しました。</p>
+
+<p>一方、時間制限のある WOD では、AI を十分に活用できませんでした。回答を待ち、内容を理解し、課題の条件に合うかを確認する時間も必要だからです。説明が授業で学んだ方法と異なれば、かえって混乱する可能性もあります。条件の一部を取り違えると課題全体の結果に影響するため、この場面では自分の理解を優先しました。</p>
+
+<p>記事やプロジェクトに取り組む際には、論点を整理したり、概念を説明し直してもらったりする使い方が役立ちました。たとえば、Underscore の sum 関数をどのような場面で使えばよいか、どんな練習問題が考えられるか、といった質問です。コードの説明や文書化についても、授業外で相談できる相手のように感じました。</p>
+
+<p>なお、コーディング規約に関する問題の多くは ESLint の指摘で解決できたため、その部分で AI を使う必要はあまりありませんでした。</p>
+
+<h2 id="理解と学習への影響">理解と学習への影響</h2>
+
+<p>AI は、背景の説明、具体例、その場でのフィードバックを通じて、難しい概念を理解する助けになりました。練習課題を提案してもらい、理論を別の場面に当てはめることもできます。コードの分析やデバッグでは、解決案や確認の順序を示してもらうことで、考えを前に進めやすくなりました。</p>
+
+<p>ただし、回答をそのまま使うだけでは、仕組みを理解したことにはなりません。基本原理を把握せずに依存すると、自分で説明したり、別の課題へ応用したりする力が育ちにくくなります。また、AI の回答が常に正しいとは限らないため、情報源と結果の確かさを確認する必要があります。</p>
+
+<p>私にとって適切な使い方は、基礎学習を置き換えることではなく、自分で理解を深めるための補助として使うことです。</p>
+
+<h2 id="教室の外での活用">教室の外での活用</h2>
+
+<p>授業以外にも、AI の用途はさまざまです。</p>
+
+<ul>
+  <li>企業サイトでの問い合わせ対応を補助するチャットボット</li>
+  <li>ブログ、記事、宣伝文などのアイデア出しや下書き</li>
+  <li>プログラミングの質問、コード例の説明、問題の切り分け</li>
+  <li>学習者に合わせた説明や練習問題を用意する教育支援</li>
+</ul>
+
+<p>教育では、個別の理解に合わせて説明を変えられることが魅力です。一方で、AI が考える過程を代わりに済ませてしまえば、学習者が自分で考える機会を減らすことにもなります。教員の役割をそのまま置き換えるのではなく、どこで支援し、どこでは自力で取り組むかを考える必要があります。</p>
+
+<h2 id="課題と改善の可能性">課題と改善の可能性</h2>
+
+<p>ソフトウェア開発では、細かな条件の違いが動作に大きく影響します。ChatGPT、Bard、Copilot などのツールに相談しても、複雑なコードの構造や文脈を十分に捉えられず、曖昧な提案や誤った説明が返ってくることがありました。</p>
+
+<p>また、この記事を書いた当時、ツールによって扱える情報の新しさや検索機能に違いがあると感じました。ChatGPT の知識の範囲と、Bard の情報取得の違いも、回答を受け取る際に意識していた点です。こうした機能は変わり得るため、回答時点の情報に照らして判断する必要があります。人種、性別などの話題に偏りが含まれる可能性にも注意が必要です。</p>
+
+<p>改善の余地としては、利用者の目的に合わせた調整や、具体的なフィードバックが挙げられます。単に「よかった」「よくなかった」と評価するだけでなく、どの部分が正確で、どこが役立たなかったかを伝えられれば、改善の手がかりが増えるはずです。</p>
+
+<p>実際のプロジェクトで使いながら学ぶ仕組みや、理解度に応じた学習内容の調整にも可能性があります。その際も、人による指導と AI の支援を組み合わせることが重要だと考えます。</p>
+
+<h2 id="従来の学習方法との比較と今後">従来の学習方法との比較と、今後</h2>
+
+<p>講義や教科書には、順序立てて知識を学べる強みがあります。一方、説明を聞くだけでは集中しにくかったり、自分の疑問をその場で解消できなかったりすることもあります。</p>
+
+<p>対話型 AI は、学習者の質問に応じて説明を変えられるため、参加しながら学びやすい点が利点です。ただし、すぐに答えを得られることと、知識が長く身につくことは同じではありません。体系的な学習と、自分で考えて確かめる過程を組み合わせる必要があります。</p>
+
+<p>今後は、個別の学習計画、理解度に応じた評価、共同作業への支援などが広がる可能性があります。専門分野や文脈をより正確に理解できるようになれば、教育の場でも支援の質を高められるのではないかと思います。</p>
+
+<h2 id="おわりに">おわりに</h2>
+
+<p>AI は、理解、練習、問題解決を支援する有用な道具でした。別の説明、すぐに得られるフィードバック、具体的なコード例は、私の学習に役立ちました。一方、誤りや偏り、文脈の取り違えがあり得ることを忘れてはいけません。</p>
+
+<p>大切なのは、便利さに任せきりにせず、基礎を学び、自分で検証する姿勢を持つことです。人の判断や指導と AI の力を適切に組み合わせれば、ソフトウェア工学の学びをより豊かにできると考えています。</p>
+
+  </div>
+</article>
+
+</main>
+
+<footer class="fp-footer">
+  <span>&copy; Lloyd Sanderson</span>
+  <span>動きとわかりやすさに、自分らしさを。</span>
+</footer>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+  <script src="/assets/js/portfolio.js"></script>
+  </body>
+</html>

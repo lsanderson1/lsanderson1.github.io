@@ -1,20 +1,20 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="canonical" href="https://lsanderson1.github.io/essays/reflectingonjavascript.html">
-    <link rel="alternate" hreflang="en" href="https://lsanderson1.github.io/essays/reflectingonjavascript.html"><link rel="alternate" hreflang="x-default" href="https://lsanderson1.github.io/essays/reflectingonjavascript.html">
-    <link rel="alternate" hreflang="ja" href="https://lsanderson1.github.io/ja/essays/reflectingonjavascript.html">
-    <meta property="og:locale" content="en_US">
-    <meta name="title" content="Java in a New Light | Lloyd Sanderson | Professional Portfolio">
-    <meta name="description" content="Software, game development, and Japanese: projects, essays, and experience by Lloyd Sanderson.">
+    <link rel="canonical" href="https://lsanderson1.github.io/ja/essays/designpatterns.html">
+    <link rel="alternate" hreflang="en" href="https://lsanderson1.github.io/essays/designpatterns.html"><link rel="alternate" hreflang="x-default" href="https://lsanderson1.github.io/essays/designpatterns.html">
+    <link rel="alternate" hreflang="ja" href="https://lsanderson1.github.io/ja/essays/designpatterns.html">
+    <meta property="og:locale" content="ja_JP">
+    <meta name="title" content="たとえ話で考えるデザインパターン | Lloyd Sanderson | ポートフォリオ">
+    <meta name="description" content="ソフトウェア開発・ゲーム制作・日本語を軸に活動する Lloyd Sanderson のポートフォリオ。制作実績、技術記事、学歴・スキルをご紹介します。">
     <meta name="image" content="https://github.com/lsanderson1.png">
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="Lloyd Sanderson | Professional Portfolio">
-    <meta property="og:url" content="https://lsanderson1.github.io/essays/reflectingonjavascript.html">
-    <meta property="og:title" content="Java in a New Light | Lloyd Sanderson | Professional Portfolio">
-    <meta property="og:description" content="Software, game development, and Japanese: projects, essays, and experience by Lloyd Sanderson.">
+    <meta property="og:site_name" content="Lloyd Sanderson | ポートフォリオ">
+    <meta property="og:url" content="https://lsanderson1.github.io/ja/essays/designpatterns.html">
+    <meta property="og:title" content="たとえ話で考えるデザインパターン | Lloyd Sanderson | ポートフォリオ">
+    <meta property="og:description" content="ソフトウェア開発・ゲーム制作・日本語を軸に活動する Lloyd Sanderson のポートフォリオ。制作実績、技術記事、学歴・スキルをご紹介します。">
     <meta property="og:image" content="https://github.com/lsanderson1.png">
     <link rel="icon" href="/favicon.svg?v=11" type="image/svg+xml" sizes="any">
     <link rel="icon" href="/favicon.ico?v=11" type="image/x-icon" sizes="16x16 32x32 48x48">
@@ -27,22 +27,22 @@
     </script>
     
 
-    <title>Java in a New Light | Lloyd Sanderson | Professional Portfolio</title>
+    <title>たとえ話で考えるデザインパターン | Lloyd Sanderson | ポートフォリオ</title>
   </head>
   <body>
   
 <header class="fp-nav">
-  <a class="fp-brand" href="/" aria-label="Lloyd Sanderson home">
+  <a class="fp-brand" href="/ja/" aria-label="Lloyd Sanderson のホームページ">
     Lloyd Sanderson
   </a>
-  <nav aria-label="Primary navigation">
-    <a href="/resume.html">Resume <small>履歴</small></a>
-    <a href="/unreal-journey/">Unreal Journey <small>開発記録</small></a>
-    <a href="/projects/">Projects <small>作品</small></a>
-    <a class="is-active" aria-current="page" href="/essays/">Essays <small>文章</small></a>
+  <nav aria-label="メインナビゲーション">
+    <a href="/ja/resume.html">Resume <small>履歴</small></a>
+    <a href="/ja/unreal-journey/">Unreal Journey <small>開発記録</small></a>
+    <a href="/ja/projects/">Projects <small>作品</small></a>
+    <a class="is-active" aria-current="page" href="/ja/essays/">Essays <small>文章</small></a>
   </nav>
-  <div class="fp-language-switch" role="group" aria-label="Language">
-    <a href="/essays/reflectingonjavascript.html" lang="en" hreflang="en" class="is-active" aria-current="true"><svg class="fp-language-flag" viewBox="0 0 20 14" aria-hidden="true" focusable="false">
+  <div class="fp-language-switch" role="group" aria-label="表示言語">
+    <a href="/essays/designpatterns.html" lang="en" hreflang="en"><svg class="fp-language-flag" viewBox="0 0 20 14" aria-hidden="true" focusable="false">
   <rect width="20" height="14" fill="#fff"/>
   
   <path stroke="#b22234" stroke-width="1.077" d="M0 .538h20M0 2.692h20M0 4.846h20M0 7h20M0 9.154h20M0 11.308h20M0 13.462h20"/>
@@ -198,7 +198,7 @@
   
 </svg>
 English</a>
-    <a href="/ja/essays/reflectingonjavascript.html" lang="ja" hreflang="ja"><svg class="fp-language-flag" viewBox="0 0 20 14" aria-hidden="true" focusable="false">
+    <a href="/ja/essays/designpatterns.html" lang="ja" hreflang="ja" class="is-active" aria-current="true"><svg class="fp-language-flag" viewBox="0 0 20 14" aria-hidden="true" focusable="false">
   <rect width="20" height="14" fill="#fff"/>
   
   <circle cx="10" cy="7" r="4.2" fill="#bc002d"/>
@@ -213,25 +213,61 @@ English</a>
 
 <article class="fp-project-reader fp-essay-reader">
   <div class="fp-project-reader-bar">
-    <a class="btn" href="/essays/">← All Essays</a>
-    <span>29 Aug 2023</span>
+    <a class="btn" href="/ja/essays/">← 記事一覧</a>
+    <span>2023年11月29日</span>
   </div>
   <header class="fp-project-reader-head fp-essay-reader-head">
-    <p class="fp-kicker">Computer Science</p>
-    <h1>Java in a New Light</h1>
+    <p class="fp-kicker">デザインパターン · アルゴリズムの応用 · たとえ話による理解 · 実践への応用 · 機能の設計</p>
+    <h1>たとえ話で考えるデザインパターン</h1>
   </header>
   <div class="fp-project-reader-body fp-essay-reader-body">
-    <p><em>Javascript, easy to understand, hard to master</em></p>
+    <h2 id="設計の引き出しとしてのデザインパターン">設計の引き出しとしてのデザインパターン</h2>
 
-<p>Going across many of the languages that I have learned throughout the years, to be completely honest, I was a newbie with Javascript. I had no idea how it would function, how you would do basic arithmetic, declare variables, print out values and so forth. But as I went forward with it, I realized that it is not much different than say Java. How you would create a function (in Java would be a class) and be able to declare function variables throughout the body. One thing though that makes it different from the others is that it is able to be “First-class functions” meaning that variables can be declared through the function which make it easy and concise for the programmer to use.</p>
+<p>デザインパターンは、よくある設計上の課題に対して、経験をもとに整理された解決の型です。建物や橋の設計図のように、ソフトウェアにも構造を考える手がかりを与えてくれます。柔軟で、壊れにくく、変更しやすい仕組みをつくるための共通の知恵とも言えます。</p>
 
-<h2 id="thoughts-on-the-many-different-type-javascript-models">Thoughts on the many different type Javascript models</h2>
+<p>ここでは Singleton、Observer、Composite、Strategy、Decorator の五つを、身近なたとえと結びつけながら振り返ります。</p>
 
-<p>Alternatively, conventional Javascript models and the newer introduction to ES6 I believe made it a little more complex to comprehend, but overall easier to implement, such as the arrow notation. Instead of implicitly stating a function, you can use arrow notation to mark that function as a variable and be able to pass arguments through that. I believe that is a very convenient and ingenuitive way to do function declarations. From a software engineering perspective, Javascript has many useful qualities which make code more accessible, easier to read with not as much difficulty, all which keeping the normal conventions of past languages (such as C++, Python and Java) which make it also easier to learn for an individual like myself that is completely new to Javascript to pick up and use on a daily basis.</p>
+<h2 id="singleton一つだけ存在する役割">Singleton：一つだけ存在する役割</h2>
 
-<h2 id="thoughts-on-wod">Thoughts on WOD</h2>
+<p>共通の型がなければ、同じような問題に出会うたびに、一から解決策を考えることになります。デザインパターンは、過去の知見を共有し、検討の出発点をそろえる役割を持っています。</p>
 
-<p>Overall in terms of the WODs, learning Javascript through this method was tough, to do a certain task in a given time allotted is very stressful that you will either not be able to finish in time, or the code will not compile. Being an all or nothing, this really puts emphasis on the fact that you would really need to know your stuff before attempting the WOD, or else you will not do as well on it. It gives a good incentive for the student to practice though and figure out what could be done to improve in the WOD as well as any other significant changes they could make to alter their code better, shorter, or easier to read. These factors really come into consideration when doing a WOD because they are tested on their ability not only to get the correct code, but quickly get the correct code. In a sense, I think practicing WODs are enjoyable because it helps you prepare for the WOD and you might learn something new along the way. Regardless, it is a good resource to understand and pick up Javascript, but you will have to be prepared for what comes next.</p>
+<p>Singleton の目的は、あるクラスのインスタンスを一つに制限し、それにアクセスする共通の窓口を用意することです。Java の典型的な例では、生成を制限するコンストラクタ、非公開の静的なインスタンス、そして <code class="language-plaintext highlighter-rouge">getInstance()</code> のような公開された静的メソッドを使います。必要なインスタンスがまだなければ、その窓口で生成します。</p>
+
+<p>太陽系に太陽が一つあるように、アプリケーション内で一つの役割を共有するイメージです。「唯一の存在」というたとえにすると、目的を覚えやすくなります。</p>
+
+<h2 id="observer変化を見守り知らせる">Observer：変化を見守り、知らせる</h2>
+
+<p>Observer は、あるオブジェクトの状態が変わったとき、関係する複数のオブジェクトへ通知する仕組みです。通知される側を登録しておき、変更が起きたらそれぞれの処理を呼び出します。</p>
+
+<p>見張り役が異変を周囲へ知らせるように、対象と、それに関心を持つ観察者の間に連絡経路を設けます。一対多の依存関係を表現でき、イベントを中心とした処理や、画面の複数箇所で状態をそろえる場面で役立ちます。授業で <code class="language-plaintext highlighter-rouge">useState</code> などを通じて状態の変化と表示の更新を考えた経験も、この考え方を理解するきっかけになりました。</p>
+
+<h2 id="composite部分と全体を同じように扱う">Composite：部分と全体を同じように扱う</h2>
+
+<p>Composite は、オブジェクトを木構造にまとめ、個々の要素と要素のまとまりを、共通のインターフェースで扱うためのパターンです。内部の細かな構成を隠し、利用する側の処理を簡潔にできます。共通の扱い方を保てれば、要素の種類を追加するときも、利用側への影響を抑えられます。</p>
+
+<p>都市の中に地区があり、その地区にさらに建物や名所がある、と考えるとイメージしやすくなります。それぞれは独立した要素でありながら、全体の一部でもあります。</p>
+
+<p>実際の例では、ファイルとディレクトリを持つファイルシステムがわかりやすいでしょう。UI の構成や XML 文書にも階層があり、ICS 314 の授業で扱った内容とも結びつきます。</p>
+
+<h2 id="strategy状況に応じて方法を選ぶ">Strategy：状況に応じて方法を選ぶ</h2>
+
+<p>Strategy は、複数のアルゴリズムを別々のオブジェクトにまとめ、必要に応じて差し替えるためのパターンです。共通のインターフェースに沿って個別の方法を実装すれば、利用する側のコードへの影響を抑えながら、処理方法を変更できます。実行時に選び分けられることも利点です。</p>
+
+<p>たとえば、バブルソート、クイックソート、マージソートをそれぞれ用意し、データ量や条件に応じて選ぶ構成が考えられます。ICS 311 で学ぶアルゴリズムとも関連する発想です。</p>
+
+<p>料理人が目的に合わせて調理法や道具を選ぶように、開発者も状況に合った手段を選びます。単に手段を増やすのではなく、選び替えやすい構造を用意する点が重要だと思います。</p>
+
+<h2 id="decorator元の仕組みを包んで機能を加える">Decorator：元の仕組みを包んで機能を加える</h2>
+
+<p>Decorator は、元のオブジェクトを別のオブジェクトで包み、動的に役割や機能を追加するパターンです。中心となる構造を直接変更せずに、必要な機能を重ねられます。</p>
+
+<p>UI に追加の装飾や動作を積み重ねる場面を想像するとわかりやすくなります。土台と拡張を分けて考えることで、機能が増えても設計を整理しやすくなります。</p>
+
+<h2 id="おわりに">おわりに</h2>
+
+<p>Singleton は唯一の存在、Observer は変化の通知、Composite は階層の統一的な扱い、Strategy は方法の切り替え、Decorator は機能の追加を担います。それぞれの名前は、開発者同士が設計の意図を共有する共通語になります。</p>
+
+<p>再利用、カプセル化、関心の分離を意識することで、コードを書くだけでなく、保守し、拡張することも考えやすくなります。名前だけで役割を思い出せないときも、たとえ話と結びつけておけば、理解の手がかりになるのではないでしょうか。</p>
 
   </div>
 </article>
@@ -240,7 +276,7 @@ English</a>
 
 <footer class="fp-footer">
   <span>&copy; Lloyd Sanderson</span>
-  <span>Designed for motion, clarity, and personality.</span>
+  <span>動きとわかりやすさに、自分らしさを。</span>
 </footer>
 
 

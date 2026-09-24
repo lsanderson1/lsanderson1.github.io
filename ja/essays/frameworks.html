@@ -1,20 +1,20 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="canonical" href="https://lsanderson1.github.io/essays/reflectingonjavascript.html">
-    <link rel="alternate" hreflang="en" href="https://lsanderson1.github.io/essays/reflectingonjavascript.html"><link rel="alternate" hreflang="x-default" href="https://lsanderson1.github.io/essays/reflectingonjavascript.html">
-    <link rel="alternate" hreflang="ja" href="https://lsanderson1.github.io/ja/essays/reflectingonjavascript.html">
-    <meta property="og:locale" content="en_US">
-    <meta name="title" content="Java in a New Light | Lloyd Sanderson | Professional Portfolio">
-    <meta name="description" content="Software, game development, and Japanese: projects, essays, and experience by Lloyd Sanderson.">
+    <link rel="canonical" href="https://lsanderson1.github.io/ja/essays/frameworks.html">
+    <link rel="alternate" hreflang="en" href="https://lsanderson1.github.io/essays/frameworks.html"><link rel="alternate" hreflang="x-default" href="https://lsanderson1.github.io/essays/frameworks.html">
+    <link rel="alternate" hreflang="ja" href="https://lsanderson1.github.io/ja/essays/frameworks.html">
+    <meta property="og:locale" content="ja_JP">
+    <meta name="title" content="UI フレームワークを使う楽しさ | Lloyd Sanderson | ポートフォリオ">
+    <meta name="description" content="ソフトウェア開発・ゲーム制作・日本語を軸に活動する Lloyd Sanderson のポートフォリオ。制作実績、技術記事、学歴・スキルをご紹介します。">
     <meta name="image" content="https://github.com/lsanderson1.png">
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="Lloyd Sanderson | Professional Portfolio">
-    <meta property="og:url" content="https://lsanderson1.github.io/essays/reflectingonjavascript.html">
-    <meta property="og:title" content="Java in a New Light | Lloyd Sanderson | Professional Portfolio">
-    <meta property="og:description" content="Software, game development, and Japanese: projects, essays, and experience by Lloyd Sanderson.">
+    <meta property="og:site_name" content="Lloyd Sanderson | ポートフォリオ">
+    <meta property="og:url" content="https://lsanderson1.github.io/ja/essays/frameworks.html">
+    <meta property="og:title" content="UI フレームワークを使う楽しさ | Lloyd Sanderson | ポートフォリオ">
+    <meta property="og:description" content="ソフトウェア開発・ゲーム制作・日本語を軸に活動する Lloyd Sanderson のポートフォリオ。制作実績、技術記事、学歴・スキルをご紹介します。">
     <meta property="og:image" content="https://github.com/lsanderson1.png">
     <link rel="icon" href="/favicon.svg?v=11" type="image/svg+xml" sizes="any">
     <link rel="icon" href="/favicon.ico?v=11" type="image/x-icon" sizes="16x16 32x32 48x48">
@@ -27,22 +27,22 @@
     </script>
     
 
-    <title>Java in a New Light | Lloyd Sanderson | Professional Portfolio</title>
+    <title>UI フレームワークを使う楽しさ | Lloyd Sanderson | ポートフォリオ</title>
   </head>
   <body>
   
 <header class="fp-nav">
-  <a class="fp-brand" href="/" aria-label="Lloyd Sanderson home">
+  <a class="fp-brand" href="/ja/" aria-label="Lloyd Sanderson のホームページ">
     Lloyd Sanderson
   </a>
-  <nav aria-label="Primary navigation">
-    <a href="/resume.html">Resume <small>履歴</small></a>
-    <a href="/unreal-journey/">Unreal Journey <small>開発記録</small></a>
-    <a href="/projects/">Projects <small>作品</small></a>
-    <a class="is-active" aria-current="page" href="/essays/">Essays <small>文章</small></a>
+  <nav aria-label="メインナビゲーション">
+    <a href="/ja/resume.html">Resume <small>履歴</small></a>
+    <a href="/ja/unreal-journey/">Unreal Journey <small>開発記録</small></a>
+    <a href="/ja/projects/">Projects <small>作品</small></a>
+    <a class="is-active" aria-current="page" href="/ja/essays/">Essays <small>文章</small></a>
   </nav>
-  <div class="fp-language-switch" role="group" aria-label="Language">
-    <a href="/essays/reflectingonjavascript.html" lang="en" hreflang="en" class="is-active" aria-current="true"><svg class="fp-language-flag" viewBox="0 0 20 14" aria-hidden="true" focusable="false">
+  <div class="fp-language-switch" role="group" aria-label="表示言語">
+    <a href="/essays/frameworks.html" lang="en" hreflang="en"><svg class="fp-language-flag" viewBox="0 0 20 14" aria-hidden="true" focusable="false">
   <rect width="20" height="14" fill="#fff"/>
   
   <path stroke="#b22234" stroke-width="1.077" d="M0 .538h20M0 2.692h20M0 4.846h20M0 7h20M0 9.154h20M0 11.308h20M0 13.462h20"/>
@@ -198,7 +198,7 @@
   
 </svg>
 English</a>
-    <a href="/ja/essays/reflectingonjavascript.html" lang="ja" hreflang="ja"><svg class="fp-language-flag" viewBox="0 0 20 14" aria-hidden="true" focusable="false">
+    <a href="/ja/essays/frameworks.html" lang="ja" hreflang="ja" class="is-active" aria-current="true"><svg class="fp-language-flag" viewBox="0 0 20 14" aria-hidden="true" focusable="false">
   <rect width="20" height="14" fill="#fff"/>
   
   <circle cx="10" cy="7" r="4.2" fill="#bc002d"/>
@@ -213,25 +213,41 @@ English</a>
 
 <article class="fp-project-reader fp-essay-reader">
   <div class="fp-project-reader-bar">
-    <a class="btn" href="/essays/">← All Essays</a>
-    <span>29 Aug 2023</span>
+    <a class="btn" href="/ja/essays/">← 記事一覧</a>
+    <span>2023年10月4日</span>
   </div>
   <header class="fp-project-reader-head fp-essay-reader-head">
-    <p class="fp-kicker">Computer Science</p>
-    <h1>Java in a New Light</h1>
+    <p class="fp-kicker">コンピュータサイエンス · ソフトウェア工学 · Bootstrap 5 · フレームワーク · コミュニティの知見</p>
+    <h1>UI フレームワークを使う楽しさ</h1>
   </header>
   <div class="fp-project-reader-body fp-essay-reader-body">
-    <p><em>Javascript, easy to understand, hard to master</em></p>
+    <p><em>UI フレームワークがもたらす利点</em></p>
 
-<p>Going across many of the languages that I have learned throughout the years, to be completely honest, I was a newbie with Javascript. I had no idea how it would function, how you would do basic arithmetic, declare variables, print out values and so forth. But as I went forward with it, I realized that it is not much different than say Java. How you would create a function (in Java would be a class) and be able to declare function variables throughout the body. One thing though that makes it different from the others is that it is able to be “First-class functions” meaning that variables can be declared through the function which make it easy and concise for the programmer to use.</p>
+<p>Bootstrap 5 のような UI フレームワークは、Web 開発を進めるうえで心強い道具です。最初は HTML と CSS だけで書く方法と勝手が違い、複雑に感じました。しかし、仕組みと目的を理解するにつれて、最初の学習にかかる時間を上回る利点が見えてきました。</p>
 
-<h2 id="thoughts-on-the-many-different-type-javascript-models">Thoughts on the many different type Javascript models</h2>
+<h2 id="開発をシンプルにする">開発をシンプルにする</h2>
 
-<p>Alternatively, conventional Javascript models and the newer introduction to ES6 I believe made it a little more complex to comprehend, but overall easier to implement, such as the arrow notation. Instead of implicitly stating a function, you can use arrow notation to mark that function as a variable and be able to pass arguments through that. I believe that is a very convenient and ingenuitive way to do function declarations. From a software engineering perspective, Javascript has many useful qualities which make code more accessible, easier to read with not as much difficulty, all which keeping the normal conventions of past languages (such as C++, Python and Java) which make it also easier to learn for an individual like myself that is completely new to Javascript to pick up and use on a daily basis.</p>
+<p>HTML と CSS だけで画面を組む場合、スタイルやレイアウトを一から定義する必要があります。<code class="language-plaintext highlighter-rouge">style.css</code> に規則を書き、HTML から参照する作業には自由度がある一方、時間もかかり、ミスも起こりやすくなります。</p>
 
-<h2 id="thoughts-on-wod">Thoughts on WOD</h2>
+<p>Bootstrap では、用意されたクラスを使ってコンポーネントやグリッドを組み立てられます。デザインの細部をすべて自分で作り込む負担が軽くなり、機能やコンテンツに力を注ぎやすくなりました。</p>
 
-<p>Overall in terms of the WODs, learning Javascript through this method was tough, to do a certain task in a given time allotted is very stressful that you will either not be able to finish in time, or the code will not compile. Being an all or nothing, this really puts emphasis on the fact that you would really need to know your stuff before attempting the WOD, or else you will not do as well on it. It gives a good incentive for the student to practice though and figure out what could be done to improve in the WOD as well as any other significant changes they could make to alter their code better, shorter, or easier to read. These factors really come into consideration when doing a WOD because they are tested on their ability not only to get the correct code, but quickly get the correct code. In a sense, I think practicing WODs are enjoyable because it helps you prepare for the WOD and you might learn something new along the way. Regardless, it is a good resource to understand and pick up Javascript, but you will have to be prepared for what comes next.</p>
+<p>画面サイズに合わせた表示も大きな利点です。スマートフォンからの閲覧が身近な今、デスクトップ、タブレット、スマートフォンで使いやすい画面を用意することは重要です。ただし、フレームワークを使えば自動的に良い配置になるわけではありません。レイアウトの原則を理解し、それぞれの機能を適切に使う必要があります。</p>
+
+<h2 id="コミュニティによる支援">コミュニティによる支援</h2>
+
+<p>Bootstrap には、公式文書、チュートリアル、外部の解説など、豊富な学習資料があります。初めて HTML と CSS に触れる人にも、開発中に問題に直面した経験者にも役立つ情報です。</p>
+
+<p>自分で HTML と CSS を書く場合と、Bootstrap を使う場合の両方を経験して、こうした資料のありがたさを感じました。疑問を調べたり、問題を切り分けたり、よりよい方法を学んだりするとき、コミュニティの知見は大きな支えになります。</p>
+
+<h2 id="効率と保守のしやすさ">効率と保守のしやすさ</h2>
+
+<p>一定の命名規則とコードの組み立て方があると、継続的な開発や他の人への引き継ぎがしやすくなります。共通の枠組みを理解していれば、チームメンバー同士で変更の意図を共有しやすく、修正にも取り組みやすくなると感じています。</p>
+
+<p>私自身、Bootstrap を使うことで、画面の機能やユーザー体験に集中できるようになりました。整ったレスポンシブな画面を比較的少ない記述で作成でき、文書やコミュニティの情報を通じて、新しい課題への対処方法も学べました。</p>
+
+<h2 id="おわりに">おわりに</h2>
+
+<p>フレームワークには、作業の効率化、レスポンシブ対応、保守性、コミュニティによる支援など、多くの利点があります。小規模なページなど、HTML と CSS だけで作るほうが適した場面もありますが、複雑な Web アプリケーションでは、共通の道具を使う価値は大きいと思います。基礎を理解したうえで使いこなすことが、安定して改善し続けられる画面づくりにつながります。</p>
 
   </div>
 </article>
@@ -240,7 +256,7 @@ English</a>
 
 <footer class="fp-footer">
   <span>&copy; Lloyd Sanderson</span>
-  <span>Designed for motion, clarity, and personality.</span>
+  <span>動きとわかりやすさに、自分らしさを。</span>
 </footer>
 
 

@@ -1,0 +1,205 @@
+{
+  "basics": {
+    "name": "Lloyd Sanderson",
+    "label": "コンピュータサイエンス・日本語専攻 卒業",
+    "picture": "https://github.com/lsanderson1.png",
+    "email": "llsanderson98@gmail.com",
+    "phone": "+1 (909) 633-3893",
+    "website": "https://lsanderson1.github.io",
+    "summary": "ソフトウェア開発、ゲーム制作、AI、プロシージャルな仕組み、3D コンテンツ制作に取り組んできました。個人制作とチーム開発を通じて、C++、C#、Python、Java、Unity、Unreal Engine、Blender の実践経験を積んでいます。日本語と日本文化の知識を生かし、日英での発信、日本をモチーフにした演出、文化をつなぐ物語づくりにも挑戦しています。技術と創造性を組み合わせ、言語や文化を越えて伝わるものづくりを目指しています。",
+    "location": {
+      "address": "",
+      "postalCode": "92592",
+      "city": "テメキュラ",
+      "countryCode": "US",
+      "region": "カリフォルニア州"
+    },
+    "profiles": [
+      {
+        "network": "GitHub",
+        "username": "lsanderson1",
+        "url": "https://github.com/lsanderson1"
+      },
+      {
+        "network": "LinkedIn",
+        "username": "lloyd-sanderson",
+        "url": "https://www.linkedin.com/in/lloyd-sanderson-4b48b0289/"
+      }
+    ]
+  },
+  "interests": [
+    {
+      "name": "AI とプロシージャルシステム"
+    },
+    {
+      "name": "ゲーム開発"
+    },
+    {
+      "name": "Unreal Engine による開発"
+    },
+    {
+      "name": "Unity による開発"
+    },
+    {
+      "name": "ソフトウェア工学"
+    },
+    {
+      "name": "ロボティクス"
+    },
+    {
+      "name": "3D モデリングとアニメーション"
+    }
+  ],
+  "skills": [
+    {
+      "name": "プログラミング言語",
+      "keywords": [
+        "C",
+        "C++",
+        "C#",
+        "Java",
+        "JavaScript",
+        "Python",
+        "Common Lisp",
+        "Prolog"
+      ]
+    },
+    {
+      "name": "ゲーム開発",
+      "keywords": [
+        "Unreal Engine",
+        "Unity",
+        "ゲームプレイの実装",
+        "AI",
+        "プロシージャルシステム",
+        "オブジェクト指向プログラミング"
+      ]
+    },
+    {
+      "name": "3D・制作ツール",
+      "keywords": [
+        "Blender",
+        "Aseprite",
+        "3D モデリング",
+        "アセット制作",
+        "アニメーション",
+        "ビジュアルデザイン"
+      ]
+    },
+    {
+      "name": "ソフトウェア開発",
+      "keywords": [
+        "オブジェクト指向設計",
+        "データ構造",
+        "ソケット通信",
+        "JSON",
+        "データベース検索",
+        "論理プログラミング",
+        "バージョン管理",
+        "チーム開発"
+      ]
+    },
+    {
+      "name": "言語",
+      "keywords": [
+        "日本語"
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "ハワイ大学マノア校",
+      "area": "コンピュータサイエンス",
+      "studyType": "理学士（BS）",
+      "startDate": "2021-09-01",
+      "endDate": "2025-12-14",
+      "location": "米国ハワイ州ホノルル"
+    },
+    {
+      "institution": "ハワイ大学マノア校",
+      "area": "日本語",
+      "studyType": "文学士（BA）",
+      "startDate": "2021-09-01",
+      "endDate": "2025-12-14",
+      "location": "米国ハワイ州ホノルル"
+    }
+  ],
+  "projects": [
+    {
+      "name": "Project Reap",
+      "description": "戦後の日本をモチーフに、Unity でチーム制作した 2D アクション・プラットフォームゲームです。",
+      "highlights": [
+        "異なる得意分野を持つメンバーと協力し、動作するゲームのプロトタイプを制作。",
+        "プレイヤーの移動、戦闘、敵の挙動、敵を連続して倒す Flow アビリティを実装。",
+        "ゲームプレイ設計、アニメーション、アセット統合、テスト、デバッグに参加。"
+      ],
+      "keywords": [
+        "C#",
+        "Unity",
+        "ゲームプレイ実装",
+        "Aseprite",
+        "アニメーション",
+        "チーム開発"
+      ],
+      "url": "https://lsanderson1.github.io/projects/ProjectReap.html"
+    },
+    {
+      "name": "If You're Not First",
+      "description": "プレイヤーと AI が競うレースゲームの試作です。チェックポイントによる順位判定、周回管理、車両の耐久値、ブーストを実装しました。",
+      "highlights": [
+        "オブジェクト指向の C# を用い、チェックポイント、周回順位、距離比較の仕組みを実装。",
+        "対戦相手の AI、車両の移動、耐久値、ブースト機能を実装。",
+        "Blender で制作したアセットを組み込み、Unity WebGL で遊べる形に公開。"
+      ],
+      "keywords": [
+        "C#",
+        "Unity",
+        "Blender",
+        "AI",
+        "オブジェクト指向",
+        "WebGL"
+      ],
+      "url": "https://lsanderson1.github.io/projects/IfYoureNotFirst.html"
+    },
+    {
+      "name": "Star Wars Question-Answering System",
+      "description": "Prolog の確定節文法（DCG）と事実データベースを使い、自然言語の質問に回答するアプリケーションです。",
+      "highlights": [
+        "Yes/No、Who、What の質問を解釈できる文法規則を設計。",
+        "自然言語の入力を Prolog の述語とデータベースへの問い合わせに変換。",
+        "回答の整形と、条件に合わない質問に対して文脈に応じたヒントを返す仕組みを実装。"
+      ],
+      "keywords": [
+        "Prolog",
+        "AI",
+        "確定節文法",
+        "自然言語処理",
+        "論理プログラミング"
+      ],
+      "url": "https://lsanderson1.github.io/projects/DCGSyntax.html"
+    },
+    {
+      "name": "Blender Command-Line Integration",
+      "description": "Blender 内の Python ソケットサーバーと Common Lisp のコマンドラインクライアントをつなぐ、言語をまたいだ自動化システムです。",
+      "highlights": [
+        "JSON コマンドを交換する TCP ソケットインターフェースを設計。",
+        "オブジェクトの作成・変形、マテリアル、照明、カメラ、パーティクル、アニメーションの操作コマンドを実装。",
+        "Blender を外部から操作できる対話型の Common Lisp クライアントを制作。"
+      ],
+      "keywords": [
+        "Python",
+        "Common Lisp",
+        "Blender",
+        "ソケット通信",
+        "JSON",
+        "自動化"
+      ],
+      "url": "https://lsanderson1.github.io/projects/BlenderCLI.html"
+    }
+  ],
+  "references": [
+    {
+      "name": "ご要望に応じて提供いたします"
+    }
+  ]
+}
