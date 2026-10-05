@@ -1,6 +1,6 @@
 # Connecting Yuki's free AI
 
-Yuki is published on the existing Jekyll portfolio. Her approved artwork and animations remain unchanged. This setup uses Cloudflare Workers AI, not the OpenAI API. No OpenAI account/key or ChatGPT subscription is required for visitors. The backend is **enabled with owner approval**; live conversation verification is in progress.
+Yuki is published on the existing Jekyll portfolio. Her approved artwork and animations remain unchanged. This setup uses Cloudflare Workers AI, not the OpenAI API. No OpenAI account/key or ChatGPT subscription is required for visitors. The backend is **enabled with owner approval**, and an English conversation has passed the complete live website flow.
 
 ## Setup status — October 5, 2026
 
@@ -13,7 +13,8 @@ Yuki is published on the existing Jekyll portfolio. Her approved artwork and ani
 - Set both activation flags to true after reconfirming Workers Free and obtaining owner approval. Current Worker version after the knowledge-loading fix: `7053969b-bfdf-4158-a8e7-790544511e05`.
 - Live endpoint checks pass: foreign origin rejected (403), permitted preflight accepted (204), malformed input rejected (400), invalid bot token rejected (403). The disabled-backend response was also verified before activation.
 - All 47 local tests pass, including redirect rejection and sanitized error-stage identifiers. Real model-binding tests returned an English introduction and a Japanese Blender CLI explanation with its correct Japanese source link. These are actual Workers AI calls, not mocked replies; they do not substitute for the complete browser/Turnstile test.
-- A real browser request passed verification and quota reservation but failed with `YUKI_KNOWLEDGE`. An authenticated remote preview reproduced the exact cause: Cloudflare Workers rejects `fetch` with `redirect: 'error'` before making a network request. Switched the knowledge fetch to `redirect: 'manual'` and retained rejection of every non-2xx response, including redirects. The same remote preview then read all 34 public pages successfully (HTTP 200). The fix is deployed; the next normal browser chat remains to be confirmed.
+- A real browser request passed verification and quota reservation but failed with `YUKI_KNOWLEDGE`. An authenticated remote preview reproduced the exact cause: Cloudflare Workers rejects `fetch` with `redirect: 'error'` before making a network request. Switched the knowledge fetch to `redirect: 'manual'` and retained rejection of every non-2xx response, including redirects. The same remote preview then read all 34 public pages successfully (HTTP 200). The fix was deployed and committed as `fdf331e`.
+- **Live browser success confirmed:** after the fix, the owner completed verification and sent the prepared English question. Yuki returned an introduction identifying herself as Lloyd's baby-dragon companion and AI mascot, and accurately described the portfolio's game-development and 3D work. The reply was independently observed in the public website's conversation panel. The full Japanese-page/Turnstile flow and broader live safety/navigation checks remain unverified; the Japanese model-binding check above passed separately.
 
 ## Stay on the free plan
 
