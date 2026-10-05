@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {ReadingMemory,chooseReadingSection,guideReference,readingMemoryKey} from '../assets/yuki/runtime/reading-context.mjs';
+import {ReadingMemory,pageTitle,readPageTitle,readingDetail,readPageSection,chooseReadingSection,guideReference,followUpReference,readingMemoryKey} from '../assets/yuki/runtime/reading-context.mjs';
 import {validateContext,textChunks,retrieveKnowledge} from '../services/yuki-api/knowledge.mjs';
 import {validateInput,modelRequest,parseModel,createHandler} from '../services/yuki-api/worker.mjs';
 import {findPageTarget} from '../assets/yuki/runtime/page-targets.mjs';
@@ -18,6 +18,34 @@ const knowledge={owner:'Lloyd',bio:{en:'Developer',ja:'開発者'},skills:['Unre
 const input={message:'Explain this.',lang:'en',page:page.url,history:[],token:'test',context:{section:'s1'}};
 const store=()=>{const m=new Map();return {getItem:k=>m.get(k)??null,setItem:(k,v)=>m.set(k,v),removeItem:k=>m.delete(k),m};};
 
+test('page identity uses landing, exact navigation labels and dynamic project titles in both languages',()=>{
+ for(const lang of ['en','ja'])for(const base of ['','/portfolio']){
+  const prefix=base+(lang==='ja'?'/ja':'');
+  const navigation=[{path:prefix+'/resume.html',title:'Resume'},{path:prefix+'/unreal-journey/',title:'Unreal Journey'},{path:prefix+'/new-collection/',title:'New Collection'}];
+  const titleFor=(path,title)=>pageTitle({path:prefix+path,base,title,navigation,lang});
+  for(const home of ['/','/index.html'])assert.equal(titleFor(home,'My slogan'),lang==='ja'?'ホーム':'Landing page');
+  assert.equal(titleFor('/resume.html','プロフィール'),'Resume');
+  assert.equal(titleFor('/unreal-journey/index.html','Unreal Engine 開発記録'),'Unreal Journey');
+  assert.equal(titleFor('/unreal-journey/new-project.html','A brand-new project'),'A brand-new project');
+  assert.equal(titleFor('/new-collection/','Collection front matter'),'New Collection');
+  assert.equal(titleFor('/essays/new-essay.html','  A new\n essay  '),'A new essay');
+ }
+ assert.equal(pageTitle({path:'/unknown.html',heading:'Fallback heading'}),'Fallback heading');
+});
+test('DOM page identity excludes nav subtitles and does not use the active parent for a project',()=>{
+ const doc={baseURI:'https://portfolio.invalid/ja/resume.html',querySelector:()=>({textContent:'Lloyd Sanderson'}),querySelectorAll:()=>[{href:'/ja/resume.html',childNodes:[{nodeType:3,textContent:'Resume '},{nodeType:1,textContent:'履歴'}]}]};
+ assert.equal(readPageTitle(doc,{path:'/ja/resume.html',title:'プロフィール',lang:'ja'}),'Resume');
+ assert.equal(readPageTitle(doc,{path:'/ja/new-project.html',title:'New project',lang:'ja'}),'New project');
+});
+test('in-view detail complements page title, suppresses duplicate main headings and identifies images',()=>{
+ assert.equal(readingDetail({title:'Museum',level:1},'Museum'),'');
+ assert.equal(readingDetail({title:'Resume',level:2},'Resume'),'');
+ assert.equal(readingDetail({title:'Interaction system',level:2},'Museum'),'Interaction system');
+ assert.equal(readingDetail({title:'Overhead room',kind:'image'},'Museum'),'Image: Overhead room');
+ assert.equal(readingDetail({title:'展示室の全景',kind:'image'},'Museum','ja'),'画像：展示室の全景');
+ assert.equal(readingDetail(null,'Museum'),'');
+});
+
 test('visible reading section follows viewport, not the last guide or chat location',()=>{
  const headings=[{id:'s0',top:-200,bottom:-170},{id:'s1',top:80,bottom:110},{id:'s2',top:650,bottom:690,end:1400}];
  assert.equal(chooseReadingSection(headings,800,60).id,'s1');
@@ -26,7 +54,52 @@ test('visible reading section follows viewport, not the last guide or chat locat
  assert.equal(chooseReadingSection([{id:'bad',top:100,bottom:120}],800),null);
 });
 test('image in view is a published description hint, not a screenshot',()=>{
- assert.equal(chooseReadingSection([{id:'s0',top:-100,bottom:-80},{id:'i0',top:80,bottom:500},{id:'s1',top:580,bottom:610,end:1000}],800,60).id,'i0');
+ assert.equal(chooseReadingSection([{id:'s0',top:-100,bottom:-80},{id:'i0',kind:'image',top:80,bottom:500},{id:'s1',top:580,bottom:610,end:1000}],800,60).id,'i0');
+});
+test('image stops owning following paragraphs once it leaves the reading area',()=>{
+ const headings=[{id:'s0',top:-400,bottom:-370,end:1600},{id:'i0',kind:'image',top:-200,bottom:100,end:1600},{id:'s1',top:900,bottom:930,end:1600}];
+ assert.equal(chooseReadingSection(headings,800,60).id,'s0');
+ assert.equal(chooseReadingSection(headings.map(h=>({...h,top:h.top-700,bottom:h.bottom-700,end:900})),800,60).id,'s1');
+});
+test('reading context changes with screen height and avoids offscreen footer labels',()=>{
+ const headings=[{id:'s0',top:-50,bottom:-20},{id:'s1',top:300,bottom:330,end:850}];
+ assert.equal(chooseReadingSection(headings,500,60).id,'s0');
+ assert.equal(chooseReadingSection(headings,900,60).id,'s1');
+ assert.equal(chooseReadingSection([{id:'s0',top:-1000,bottom:-970,end:-50}],500,60),null);
+});
+test('side portraits do not override the main text in view',()=>{
+ const entries=[{id:'s0',top:60,bottom:120,end:900},{id:'i0',kind:'image',top:80,bottom:600,left:20,right:260}];
+ assert.equal(chooseReadingSection(entries,800,60,1200).id,'s0');
+ assert.equal(chooseReadingSection(entries,800,60,390).id,'i0');
+});
+test('current carousel card is read, clipped cards are ignored, and new headings are discovered',()=>{
+ let offset=0,entries=[];
+ const rect=(left,right,top,bottom)=>({left,right,top,bottom});
+ const clip={getBoundingClientRect:()=>rect(100,900,100,700)};
+ const element=(id,title,left,right,top,bottom,carousel=false)=>({
+  dataset:{yukiSection:id},tagName:'H3',textContent:title,getAttribute:()=>null,getClientRects:()=>[1],
+  getBoundingClientRect:()=>rect(left+(carousel?offset:0),right+(carousel?offset:0),top,bottom),
+  closest:selector=>selector==='[data-feature-carousel]'&&carousel?clip:null
+ });
+ const main={getBoundingClientRect:()=>({bottom:1600}),querySelectorAll:()=>entries};
+ const doc={documentElement:{clientWidth:1000},querySelector:()=>main};
+ entries=[element('s0','First project',120,880,200,230,true),element('s1','Second project',940,1700,200,230,true),element('s2','Essays',100,900,900,930)];
+ assert.equal(readPageSection(doc,800,60).title,'First project');
+ offset=-820;assert.equal(readPageSection(doc,800,60).title,'Second project');
+ entries=[element('s7','Newly added section',100,900,150,180)];
+ assert.equal(readPageSection(doc,800,60).id,'s7');
+});
+test('guide Explain is retained only for supported follow-ups on that portfolio topic',()=>{
+ const previous={page:'/museum.html',section:'i0'};
+ const reply=url=>({sources:[{url,title:'Source'}]});
+ assert.deepEqual(followUpReference(reply('/museum.html#yuki-image-0'),previous,[page]),previous);
+ assert.deepEqual(followUpReference(reply('/museum.html'),previous,[page]),previous);
+ assert.equal(followUpReference({text:'I am a sleepy little dragon!',sources:[]},previous,[page]),null);
+ assert.equal(followUpReference(reply('/museum.html#cleanup'),previous,[page]),null);
+ assert.equal(followUpReference(reply('/other.html'),previous,[page]),null);
+ assert.equal(followUpReference(reply('https://untrusted.invalid/museum.html'),previous,[page]),null);
+ assert.equal(followUpReference(reply('/museum.html#yuki-image-0'),{...previous,section:'i999'},[page]),null);
+ assert.equal(followUpReference(reply('/museum.html'),null,[page]),null);
 });
 test('guide memory contains only public references, expires and clears',()=>{
  let now=100;const storage=store(),m=new ReadingMemory(storage,()=>now);

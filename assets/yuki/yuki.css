@@ -27,7 +27,7 @@
 .yuki-message{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;padding:2px 2px 8px}.yuki-message strong{display:none}
 .yuki-message[data-role=user]{background:#f7e9ee;border-radius:10px;padding:8px;margin-bottom:6px}
 .yuki-status{font-size:11px;line-height:1.4;color:#82636c;margin:5px 1px 8px}.yuki-status:empty{display:none}
-.yuki-reading{font-size:11px;line-height:1.4;color:#82636c;margin:4px 1px 8px}.yuki-reading span{display:block;max-height:3em;overflow:hidden}.yuki-reading span:empty{display:none}.yuki-reading button{font-size:11px;padding:5px 8px;margin-top:5px}.yuki-reading:has(span:empty):has(button[hidden]){display:none}
+.yuki-reading{font-size:11px;line-height:1.4;color:#82636c;margin:4px 1px 8px;overflow-wrap:anywhere}.yuki-reading span{display:block}.yuki-reading .yuki-page{font-weight:600}.yuki-reading span:empty{display:none}.yuki-reading button{font-size:11px;padding:5px 8px;margin-top:5px}
 .yuki-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:end}
 .yuki-form textarea{width:100%;resize:none;overflow-y:auto;scrollbar-width:thin;min-height:44px;height:44px;max-height:90px;border:1px solid #ddc8cf;background:#fff;border-radius:12px;padding:9px 10px;color:#3d2a30;font-size:16px!important;line-height:22px}
 .yuki-form button[type=submit]{background:#a4465d!important;color:white!important;border-color:#a4465d!important;min-height:42px;padding:8px 10px!important}

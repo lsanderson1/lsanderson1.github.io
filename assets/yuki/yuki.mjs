@@ -12,7 +12,7 @@ import {PageMotion,pageProjection,inViewport,prepareCall,containPageRover} from 
 import {CallPerches} from './runtime/call-perches.mjs?v=7';
 import {VisitorPersonality,replySequence,cueArtwork} from './runtime/visitor-personality.mjs?v=7';
 import {ChatPermission,ChatVerification,chatEnvironment,chatConsentKey} from './runtime/chat-access.mjs?v=1';
-import {ReadingMemory,readPageSection,guideReference} from './runtime/reading-context.mjs?v=1';
+import {ReadingMemory,readPageTitle,readingDetail,readPageSection,guideReference,followUpReference} from './runtime/reading-context.mjs?v=2';
 import {validReply,readSession,chatUnavailable} from './protocol.mjs?v=4';
 
 const root=document.querySelector('#yuki-companion');
@@ -43,7 +43,7 @@ async function start(){
  <section class="yuki-panel" id="yuki-panel" role="dialog" aria-modal="false" aria-labelledby="yuki-title" hidden>
  <div class="yuki-panel-inner"><header class="yuki-heading"><h2 id="yuki-title">ゆき <span class="yuki-beta">BETA</span><small>${tr('Your little guide','小さな案内役')}</small></h2><button class="yuki-menu" aria-expanded="false" aria-controls="yuki-more" aria-label="${tr('Guide, history and settings','案内・履歴・設定')}">⋯</button><button class="yuki-close" aria-label="${tr('Close chat','チャットを閉じる')}">×</button></header>
  <div class="yuki-speech" role="log" aria-live="polite" aria-atomic="true" aria-label="${tr('Yuki says','ゆきの返事')}"></div><p class="yuki-status" role="status"></p>
- <p class="yuki-reading"><span></span><button class="yuki-explain" type="button" hidden>${tr('Explain what you showed me','案内したところを説明して')}</button></p>
+ <p class="yuki-reading"><span class="yuki-page"></span><span class="yuki-view"></span><button class="yuki-explain" type="button" hidden>${tr('Explain what you showed me','案内したところを説明して')}</button></p>
  <form class="yuki-form"><textarea maxlength="1000" rows="1" aria-label="${tr('Message Yuki','ゆきへのメッセージ')}" placeholder="${tr('Talk to Yuki…','ゆきに話しかける…')}" ${online?'':'disabled'}></textarea><button type="submit" ${online?'':'disabled'}>${tr('Send','送信')}</button>
  <details class="yuki-setup"><summary></summary><div class="yuki-privacy"><label><input type="checkbox" class="yuki-consent" ${online?'':'disabled'}>${tr('Allow my messages, recent chat, current page/section and recent guide target to be sent to Cloudflare Workers AI, and load Cloudflare’s bot check when I open chat. Remember this permission on this browser across pages and visits; I can turn it off here anytime. Please don’t share sensitive information.','メッセージ・直近の会話・現在のページや項目・直近の案内先をCloudflare Workers AIに送信し、チャットを開くとCloudflareのボット認証を読み込むことに同意します。このブラウザーではページ移動後や次回の訪問にも同意を記憶します。ここでいつでも解除できます。個人情報・機密情報は入力しないでください。')}</label><span>${tr('Free AI has usage limits. Recent messages and guide context stay in this tab for 30 minutes. Clear them in the menu.','無料AIには利用上限があります。会話と案内先はこのタブ内で30分間保持され、メニューから消去できます。')}</span><p class="yuki-consent-note" hidden></p></div></details>
  <div class="yuki-check"><p class="yuki-verification-status" role="status"></p><div class="yuki-verification"></div><button class="yuki-retry" type="button" hidden>${tr('Retry verification','認証をやり直す')}</button><button class="yuki-cancel" type="button" hidden>${tr('Cancel sending','送信をキャンセル')}</button></div></form>
@@ -53,10 +53,14 @@ async function start(){
  <details class="yuki-history"><summary>${tr('Conversation history','会話の履歴')}</summary><div class="yuki-log" aria-label="${tr('Conversation','会話')}"></div></details>
  <div class="yuki-settings"><button data-action="roam"></button><button data-action="pause"></button><button data-action="hide"></button><button data-action="clear">${tr('Clear chat','会話を消去')}</button></div></div></div></section>`;
  const status=text=>{$('.yuki-status').textContent=text;};
- function readingContext(){return {section:readPageSection(document,innerHeight,headerBottom)?.id??'',lastGuide:readingMemory.get()};}
+ function readingContext(){measureHeader();return {section:readPageSection(document,innerHeight,headerBottom)?.id??'',lastGuide:readingMemory.get()};}
  function updateReading(){
+  measureHeader();
+  const title=readPageTitle(document,{path:location.pathname,base,title:root.dataset.pageTitle,lang:ja?'ja':'en'});
   const section=readPageSection(document,innerHeight,headerBottom);
-  $('.yuki-reading span').textContent=section?tr('On this page: ','このページの項目：')+section.title:'';
+  $('.yuki-page').textContent=tr('On this page: ','現在のページ：')+title;
+  const detail=readingDetail(section,title,ja?'ja':'en');
+  $('.yuki-view').textContent=detail?tr('In view: ','表示中：')+detail:'';
   $('.yuki-explain').hidden=!readingMemory.get();$('.yuki-explain').disabled=busy||!online;
  }
  $('.yuki-explain').onclick=()=>{if(!online||busy||!readingMemory.get())return;if($('textarea').value.trim()){status(tr('Send or clear your draft first; I’ll keep it here for you.','入力中のメッセージを先に送るか消してね。今の文章はそのまま残しておくよ。'));$('textarea').focus();return;}$('textarea').value=tr('Please explain what you just showed me in more detail. How does it relate to this project?','さっき案内してくれたところを、もう少し詳しく説明して。この作品とどう関係しているの？');$('.yuki-form').requestSubmit();};
@@ -181,7 +185,7 @@ async function start(){
   if(!ready)return;status(tr('I’ll show you…','ご案内します…'));
   try{await prepareTravel();await wake();paused=false;hidden=false;sync();
    calling=false;reactionVersion++;pendingCue=null;guide.destinations.set(d.id,d);panel(false,{restoreFocus:false});document.activeElement?.blur();guide.request(d.id);
-  }catch{d.el.scrollIntoView({block:'center'});readingMemory.set(guideReference(d.el,location.pathname,d.url));status(tr('The item is here; my flight could not load.','こちらの項目です。飛行アニメーションを読み込めませんでした。'));}
+  }catch{d.el.scrollIntoView({block:'center'});readingMemory.set(guideReference(d.el,location.pathname,d.url));if(open)updateReading();status(tr('The item is here; my flight could not load.','こちらの項目です。飛行アニメーションを読み込めませんでした。'));}
  }
  function revealTarget(id){
   const d=guide.destinations.get(id);if(!d?.el?.isConnected)return;
@@ -269,7 +273,9 @@ async function start(){
    status(tr('Yuki is thinking…','ゆきが考えています…'));react({text:'…',emotion:'thoughtful',gesture:'none'},{thinking:true}).catch(()=>{});
    const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history,lang:ja?'ja':'en',page:location.pathname,context,token}),signal:requestController.signal,credentials:'omit'});
    if(!response.ok){const detail=await response.json().catch(()=>({}));throw Object.assign(Error(response.status===429?'limit':response.status===403?'verification':'request'),{reference:detail.reference});}
-   const cue=validReply(await response.json());if(requestController.signal.aborted||!permission.allowed)return;addMessage('assistant',cue.text,true,cue.sources);
+   const cue=validReply(await response.json());if(requestController.signal.aborted||!permission.allowed)return;
+   const followUp=followUpReference(cue,context.lastGuide,knowledge);if(followUp)readingMemory.set(followUp);else readingMemory.clear();
+   addMessage('assistant',cue.text,true,cue.sources);
    if(paths[cue.destination]&&!cue.sources.length){const button=document.createElement('button');button.textContent=tr('Show me: ','案内して：')+names[cue.destination];button.onclick=async()=>{button.disabled=true;try{await guideDestination(cue.destination);}finally{button.disabled=false;}};$('.yuki-speech').lastElementChild.append(button);}
    status(tr('AI can make mistakes. Check the linked portfolio pages.','AIは誤ることがあります。リンク先の作品ページもご確認ください。'));react(cue).catch(()=>{});
   }catch(error){if(!requestController.signal.aborted)status(error.message==='cancelled'?tr('Sending cancelled.','送信をキャンセルしました。'):chatUnavailable(error.message,ja?'ja':'en',error.reference));reactionVersion++;pendingCue=null;}
@@ -327,20 +333,25 @@ async function start(){
   companion=new Companion(timing,measure(),{motion:contactPhases,idle:{},lifecycle:{clips,startAsleep:!saved.awake,inactivityMs:Infinity,crashChance:0},greeting:clips.greeting.playback,emotions:{...emotionPlayback(clips),pointLeft:clips.pointLeft.playback,pointRight:clips.pointRight.playback},airClips});
   motion=new PageMotion(companion);
   companion.rover.setArrivalStyle('land');try{renderer=new IdleRenderer($('.yuki-pet canvas'));}catch{}
-  guide=new SiteGuide(companion,{destinations:elements,reveal:revealTarget,direction:id=>{const d=guide.destinations.get(id);return pointerTarget(targetRect(d.el),shownFoot).kind;},arrive:id=>{const d=guide.destinations.get(id);readingMemory.set(guideReference(d.el,location.pathname,d.url));highlightUntil=performance.now()+10000;motion.defer();status(tr(`Ta-da! Here’s ${d.name}.`,`じゃーん！${d.name}だよ。`));}});
+  guide=new SiteGuide(companion,{destinations:elements,reveal:revealTarget,direction:id=>{const d=guide.destinations.get(id);return pointerTarget(targetRect(d.el),shownFoot).kind;},arrive:id=>{const d=guide.destinations.get(id);readingMemory.set(guideReference(d.el,location.pathname,d.url));if(open)updateReading();highlightUntil=performance.now()+10000;motion.defer();status(tr(`Ta-da! Here’s ${d.name}.`,`じゃーん！${d.name}だよ。`));}});
   obstacles=obstacleReader.read(layout.width,layout.height);
   const initial=visibleSpot(restingExtent(),obstacles,layout,layout.home);
   companion.rover.position={...initial,y:initial.y+scrollY};upsert({id:'home',...initial,y:initial.y+scrollY});
   ready=true;sync();last=performance.now();requestAnimationFrame(tick);
   if(saved.awake||open)await wake();prepareTravel().then(()=>companion.attention.setTracking(!media.matches)).catch(()=>status(tr('Some flight drawings could not load. Please reload to retry.','飛行画像を読み込めませんでした。再読み込みしてください。')));
-  fetch(new URL('knowledge.json',assets)).then(r=>r.ok?r.json():Promise.reject()).then(k=>{knowledge=Array.isArray(k.pages)?k.pages:[];destinationList();}).catch(()=>{});
+  fetch(new URL('knowledge.json',assets)).then(r=>r.ok?r.json():Promise.reject()).then(k=>{knowledge=Array.isArray(k.pages)?k.pages:[];destinationList();if(open)updateReading();}).catch(()=>{});
   let requested;try{requested=pendingGuide(sessionStorage.getItem('yuki-guide-v1'),location.pathname);sessionStorage.removeItem('yuki-guide-v1');}catch{}
   if(requested){const el=findPageTarget(document,requested,location.pathname);if(el)await showElement({id:'requested-page',name:(el.getAttribute('alt')||el.textContent).trim(),el,url:requested});}
  }catch{status(tr('Yuki’s artwork could not load. The website and links still work.','ゆきの画像を読み込めませんでした。サイトとリンクは利用できます。'));}
  for(const name of ['pointerdown','keydown','wheel','touchstart'])addEventListener(name,()=>companion?.lifecycle.activity(),{passive:true,capture:true});
  addEventListener('pointermove',e=>{if(ready&&onScreen&&!open&&e.pointerType!=='touch'&&Math.abs(e.clientY-shownFoot.y)<bodyHeight*2)companion.pointer(e.clientX);},{passive:true});
- media.addEventListener('change',sync);addEventListener('resize',()=>{measure();lastMeasure=-Infinity;});
- let readingFrame=0;addEventListener('scroll',()=>{if(open&&!readingFrame)readingFrame=requestAnimationFrame(()=>{readingFrame=0;updateReading();});},{passive:true});
+ media.addEventListener('change',sync);addEventListener('resize',()=>{measure();lastMeasure=-Infinity;if(open)updateReading();});
+ let readingFrame=0;
+ function scheduleReading(){if(open&&!readingFrame)readingFrame=requestAnimationFrame(()=>{readingFrame=0;updateReading();});}
+ addEventListener('scroll',scheduleReading,{passive:true,capture:true});
+ const main=document.querySelector('main');
+ if(main){new ResizeObserver(scheduleReading).observe(main);main.addEventListener('transitionend',scheduleReading);new MutationObserver(scheduleReading).observe(main,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['hidden','aria-hidden']});}
+ const featureTrack=document.querySelector('[data-feature-track]');if(featureTrack)new MutationObserver(scheduleReading).observe(featureTrack,{attributes:true,attributeFilter:['style']});
  addEventListener('scroll',()=>{if(!ready)return;lastMeasure=-Infinity;if(performance.now()<guideScrollUntil)return;
   // A visitor changing the view takes priority over a stale guided route.
   if(guideTarget){guide.reset();guideTarget=null;highlightUntil=0;}
