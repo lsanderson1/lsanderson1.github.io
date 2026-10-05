@@ -1,40 +1,46 @@
 import {clampFoot} from './clear-space.mjs';
 
-// Screen-space motion keeps a fast wheel/touch scroll from teleporting a
-// document-space route offscreen. Scroll starts takeoff immediately, even while
-// the speech bubble is open; the last wingbeat flows into landing after settling.
+// Feet and routes live in document coordinates. Scrolling changes only their
+// projection, never requests flight. A visitor can explicitly call her back.
 export class PageMotion {
- constructor(companion){this.c=companion;this.serial=0;this.clock=0;this.lastScroll=-Infinity;this.nextRoam=14000;this.prepared=false;this.following=false;}
- scroll(){this.lastScroll=this.clock;this.c.lifecycle?.activity();}
- get scrolling(){return this.clock-this.lastScroll<800;}
- travel(target,{hover=false}={}){
+ constructor(companion,{random=Math.random}={}){this.c=companion;this.random=random;this.serial=0;this.clock=0;this.lastScroll=-Infinity;this.prepared=false;this.defer();}
+ defer(){this.nextRoam=this.clock+75000+this.random()*45000;}
+ scroll(){this.lastScroll=this.clock;this.defer();}
+ get scrolling(){return this.clock-this.lastScroll<4000;}
+ travel(target,{arrival='land'}={}){
   const r=this.c.rover,id='page-move-'+(++this.serial%2);
   r.points=r.points.filter(p=>!p.id.startsWith('page-move-')||p.id===r.at||p.id===r.wanted);
   const i=r.points.findIndex(p=>p.id===id),point={id,...target,autonomous:false};
   if(i<0)r.points.push(point);else r.points[i]=point;
-  r.setArrivalStyle(hover?'hover':'land');r.request(id);
+  r.setArrivalStyle(arrival);r.request(id);this.defer();
  }
- update(dt,{hidden,paused,guiding,open,roam,target,currentClear=true}){
+ update(dt,{hidden,paused,guiding,open,roam,target,visible=true,reacting=false}){
   this.clock+=dt;const r=this.c.rover;
-  if(!this.prepared||hidden||paused||guiding||r.lessMotion)return;
-  if(this.scrolling){
-   if(!this.following){this.following=true;this.c.lifecycle?.wake();this.travel(target,{hover:true});}
-   r.setArrivalStyle('hover');
-  }else if(this.following){r.setArrivalStyle('land');if(r.graph.state==='rest'){this.following=false;this.nextRoam=this.clock+14000;}}
-  if(this.following)return;
-  if(r.graph.state!=='rest'||this.c.lifecycle?.locked||this.c.emotion.active||this.c.emotion.requested)return;
-  if(!currentClear&&this.clock>=this.nextAvoid){this.travel(target);this.nextAvoid=this.clock+3000;}
-  else if(roam&&!open&&this.clock>=this.nextRoam){this.travel(target);this.nextRoam=this.clock+18000+Math.random()*12000;}
+  if(!this.prepared||hidden||paused||guiding||open||!visible||!roam||reacting||this.scrolling||r.lessMotion)return;
+  if(r.graph.state!=='rest'||r.wanted!==r.at||this.c.lifecycle?.locked||this.c.greeting.active||this.c.greeting.requested||this.c.emotion.active||this.c.emotion.requested)return;
+  if(this.clock>=this.nextRoam){
+   const destination=typeof target==='function'?target():target;
+   if(destination&&Math.hypot(r.foot.x-destination.x,r.foot.y-destination.y)>80)this.travel(destination,{arrival:'auto'});
+   else this.defer();
+  }
  }
- nextAvoid=0;
 }
 
-// Translate the *whole* model/route, never individual dimensions. This also
-// protects wing tips during resizing and mobile keyboard changes.
-export function containRover(rover,extent,viewport){
- const before=rover.foot,after=clampFoot(before,extent,viewport),dx=after.x-before.x,dy=after.y-before.y;
- if(!dx&&!dy)return;
+export function pageProjection(p,scrollY){return {...p,y:p.y-scrollY,foot:{x:p.foot.x,y:p.foot.y-scrollY}};}
+export function inViewport(box,{width,height}){return box.bottom>0&&box.top<height&&box.right>0&&box.left<width;}
+export function translateRover(rover,dx,dy){
  rover.position.x+=dx;rover.position.y+=dy;
- if(rover.route){for(const p of [rover.route.start,rover.route.end]){p.x+=dx;p.y+=dy;}}
+ if(rover.route)for(const p of [rover.route.start,rover.route.end]){p.x+=dx;p.y+=dy;}
  for(const p of rover.points)if(p.id===rover.at||p.id===rover.wanted){p.x+=dx;p.y+=dy;}
+}
+// A distant, fully offscreen dragon enters from just beyond the nearest edge.
+// Never relocate a drawing that the visitor can currently see.
+export function prepareCall(rover,extent,viewport,scrollY){
+ const f=rover.foot,y=f.y-scrollY;
+ if(y+extent.bottom<0)translateRover(rover,0,scrollY-extent.bottom-24-f.y);
+ else if(y+extent.top>viewport.height)translateRover(rover,0,scrollY+viewport.height-extent.top+24-f.y);
+}
+export function containPageRover(rover,extent,viewport){
+ const f=rover.foot,x=clampFoot(f,extent,viewport).x;
+ translateRover(rover,x-f.x,0);
 }

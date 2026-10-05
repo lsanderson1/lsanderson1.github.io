@@ -218,7 +218,7 @@ English</a>
   </div>
   <header class="fp-project-reader-head fp-journey-reader-head">
     <p class="fp-kicker">Project 1 · Days 1-10 · Complete</p>
-    <h1>Interactable Museum Room</h1>
+    <h1 id="yuki-section-0" data-yuki-section="s0">Interactable Museum Room</h1>
     <p>My first Unreal Engine portfolio project: a reusable museum interaction system with object-specific prompts, inspection UI, centralized input, and safe cleanup.</p>
     <div class="fp-tags">
       <span>Unreal Engine 5.8</span><span>Blueprints</span><span>UMG</span><span>Blueprint Interfaces</span><span>Interaction Systems</span>
@@ -227,7 +227,7 @@ English</a>
       <section class="fp-build-card" aria-labelledby="playable-build-title">
         <div>
           <p class="fp-build-label">Playable Windows build</p>
-          <h2 id="playable-build-title">Experience this project firsthand</h2>
+          <h2 id="playable-build-title" data-yuki-section="s1">Experience this project firsthand</h2>
           <p>Download the standalone portfolio build. Unreal Engine is not required.</p>
           <ul class="fp-build-meta" aria-label="Build details">
             <li>Windows 10/11 · 64-bit</li>
@@ -240,17 +240,17 @@ English</a>
         </a>
       </section>
     
-    <img class="fp-project-cover" src="/img/unreal-journey/project-1-museum-room.png" alt="Overhead Unreal Editor view of the completed interactable museum room">
+    <img class="fp-project-cover" src="/img/unreal-journey/project-1-museum-room.png" alt="Overhead Unreal Editor view of the completed interactable museum room" id="yuki-image-0" data-yuki-section="i0">
   </header>
   <div class="fp-project-reader-body fp-journey-reader-body">
     
       <section class="fp-build-guide" aria-labelledby="play-this-project">
         <p class="fp-kicker">Standalone demonstration</p>
-        <h2 id="play-this-project">Play this project</h2>
+        <h2 id="play-this-project" data-yuki-section="s2">Play this project</h2>
         <p>Download the ZIP, extract the complete folder, and run <code>Project01.exe</code>. Keep the executable and its accompanying folders together.</p>
         <div class="fp-build-guide-grid">
           <div>
-            <h3>Start the build</h3>
+            <h3 id="yuki-section-3" data-yuki-section="s3">Start the build</h3>
             <ol>
               <li>Download and extract the ZIP file.</li>
               <li>Open the extracted project folder.</li>
@@ -258,7 +258,7 @@ English</a>
             </ol>
           </div>
           <div>
-            <h3>Controls</h3>
+            <h3 id="yuki-section-4" data-yuki-section="s4">Controls</h3>
             <ul>
               
                 <li>Move: W, A, S, D</li>
@@ -275,18 +275,18 @@ English</a>
         <p class="fp-build-notice"><strong>Windows notice:</strong> Microsoft Defender SmartScreen may appear because this independent portfolio executable is not digitally signed. Only run a build downloaded from this official GitHub release.</p>
       </section>
     
-    <h2 id="final-walkthrough">Final Walkthrough</h2>
+    <h2 id="final-walkthrough" data-yuki-section="s5">Final Walkthrough</h2>
 
 <video class="w-100 rounded border mb-4" controls="" preload="metadata" poster="/img/unreal-journey/project-1-museum-room.png">
   <source src="/assets/video/unreal-journey/project-1-interactable-museum.mp4" type="video/mp4" />
   Your browser does not support embedded video.
 </video>
 
-<h2 id="project-goal">Project Goal</h2>
+<h2 id="project-goal" data-yuki-section="s6">Project Goal</h2>
 
 <p>The goal was to move from a blank Unreal project to a small museum room where every display object could share one interaction system while presenting its own name, description, and prompt. The final loop lets the player approach an artifact, see a contextual prompt, press E to inspect it, and safely clear the interface when leaving.</p>
 
-<h2 id="what-i-built">What I Built</h2>
+<h2 id="what-i-built" data-yuki-section="s7">What I Built</h2>
 
 <ul>
   <li><code class="language-plaintext highlighter-rouge">BP_DisplayObject_Base</code>, a reusable Blueprint for museum artifacts.</li>
@@ -298,7 +298,7 @@ English</a>
   <li>Reference validation, duplicate-widget prevention, and safe UI cleanup.</li>
 </ul>
 
-<h2 id="development-journey">Development Journey</h2>
+<h2 id="development-journey" data-yuki-section="s8">Development Journey</h2>
 
 <table>
   <thead>
@@ -331,13 +331,13 @@ English</a>
   </tbody>
 </table>
 
-<h2 id="key-lessons">Key Lessons</h2>
+<h2 id="key-lessons" data-yuki-section="s9">Key Lessons</h2>
 
 <p>This project established the foundation of my Unreal workflow. I learned how Actor Blueprints, PlayerControllers, Blueprint Interfaces, and Widget Blueprints divide responsibility. The largest architectural improvement was moving input out of each artifact and into one controller, allowing display objects to focus on their own data and interaction behavior.</p>
 
 <p>I also learned why object references need deliberate cleanup. A prompt or inspection panel is not only something visible on screen; it is a live widget reference that must be validated, removed, and cleared at the correct time.</p>
 
-<h2 id="result">Result</h2>
+<h2 id="result" data-yuki-section="s10">Result</h2>
 
 <p>The completed room supports multiple display objects using the same Blueprint logic. Each object can provide unique player-facing information without duplicating the interaction system, making the result suitable for reuse in later pickups, puzzle objects, dialogue targets, and inspectable items.</p>
 
@@ -357,9 +357,9 @@ English</a>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
   <script src="/assets/js/portfolio.js"></script>
   
-<link rel="stylesheet" href="/assets/yuki/yuki.css?v=5">
-<div id="yuki-companion" data-assets="/assets/yuki/" data-base="" data-endpoint="https://yuki-portfolio-chat.lsanderson1-github-io.workers.dev/chat" data-site-key="0x4AAAAAAFOFIN7xPRQPUV4Q"></div>
-<script type="module" src="/assets/yuki/yuki.mjs?v=5"></script>
+<link rel="stylesheet" href="/assets/yuki/yuki.css?v=9">
+<div id="yuki-companion" data-assets="/assets/yuki/" data-base="" data-site-origin="https://lsanderson1.github.io" data-endpoint="https://yuki-portfolio-chat.lsanderson1-github-io.workers.dev/chat" data-site-key="0x4AAAAAAFOFIN7xPRQPUV4Q"></div>
+<script type="module" src="/assets/yuki/yuki.mjs?v=9"></script>
 
 
   </body>
