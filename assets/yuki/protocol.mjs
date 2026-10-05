@@ -1,3 +1,4 @@
+import {cleanVariety,cleanStoryTopics} from './runtime/reply-variety.mjs';
 export const emotions=['neutral','confused','delighted','thoughtful','surprised','shy','proud','reassuring','amused'];
 export const destinations=['none','projects','essays','unreal','resume'];
 export function chatUnavailable(reason,lang='en',reference=''){
@@ -11,7 +12,7 @@ export function chatUnavailable(reason,lang='en',reference=''){
 }
 export function validReply(value){
  if(!value||typeof value.text!=='string'||!value.text.trim()||value.text.length>1000)throw Error('Invalid reply');
- return {text:value.text.trim(),emotion:emotions.includes(value.emotion)?value.emotion:'neutral',gesture:['none','wave','talkOpen','talkExplain'].includes(value.gesture)?value.gesture:'none',destination:destinations.includes(value.destination)?value.destination:'none',sources:Array.isArray(value.sources)?value.sources.filter(s=>s&&typeof s.title==='string'&&typeof s.url==='string').slice(0,3):[]};
+ return {text:value.text.trim(),emotion:emotions.includes(value.emotion)?value.emotion:'neutral',gesture:['none','wave','talkOpen','talkExplain'].includes(value.gesture)?value.gesture:'none',destination:destinations.includes(value.destination)?value.destination:'none',sources:Array.isArray(value.sources)?value.sources.filter(s=>s&&typeof s.title==='string'&&typeof s.url==='string').slice(0,3):[],storyTopics:cleanStoryTopics(value.storyTopics)};
 }
 export function safeSitePath(value,base=''){
  if(typeof value!=='string'||!value.startsWith('/')||value.startsWith('//')||/[\\\u0000-\u0020]/.test(value)||value.includes('%'))return null;
@@ -21,6 +22,6 @@ export function safeSitePath(value,base=''){
 }
 export function readSession(storage,now=Date.now()){
  try{const s=JSON.parse(storage.getItem('yuki-session-v1'));if(!s||!Number.isFinite(s.savedAt)||now-s.savedAt>1800000||s.savedAt>now)return {};
-  return {awake:s.awake===true,hidden:s.hidden===true,paused:s.paused===true,roam:s.roam===true,mobilityVersion:s.mobilityVersion===2?2:1,x:Number.isFinite(s.x)?Math.max(.1,Math.min(.9,s.x)):.2,y:Number.isFinite(s.y)?Math.max(.25,Math.min(.9,s.y)):.8,messages:Array.isArray(s.messages)?s.messages.filter(m=>['user','assistant'].includes(m.role)&&typeof m.text==='string'&&m.text.length<=1000).slice(-12):[]};
+  return {awake:s.awake===true,hidden:s.hidden===true,paused:s.paused===true,roam:s.roam===true,mobilityVersion:s.mobilityVersion===2?2:1,x:Number.isFinite(s.x)?Math.max(.1,Math.min(.9,s.x)):.2,y:Number.isFinite(s.y)?Math.max(.25,Math.min(.9,s.y)):.8,variety:cleanVariety(s.variety),messages:Array.isArray(s.messages)?s.messages.filter(m=>['user','assistant'].includes(m.role)&&typeof m.text==='string'&&m.text.length<=1000).slice(-12):[]};
  }catch{return {};}
 }

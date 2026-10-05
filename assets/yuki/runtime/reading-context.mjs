@@ -3,9 +3,10 @@ import {safeSitePath} from '../protocol.mjs';
 export const readingMemoryKey='yuki-reading-v1';
 const cleanTitle=value=>typeof value==='string'?value.replace(/\s+/g,' ').trim():'';
 const pagePath=value=>value.split(/[?#]/)[0].replace(/\/index\.html$/,'/').replace(/\/$/,'')||'/';
+const homePage=(path,base,lang)=>pagePath(path)===pagePath(base+(lang==='ja'?'/ja/':'/'));
 export function pageTitle({path='/',base='',title='',heading='',navigation=[],lang='en'}={}){
- const current=pagePath(path),home=pagePath(base+(lang==='ja'?'/ja/':'/'));
- if(current===home)return lang==='ja'?'ホーム':'Landing page';
+ const current=pagePath(path);
+ if(homePage(path,base,lang))return lang==='ja'?'ホーム':'Landing page';
  // Match only the actual index URL: an active parent nav item must never
  // replace an individual project's title. New nav/pages need no manual list.
  const nav=navigation.find(item=>pagePath(item.path)===current);
@@ -22,6 +23,19 @@ export function readPageTitle(doc,{path,base='',title='',lang='en'}={}){
 export function readingDetail(section,title,lang='en'){
  if(!section||section.level===1||cleanTitle(section.title).toLocaleLowerCase()===cleanTitle(title).toLocaleLowerCase())return '';
  return (section.kind==='image'?(lang==='ja'?'画像：':'Image: '):'')+cleanTitle(section.title);
+}
+export function readPageDisplaySection(doc,{path='/',base='',lang='en',height,header=0}){
+ if(!homePage(path,base,lang))return readPageSection(doc,height,header);
+ // The homepage label describes the broad area, not one of the cards inside
+ // it. Keep the more precise card/image context separately for AI questions.
+ const line=header+Math.max(0,height-header)*.45;
+ for(const area of doc.querySelectorAll('main > section.fp-section')){
+  if(!area.getClientRects().length||area.closest('[hidden], [aria-hidden="true"]'))continue;
+  const bounds=area.getBoundingClientRect();if(bounds.top>line||bounds.bottom<=line)continue;
+  const heading=area.querySelector(':scope > .fp-section-head h2, :scope > h2');
+  if(heading)return {id:heading.dataset.yukiSection??'',title:cleanTitle(heading.textContent),kind:'section',level:2};
+ }
+ return null;
 }
 export const sectionKey=value=>typeof value==='string'&&/^[si]\d{1,4}$/.test(value)?value:'';
 export function readingReference(value){
