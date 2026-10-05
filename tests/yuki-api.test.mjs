@@ -31,7 +31,19 @@ test('JSON-mode envelopes and empty thinking prefix are accepted, reasoning is n
 test('visitor or environment cannot switch model/provider or supply a credential',async()=>{const f=fixture();Object.assign(f.env,{AI_MODEL:'paid-model',OPENAI_MODEL:'paid-model',OPENAI_API_KEY:'unused'});const r=await f.handler(f.request({...input,model:'paid-model',gateway:{id:'paid'},endpoint:'https://evil.invalid'}),f.env);assert.equal(r.status,200);assert.equal(f.aiCalls[0].name,CLOUDFLARE_MODEL);assert.deepEqual(f.aiCalls[0].options,[]);assert(!JSON.stringify(f.aiCalls).includes('paid-model'));});
 test('Japanese requests retain bounded history, personality and localized knowledge',()=>{const v=validateInput({...input,lang:'ja',history:[{role:'user',content:'こんにちは'},{role:'assistant',content:'こんにちは！'}]});const body=modelRequest(v,selectKnowledge(knowledge,v));assert.match(body.messages[0].content,/natural Japanese/);assert.match(body.messages[0].content,/fictional baby-dragon/);assert.match(body.messages[0].content,/\/ja\/projects/);assert.equal(body.messages.length,4);assert.deepEqual(body.messages.slice(1,3),v.history);});
 test('offline and exhausted-limit copy is honest and keeps guide buttons usable in both languages',()=>{for(const lang of ['en','ja'])for(const reason of ['not-connected','limit','request'])assert.match(chatUnavailable(reason,lang),lang==='ja'?/ボタン/:/buttons/);assert.match(chatUnavailable('not-connected'),/not connected/);assert.match(chatUnavailable('limit'),/limit/);const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');assert.match(ui,/Cloudflare Workers AI/);assert(!ui.includes('to OpenAI'));assert.match(ui,/chatUnavailable\(error.message/);});
-test('deployment stays disabled until owner confirms Free; no automatic billing or gateway configuration',()=>{const config=readFileSync(new URL('../services/yuki-api/wrangler.toml',import.meta.url),'utf8');assert.match(config,/CHAT_ENABLED = "false"/);assert.match(config,/FREE_PLAN_CONFIRMED = "false"/);assert.match(config,/\[ai\]\s+binding = "AI"/);assert(!config.includes('OPENAI_API_KEY'));assert(!config.includes('[ai.gateway]'));});
+test('deployment activation is explicit, requires Free acknowledgement, and retains capped direct AI',()=>{
+ const config=readFileSync(new URL('../services/yuki-api/wrangler.toml',import.meta.url),'utf8');
+ const enabled=config.match(/^CHAT_ENABLED = "(true|false)"$/m)?.[1];
+ const confirmed=config.match(/^FREE_PLAN_CONFIRMED = "(true|false)"$/m)?.[1];
+ assert(enabled&&confirmed,'Both activation flags must be explicitly declared');
+ if(enabled==='true')assert.equal(confirmed,'true','Activation requires a verified Free-plan acknowledgement');
+ assert.match(config,/\[ai\]\s+binding = "AI"/);
+ for(const [key,ceiling] of [['DAILY_REQUEST_LIMIT',100],['VISITOR_DAILY_LIMIT',20],['VISITOR_MINUTE_LIMIT',4]]){
+  const value=Number(config.match(new RegExp(`^${key} = "(\\d+)"$`,'m'))?.[1]);
+  assert(value>0&&value<=ceiling,`${key} must retain the approved ceiling`);
+ }
+ assert(!config.includes('OPENAI_API_KEY'));assert(!config.includes('[ai.gateway]'));
+});
 test('safe links and sessions reject dangerous paths and stale/bad state',()=>{for(const p of ['//evil.invalid','javascript:alert(1)','/\\evil.invalid','/%2f/evil','/x y'])assert.equal(safeSitePath(p),null);assert.equal(safeSitePath('/base/../outside','/base'),null);assert.equal(safeSitePath('/projects/#a'),'/projects/#a');for(const savedAt of [undefined,-2000000,2001])assert.deepEqual(readSession({getItem:()=>JSON.stringify({savedAt})},2000),{});const s=readSession({getItem:()=>JSON.stringify({savedAt:1000,messages:[{role:'system',text:'bad'},{role:'user',text:'hello'}]})},2000);assert.equal(s.messages.length,1);assert.throws(()=>validReply({text:''}));});
 class Storage {
  constructor(){this.m=new Map();this.queue=Promise.resolve();}

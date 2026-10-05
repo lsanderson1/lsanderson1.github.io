@@ -1,6 +1,6 @@
 # Connecting Yuki's free AI
 
-Yuki is integrated locally into the existing Jekyll portfolio. Her approved artwork and animations remain unchanged. This setup uses Cloudflare Workers AI, not the OpenAI API. No OpenAI account/key or ChatGPT subscription is required for visitors. AI remains **disabled pending website publication and live checks**.
+Yuki is published on the existing Jekyll portfolio. Her approved artwork and animations remain unchanged. This setup uses Cloudflare Workers AI, not the OpenAI API. No OpenAI account/key or ChatGPT subscription is required for visitors. The backend is **enabled with owner approval**; live conversation verification is in progress.
 
 ## Setup status — October 5, 2026
 
@@ -9,8 +9,10 @@ Yuki is integrated locally into the existing Jekyll portfolio. Her approved artw
 - Created the Managed Turnstile widget **Yuki Portfolio Chat**, restricted to `lsanderson1.github.io`, with no challenge pre-clearance.
 - Stored `TURNSTILE_SECRET` and a cryptographically random `IP_HASH_SECRET` directly in Cloudflare through standard input, without placing their values in website files or chat. Deployment credentials use encrypted storage with the key in Windows Credential Manager.
 - Added only the public endpoint and Turnstile site key to `_data/yuki.json`.
-- Verified the deployed endpoint rejects missing/foreign origins (403) and returns **Chat not connected** (503) for disabled chat from the allowed origin. Both activation flags remain false.
-- All 45 local tests pass. Live English/Japanese inference has **not** been tested. The public knowledge index still returns 404 because these website changes have not been committed or pushed. Publish with owner approval, verify the index, then enable the backend and run the live checks below.
+- Published website commit `f90c6c4`; GitHub Actions run `37280121826` completed successfully. The public knowledge index responds successfully and contains 34 English/Japanese pages.
+- Set both activation flags to true after reconfirming Workers Free and obtaining owner approval. Activated Worker version: `3e8fddd4-41a3-403a-b619-4ffce7369a3b`.
+- Live endpoint checks pass: foreign origin rejected (403), permitted preflight accepted (204), malformed input rejected (400), invalid bot token rejected (403). The disabled-backend response was also verified before activation.
+- All 45 local tests pass. Real English/Japanese inference still needs the live checks below; mocked tests and successful deployment alone do not confirm model replies.
 
 ## Stay on the free plan
 
@@ -35,7 +37,7 @@ npx wrangler@4 login --use-keyring --scopes account:read user:read workers_scrip
 npx wrangler@4 deploy --config services/yuki-api/wrangler.toml
 ```
 
-The initial deployment is disabled (`CHAT_ENABLED` and `FREE_PLAN_CONFIRMED` are both false). Record its `https://yuki-portfolio-chat.<your-subdomain>.workers.dev` address. This is a public URL, not a secret. The `[ai]` section binds Workers AI directly; it needs no model API-key secret. See [Workers AI bindings](https://developers.cloudflare.com/workers-ai/get-started/workers-wrangler/).
+For a new account or fresh installation, set `CHAT_ENABLED` and `FREE_PLAN_CONFIRMED` to false before that first deployment. This repository now records the existing, owner-approved active deployment. Record its `https://yuki-portfolio-chat.<your-subdomain>.workers.dev` address. This is a public URL, not a secret. The `[ai]` section binds Workers AI directly; it needs no model API-key secret. See [Workers AI bindings](https://developers.cloudflare.com/workers-ai/get-started/workers-wrangler/).
 
 In Cloudflare Turnstile, create a **Managed** widget restricted to `lsanderson1.github.io`. The website requires consent before loading Turnstile. Its site key is public; its secret key belongs only in the Worker. Server-side verification checks both the exact hostname and `yuki-chat` action, as described in the [Turnstile validation guide](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/).
 
@@ -60,7 +62,7 @@ In `_data/yuki.json`, set **only public values**:
 
 Publish the website (when approved), and verify `/assets/yuki/knowledge.json` is publicly available. After confirming Workers Free, set `FREE_PLAN_CONFIRMED = "true"` and `CHAT_ENABLED = "true"` in `services/yuki-api/wrangler.toml` and deploy again. Keep `SITE_ORIGIN` equal to the exact HTTPS website origin, without a trailing slash. A custom domain later requires updating both this value and Turnstile's allowed hostname.
 
-Public connection values are now configured, but the backend remains disabled. The production widget is restricted to the live GitHub Pages hostname; localhost cannot complete production chat. Animation and guidance still work locally. Do not loosen origin/bot checks to make localhost bypass production protections. A real inference smoke test uses your free allocation, even when initiated from local development; it is not an offline model.
+Public connection values are configured and the backend is enabled. The production widget is restricted to the live GitHub Pages hostname; localhost cannot complete production chat. Animation and guidance still work locally. Do not loosen origin/bot checks to make localhost bypass production protections. A real inference smoke test uses your free allocation; it is not an offline model. Turnstile verification expires and is single-use: complete the check and send promptly, then re-verify when requested for another message.
 
 ## Initial safeguards
 

@@ -6,8 +6,9 @@ workers_dev = true
 
 [vars]
 SITE_ORIGIN = "https://lsanderson1.github.io"
-CHAT_ENABLED = "false"
-FREE_PLAN_CONFIRMED = "false"
+# Owner approved activation; Workers Free and published site index verified 2026-10-05.
+CHAT_ENABLED = "true"
+FREE_PLAN_CONFIRMED = "true"
 # Application-enforced request ceilings, not just spending-alert emails.
 DAILY_REQUEST_LIMIT = "100"
 VISITOR_DAILY_LIMIT = "20"
