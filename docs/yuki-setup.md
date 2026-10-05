@@ -10,9 +10,10 @@ Yuki is published on the existing Jekyll portfolio. Her approved artwork and ani
 - Stored `TURNSTILE_SECRET` and a cryptographically random `IP_HASH_SECRET` directly in Cloudflare through standard input, without placing their values in website files or chat. Deployment credentials use encrypted storage with the key in Windows Credential Manager.
 - Added only the public endpoint and Turnstile site key to `_data/yuki.json`.
 - Published website commit `f90c6c4`; GitHub Actions run `37280121826` completed successfully. The public knowledge index responds successfully and contains 34 English/Japanese pages.
-- Set both activation flags to true after reconfirming Workers Free and obtaining owner approval. Activated Worker version: `3e8fddd4-41a3-403a-b619-4ffce7369a3b`.
+- Set both activation flags to true after reconfirming Workers Free and obtaining owner approval. Current Worker version after the knowledge-loading fix: `7053969b-bfdf-4158-a8e7-790544511e05`.
 - Live endpoint checks pass: foreign origin rejected (403), permitted preflight accepted (204), malformed input rejected (400), invalid bot token rejected (403). The disabled-backend response was also verified before activation.
-- All 45 local tests pass. Real English/Japanese inference still needs the live checks below; mocked tests and successful deployment alone do not confirm model replies.
+- All 47 local tests pass, including redirect rejection and sanitized error-stage identifiers. Real model-binding tests returned an English introduction and a Japanese Blender CLI explanation with its correct Japanese source link. These are actual Workers AI calls, not mocked replies; they do not substitute for the complete browser/Turnstile test.
+- A real browser request passed verification and quota reservation but failed with `YUKI_KNOWLEDGE`. An authenticated remote preview reproduced the exact cause: Cloudflare Workers rejects `fetch` with `redirect: 'error'` before making a network request. Switched the knowledge fetch to `redirect: 'manual'` and retained rejection of every non-2xx response, including redirects. The same remote preview then read all 34 public pages successfully (HTTP 200). The fix is deployed; the next normal browser chat remains to be confirmed.
 
 ## Stay on the free plan
 
@@ -20,7 +21,7 @@ As checked on October 5, 2026, [Workers AI includes 10,000 Neurons per UTC day o
 
 **Keep the account on Workers Free. Do not enable Workers Paid, buy AI Gateway credits, or configure a paid fallback.** The application cannot inspect or guarantee your actual billing plan. `FREE_PLAN_CONFIRMED` is an owner acknowledgement, not an automatic billing check. If the account is later upgraded, this flag will not prevent Cloudflare billing under the new plan.
 
-The backend pins `@cf/qwen/qwen3-30b-a3b-fp8`, currently eligible for Workers Free, and calls it directly through the AI binding. It ignores visitor/environment model overrides and has no OpenAI route, Gateway configuration or automatic retry. [Cloudflare model reference](https://developers.cloudflare.com/workers-ai/models/qwen3-30b-a3b-fp8/). English/Japanese conversational quality and animation cue reliability still need live testing; they are not established by mocked tests.
+The backend pins `@cf/qwen/qwen3-30b-a3b-fp8`, currently eligible for Workers Free, and calls it directly through the AI binding. It ignores visitor/environment model overrides and has no OpenAI route, Gateway configuration or automatic retry. [Cloudflare model reference](https://developers.cloudflare.com/workers-ai/models/qwen3-30b-a3b-fp8/). Initial real English/Japanese binding checks passed, but broader conversational quality and browser animation cue reliability still need the live checks below; they are not established by mocked tests.
 
 ## What you need to do personally
 

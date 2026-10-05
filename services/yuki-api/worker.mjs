@@ -132,7 +132,9 @@ export function createHandler(network=fetch){
    stage='KNOWLEDGE';
    // No URL from the visitor/model is fetched. Refresh only our own public index.
    if(!cached||cached.origin!==allowed||now-cached.at>300000){
-    const result=await network(allowed+'/assets/yuki/knowledge.json',{signal:AbortSignal.timeout(7000),redirect:'error'});
+    // Workers rejects redirect:'error' before sending a request. Use manual
+    // and reject non-2xx below, so a redirect still cannot leave our site.
+    const result=await network(allowed+'/assets/yuki/knowledge.json',{signal:AbortSignal.timeout(7000),redirect:'manual'});
     if(!result.ok)throw failure(503,'Site information unavailable');
     cached={origin:allowed,at:now,data:await boundedJSON(result,512000)};
    }
