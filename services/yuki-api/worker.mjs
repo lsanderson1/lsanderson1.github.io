@@ -110,21 +110,26 @@ export function createHandler(network=fetch){
   if(request.method!=='POST')return response(405,{error:'POST required'});
   // This is an operator acknowledgement, not a Cloudflare billing-plan query.
   // Leave it false until the owner confirms Workers Free in their dashboard.
-  if(env.CHAT_ENABLED!=='true'||env.FREE_PLAN_CONFIRMED!=='true'||typeof env.AI?.run!=='function'||!env.TURNSTILE_SECRET||!env.IP_HASH_SECRET||env.IP_HASH_SECRET.length<32||!env.QUOTA)return response(503,{error:'Chat not connected'});
+  if(env.CHAT_ENABLED!=='true'||env.FREE_PLAN_CONFIRMED!=='true'||typeof env.AI?.run!=='function'||!env.TURNSTILE_SECRET||!env.IP_HASH_SECRET||env.IP_HASH_SECRET.length<32||!env.QUOTA)return response(503,{error:'Chat not connected',reference:'YUKI_CONFIG'});
   if(!request.headers.get('content-type')?.toLowerCase().startsWith('application/json'))return response(415,{error:'JSON required'});
+  let stage='INPUT';
   try{
    const input=validateInput(await boundedJSON(request));
+   stage='VERIFY';
    const verified=await network(VERIFY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({secret:env.TURNSTILE_SECRET,response:input.token}),signal:AbortSignal.timeout(7000)});
    if(!verified.ok)throw failure(503,'Verification unavailable');
    const proof=await boundedJSON(verified,16000);
    if(proof.success!==true||proof.hostname!==new URL(allowed).hostname||proof.action!=='yuki-chat')throw failure(403,'Verification failed');
+   stage='VISITOR';
    // CF-Connecting-IP is set by Cloudflare, not taken from the JSON body.
    const ip=request.headers.get('CF-Connecting-IP');if(!ip)throw failure(503,'Visitor verification unavailable');
    const now=Date.now(),day=new Date(now).toISOString().slice(0,10),hash=await ipHash(ip,env.IP_HASH_SECRET,day);
+   stage='QUOTA';
    const quota=env.QUOTA.get(env.QUOTA.idFromName(day));
    const reservation=await quota.fetch('https://quota.invalid/reserve',{method:'POST',body:JSON.stringify({hash,minute:Math.floor(now/60000)})});
    if(reservation.status===429){headers['Retry-After']='60';throw failure(429,'Chat limit reached');}
    if(reservation.status!==204)throw failure(503,'Chat limit unavailable');
+   stage='KNOWLEDGE';
    // No URL from the visitor/model is fetched. Refresh only our own public index.
    if(!cached||cached.origin!==allowed||now-cached.at>300000){
     const result=await network(allowed+'/assets/yuki/knowledge.json',{signal:AbortSignal.timeout(7000),redirect:'error'});
@@ -132,12 +137,16 @@ export function createHandler(network=fetch){
     cached={origin:allowed,at:now,data:await boundedJSON(result,512000)};
    }
    const knowledge=selectKnowledge(cached.data,input);
+   stage='MODEL';
    const result=await runModel(env.AI,modelRequest(input,knowledge));
+   stage='REPLY';
    return response(200,parseModel(result,knowledge));
   }catch(error){
    // Never expose provider responses, visitor content, stack traces or credentials.
    const code=Number.isInteger(error.status)?error.status:503;
-   return response(code,{error:code===429?'Chat limit reached':code===400?'Invalid request':code===413?'Request too large':code===403?'Verification failed':'Chat unavailable'});
+   // A fixed stage identifier makes live failures diagnosable without logging
+   // messages, tokens, IPs, provider responses, or secrets.
+   return response(code,{error:code===429?'Chat limit reached':code===400?'Invalid request':code===413?'Request too large':code===403?'Verification failed':'Chat unavailable',reference:'YUKI_'+stage});
   }
  };
 }
