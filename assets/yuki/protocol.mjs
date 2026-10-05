@@ -2,6 +2,7 @@ export const emotions=['neutral','confused','delighted','thoughtful','surprised'
 export const destinations=['none','projects','essays','unreal','resume'];
 export function chatUnavailable(reason,lang='en',reference=''){
  const ja=lang==='ja';
+ if(reason==='preview')return ja?'ここはローカルプレビューです。AIチャットは公開サイトで利用できます。ここでもアニメーションや作品案内は使えます。':'This is a local preview. AI chat is available on the published website; animations and project guidance still work here.';
  if(reason==='not-connected')return ja?'無料AIチャットはまだ接続されていません。下のボタンから作品をご案内できます。':'Free AI chat is not connected yet. I can still show you around using the buttons below.';
  if(reason==='limit')return ja?'無料チャットの利用上限に達しました。時間をおいてお試しください。下の案内ボタンは引き続き使えます。':'The free chat limit has been reached. Please try again later; the guide buttons below still work.';
  if(reason==='verification')return ja?'認証の有効期限が切れたか、認証できませんでした。下の認証をもう一度完了してから送信してください。案内ボタンは引き続き使えます。':'Verification expired or could not be confirmed. Please complete the check below again before sending. The guide buttons still work.';

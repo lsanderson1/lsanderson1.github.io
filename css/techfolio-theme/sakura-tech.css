@@ -283,6 +283,10 @@ h1, h2, h3 { line-height: 1.12; }
   pointer-events: none;
 }
 
+/* Falling petals pass in front of Yuki (40), beneath navigation (50).
+   Keep the branch itself in its original background layer. */
+.fp-sakura-foreground { z-index: 45; }
+
 .fp-sakura-canopy {
   position: absolute;
   top: var(--branch-top);

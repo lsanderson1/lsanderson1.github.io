@@ -8,6 +8,19 @@ const input={message:'Tell me about Blender',history:[],lang:'en',page:'/project
 const knowledge={owner:'Lloyd',bio:{en:'Developer',ja:'開発者'},skills:['Blender'],pages:[{id:'blender',lang:'en',url:'/projects/blender.html',title:'Blender',summary:'Tools',text:'A Blender command tool.'},{id:'blender',lang:'ja',url:'/ja/projects/blender.html',title:'Blender',text:'ツールを作成'}]};
 const reply={text:'A Blender tool.',emotion:'neutral',gesture:'talkExplain',destination:'projects',sourceIds:['blender','https://evil.invalid']};
 const output=v=>({choices:[{finish_reason:'stop',message:{role:'assistant',content:JSON.stringify(v)}}]});
+test('baby-dragon personality maps every emotion without weakening factual or cost safeguards',()=>{
+ const prompt=modelRequest(input,selectKnowledge(knowledge,input)).messages[0].content;
+ for(const kind of ['delighted','amused','shy','proud','thoughtful','confused','surprised','reassuring'])assert(prompt.includes(kind));
+ assert.match(prompt,/do not request wave/);assert.match(prompt,/Never invent credentials/);assert.match(prompt,/not misspelled baby talk/);
+ assert.match(prompt,/cute and gently quirky/);assert.match(prompt,/mixing softer greetings/);assert.match(prompt,/not a joke in every reply/);assert.match(prompt,/Answer the actual question first/);
+});
+test('chat omits permanent category shortcuts but keeps contextual destination guiding',()=>{
+ const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
+ assert(!ui.includes('data-guide'));assert(!ui.includes('class="yuki-guide"'));
+ assert.match(ui,/await guideDestination\(cue.destination\)/);assert.match(ui,/async function guideDestination\(id\)/);
+ assert.match(ui,/class="yuki-search"/);assert.match(ui,/if\(!paths\[id\]\)return/);
+ assert.match(ui,/filter\(p=>!categoryUrls.has/);assert(!ui.includes('const sections=[...elements.map'));
+});
 const json=(v,status=200)=>new Response(JSON.stringify(v),{status,headers:{'Content-Type':'application/json'}});
 function fixture({proof={},quota=204,model=output(reply),providerError=null,knowledgeStatus=200}={}){
  const calls=[],aiCalls=[];const handler=createHandler(async(url,options)=>{calls.push({url,options});if(url.includes('siteverify'))return json({success:true,hostname:'lsanderson1.github.io',action:'yuki-chat',...proof});if(url.endsWith('knowledge.json'))return json(knowledge,knowledgeStatus);throw Error('Unexpected network destination');});
