@@ -1,3 +1,4 @@
+/* The companion never changes page widths, margins or scrolling. */
 #yuki-companion{position:fixed;inset:0;z-index:1030;pointer-events:none;font:14px/1.55 system-ui,sans-serif;color:#3d2a30}
 #yuki-companion *{box-sizing:border-box}
 #yuki-companion [hidden]{display:none!important}
@@ -5,24 +6,41 @@
 #yuki-companion button{cursor:pointer;border:1px solid #ddc6cb;border-radius:12px;background:#fff9fa;color:#713744;padding:8px 12px}
 #yuki-companion button:hover{background:#fae9ee}
 #yuki-companion button:disabled{opacity:.55;cursor:wait}
-#yuki-companion :focus-visible{outline:3px solid #aa4861;outline-offset:3px}
+#yuki-companion :focus-visible{outline:3px solid #aa4861;outline-offset:2px}
 .yuki-pet{position:absolute;top:0;left:0;pointer-events:none;will-change:transform}
 .yuki-pet img,.yuki-pet canvas{width:100%;height:100%;position:absolute;inset:0;pointer-events:none}
 .yuki-hit{position:absolute;pointer-events:auto;border:0!important;padding:0!important;background:transparent!important;border-radius:40%!important}
 .yuki-hit:focus-visible{outline-offset:0!important}
 .yuki-bubble{position:absolute;border:1px solid #b6d8e7;border-radius:50%;background:radial-gradient(circle at 30% 25%,#ffffffc9 0 13%,#e3faff3b 28%,#cceeff25 65%,#fff8 90%);box-shadow:inset -2px -2px 4px #9dccdf30;pointer-events:none}
-.yuki-launcher{position:absolute;right:22px;bottom:20px;pointer-events:auto;box-shadow:0 4px 22px #68354916;background:#fff9fa!important;display:flex;gap:10px;align-items:center}
-.yuki-launcher span:first-child{font-size:21px}.yuki-dot{width:6px;height:6px;background:#b44b64;border-radius:50%}
-.yuki-panel{position:absolute;right:22px;bottom:78px;width:min(370px,calc(100vw - 28px));max-height:min(610px,calc(100dvh - 104px));border:1px solid #e0cbd1;border-radius:20px;background:#fffdfb;box-shadow:0 12px 50px #55334220;pointer-events:auto;display:flex;flex-direction:column;overflow:hidden}
-.yuki-heading{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #f0e3e7}.yuki-heading h2{font:600 19px/1.3 system-ui;margin:0}.yuki-heading small{color:#8c6d75}.yuki-heading button{border:0!important;font-size:20px!important}
-.yuki-log{overflow-y:auto;min-height:90px;max-height:280px;overscroll-behavior:contain;padding:12px 16px;scrollbar-width:thin}
-.yuki-message{white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 12px;padding:10px 12px;border-radius:14px;background:#f6eef0}.yuki-message[data-role=user]{background:#fae1e8;margin-left:24px}.yuki-message strong{display:block;font-size:11px;letter-spacing:.04em;color:#946573;margin-bottom:3px}
-.yuki-status{font-size:12px;color:#886671;margin:0;padding:8px 16px}.yuki-guide{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 10px}.yuki-guide button,.yuki-settings button{font-size:12px!important;padding:5px 9px!important}
-.yuki-form{padding:10px 16px;border-top:1px solid #f0e3e7;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}.yuki-form textarea{width:100%;resize:vertical;min-height:42px;max-height:100px;border:1px solid #e0cbd1;background:white;border-radius:10px;padding:8px;color:#3d2a30}.yuki-privacy{grid-column:1/-1;font-size:11px;line-height:1.5;color:#876d75}.yuki-privacy label{display:flex;align-items:start;gap:6px}.yuki-privacy input{margin-top:3px}.yuki-verification{grid-column:1/-1;min-height:0}.yuki-form button[type=submit]{background:#a4465d!important;color:white!important;border-color:#a4465d!important}
-.yuki-settings{padding:9px 16px;display:flex;gap:6px;flex-wrap:wrap;border-top:1px solid #f0e3e7}.yuki-sources{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.yuki-sources a{font-size:12px;color:#923850;text-decoration:underline}
-@media(max-width:600px){.yuki-launcher{right:14px;bottom:14px}.yuki-panel{right:14px;bottom:72px;max-height:60dvh}.yuki-log{max-height:170px}.yuki-settings{padding:7px 12px}.yuki-form{padding:8px 12px}.yuki-heading{padding:10px 12px}}
+.yuki-launcher{position:absolute;pointer-events:auto;width:36px;height:36px;padding:0!important;border-radius:50%!important;box-shadow:0 2px 10px #150b1a30;font-size:13px!important}
+.yuki-launcher span:last-child{display:none}
+.yuki-panel{position:absolute;width:min(316px,calc(100vw - 20px));pointer-events:auto;filter:drop-shadow(0 8px 20px #150b1a35)}
+.yuki-panel::after{content:"";position:absolute;left:var(--yuki-tail,70%);bottom:-9px;width:18px;height:18px;transform:rotate(45deg);background:#fffaf7;border-right:1px solid #e3cdd3;border-bottom:1px solid #e3cdd3;z-index:-1}
+.yuki-panel[data-below=true]::after{bottom:auto;top:-9px;transform:rotate(225deg)}
+.yuki-panel-inner{background:#fffaf7;border:1px solid #e3cdd3;border-radius:20px;padding:12px;max-height:var(--yuki-bubble-max,65dvh);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.yuki-heading{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.yuki-heading h2{font:600 14px/1.3 system-ui;margin:0;flex:1}.yuki-heading small{font-size:11px;color:#907079;margin-left:4px}
+.yuki-heading button{padding:2px 8px!important;min-height:32px;border:0!important;font-size:17px!important;background:transparent!important}
+.yuki-speech{max-height:min(220px,29dvh);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;font-size:14px}
+.yuki-message{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;padding:2px 2px 8px}.yuki-message strong{display:none}
+.yuki-message[data-role=user]{background:#f7e9ee;border-radius:10px;padding:8px;margin-bottom:6px}
+.yuki-status{font-size:11px;line-height:1.4;color:#82636c;margin:5px 1px 8px}.yuki-status:empty{display:none}
+.yuki-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:end}
+.yuki-form textarea{width:100%;resize:none;overflow-y:auto;scrollbar-width:thin;min-height:44px;height:44px;max-height:90px;border:1px solid #ddc8cf;background:#fff;border-radius:12px;padding:9px 10px;color:#3d2a30;font-size:16px!important;line-height:22px}
+.yuki-form button[type=submit]{background:#a4465d!important;color:white!important;border-color:#a4465d!important;min-height:42px;padding:8px 10px!important}
+.yuki-setup{grid-column:1/-1;font-size:11px;line-height:1.45;color:#80636b}
+.yuki-setup summary{cursor:pointer;padding:6px 2px;min-height:30px}
+.yuki-privacy label{display:flex;gap:7px;align-items:start;margin:4px 0 6px}.yuki-privacy input{margin-top:3px;flex-shrink:0}
+.yuki-verification{margin:6px 0;overflow:hidden;min-height:0}
+.yuki-more{border-top:1px solid #eadce0;margin-top:10px;padding-top:8px}
+.yuki-guide,.yuki-settings{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.yuki-guide button,.yuki-settings button,.yuki-sources button,.yuki-sources a{font-size:12px!important;padding:5px 8px!important}
+.yuki-search{width:100%;border:1px solid #ddc8cf;border-radius:8px;padding:8px;font-size:16px!important;margin:3px 0 7px}
+.yuki-destinations{display:flex;flex-direction:column;gap:4px;max-height:140px;overflow:auto;margin-bottom:9px}
+.yuki-destinations button{text-align:left;font-size:12px!important}
+.yuki-history summary{font-size:12px;cursor:pointer;margin:6px 0}.yuki-log{max-height:160px;overflow:auto;font-size:12px}.yuki-log .yuki-message strong{display:block;font-size:10px;color:#966b7c}.yuki-log .yuki-message{border-bottom:1px solid #ecdce1;margin-bottom:6px}
+.yuki-sources{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}.yuki-sources a{color:#923850;text-decoration:underline}.yuki-sources button{white-space:normal;text-align:left}
+.yuki-guide-line{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}.yuki-guide-line path{stroke:#f3a7bb;stroke-width:2;fill:none;stroke-dasharray:5 5}.yuki-guide-line circle{fill:#fff4f6;stroke:#c75a7a;stroke-width:2}
+.yuki-target-ring{position:absolute;border:2px solid #f3a7bb;border-radius:8px;box-shadow:0 0 0 4px #ed8fa424;pointer-events:none}
 @media(prefers-reduced-motion:reduce){.yuki-pet{will-change:auto}}
-/* Short browser panels and phone keyboards must not hide settings or consent. */
-#yuki-companion .yuki-panel{overflow-y:auto;overscroll-behavior:contain}
-#yuki-companion .yuki-panel>*{flex-shrink:0}
-#yuki-companion .yuki-log{flex-shrink:1}
+@media print{#yuki-companion{display:none!important}}

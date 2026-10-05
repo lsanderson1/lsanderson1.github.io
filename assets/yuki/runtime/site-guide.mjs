@@ -1,8 +1,8 @@
 // Only caller-registered page destinations are allowed. No URLs/selectors from AI.
 export class SiteGuide {
- constructor(companion,{destinations=[],reveal=()=>{},arrive=()=>{}}={}) {
+ constructor(companion,{destinations=[],reveal=()=>{},arrive=()=>{},direction=()=> 'pointLeft'}={}) {
   this.c=companion;this.destinations=new Map(destinations.map(p=>[p.id,p]));
-  this.reveal=reveal;this.arrive=arrive;this.reset();
+  this.reveal=reveal;this.arrive=arrive;this.direction=direction;this.reset();
  }
  reset(){this.target=null;this.stage='idle';this.pointKind=null;}
  get active(){return this.stage!=='idle';}
@@ -25,8 +25,10 @@ export class SiteGuide {
    }
    if(r.graph.state!=='rest'||r.wanted!==r.at||c.greeting.active||c.greeting.requested||c.emotion.active||c.emotion.requested)return;
    this.reveal(this.target);
-   const dx=r.point(this.target).x-r.foot.x;
-   this.pointKind=dx<0?'pointLeft':'pointRight';
+   this.stage='orienting';return;
+  }
+  if(this.stage==='orienting'){
+   this.pointKind=this.direction(this.target);
    if(c.express(this.pointKind))this.stage='pointing';
    return;
   }
@@ -40,7 +42,7 @@ export class SiteGuide {
    }
    if(r.graph.state!=='rest'||r.at!==this.target)return;
    // Land, then present the content inward from its right-hand edge.
-   if(c.express('pointLeft'))this.stage='presenting';
+   if(c.express(this.direction(this.target)))this.stage='presenting';
    return;
   }
   if(this.stage==='presenting'&&!c.emotion.active&&!c.emotion.requested){
