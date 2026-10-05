@@ -5,7 +5,7 @@ import {takeoffMs,landingMs,contactPhases} from './runtime/timing.mjs';
 import {airClips} from './runtime/air-reactions.mjs';
 import {emotionPlayback,applyReplyCue} from './runtime/reply-cues.mjs';
 import {SiteGuide,elementPerch} from './runtime/site-guide.mjs';
-import {validReply,safeSitePath,readSession,chatUnavailable} from './protocol.mjs';
+import {validReply,safeSitePath,readSession,chatUnavailable} from './protocol.mjs?v=2';
 
 const root=document.querySelector('#yuki-companion');
 if(root)start().catch(()=>{root.textContent='';}); // Portfolio remains usable on failure.
@@ -99,11 +99,11 @@ async function start(){
   const history=messages.slice(-6).map(m=>({role:m.role,content:m.text}));addMessage('user',text);$('textarea').value='';busy=true;$('button[type=submit]').disabled=true;controller=new AbortController();const timer=setTimeout(()=>{status(tr('Yuki took too long to answer. Please try again.','回答が時間内に届きませんでした。もう一度お試しください。'));controller.abort();},45000);
   try{await wake();status(tr('Yuki is thinking…','ゆきが考えています…'));react({text:'…',emotion:'thoughtful',gesture:'none'}).catch(()=>{});
    const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history,lang:ja?'ja':'en',page:location.pathname,token}),signal:controller.signal,credentials:'omit'});
-   if(!response.ok)throw Error(response.status===429?'limit':response.status===503?'offline':'request');
+   if(!response.ok){const detail=await response.json().catch(()=>({}));throw Object.assign(Error(response.status===429?'limit':response.status===403?'verification':'request'),{reference:detail.reference});}
    const cue=validReply(await response.json());if(controller.signal.aborted)return;addMessage('assistant',cue.text,true,cue.sources);
    if(paths[cue.destination]){const button=document.createElement('button');button.textContent=tr('Show me: ','案内して：')+names[cue.destination];button.onclick=()=>$(`[data-guide="${cue.destination}"]`).click();$('.yuki-log').lastElementChild.append(button);}
    status(tr('AI can make mistakes. Check the linked portfolio pages.','AIは誤ることがあります。リンク先の作品ページもご確認ください。'));react(cue).catch(()=>{});
-  }catch(error){if(!controller.signal.aborted)status(chatUnavailable(error.message,ja?'ja':'en'));reactionVersion++;pendingCue=null;}
+  }catch(error){if(!controller.signal.aborted)status(chatUnavailable(error.message,ja?'ja':'en',error.reference));reactionVersion++;pendingCue=null;}
   finally{clearTimeout(timer);busy=false;$('button[type=submit]').disabled=false;token='';if(widget!==null)window.turnstile.reset(widget);save();}
  };
  function render(){if(!companion)return;const r=companion.rover,life=companion.lifecycle,p=projectFrame(companion,clips,bodyHeight);if(!p.frame?.image)return;
