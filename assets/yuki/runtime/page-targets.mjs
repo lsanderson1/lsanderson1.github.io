@@ -29,3 +29,13 @@ export function pendingGuide(value,currentPath,now=Date.now()){
  return new URL(p.url,'https://portfolio.invalid').pathname===currentPath?p.url:null;
  }catch{return null;}
 }
+
+export function targetRect(el){
+ const outer=el.getBoundingClientRect(),range=el.ownerDocument.createRange();range.selectNodeContents(el);
+ const rects=[...range.getClientRects()].filter(r=>r.width>0&&r.height>0);
+ if(!rects.length)return outer;
+ // Heading blocks often fill an entire row. Point at the actual title ink,
+ // not the unrelated empty space at the opposite end of that block.
+ const box={left:Math.max(outer.left,Math.min(...rects.map(r=>r.left))),right:Math.min(outer.right,Math.max(...rects.map(r=>r.right))),top:Math.max(outer.top,Math.min(...rects.map(r=>r.top))),bottom:Math.min(outer.bottom,Math.max(...rects.map(r=>r.bottom)))};
+ return {...box,width:box.right-box.left,height:box.bottom-box.top};
+}

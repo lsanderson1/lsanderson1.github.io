@@ -4,11 +4,12 @@ import {IdleRenderer} from './runtime/idle-renderer.mjs';
 import {takeoffMs,landingMs,contactPhases} from './runtime/timing.mjs';
 import {airClips} from './runtime/air-reactions.mjs';
 import {emotionPlayback,applyReplyCue} from './runtime/reply-cues.mjs';
-import {SiteGuide} from './runtime/site-guide.mjs?v=4';
-import {pageLayout,visibleFoot,bubblePlacement,pointerTarget,needsFollow} from './runtime/page-layout.mjs';
-import {localizedPages,localizePath,findPageTarget,pendingGuide} from './runtime/page-targets.mjs';
-import {PageObstacles,safeSpot,fits,atFoot} from './runtime/clear-space.mjs';
-import {validReply,safeSitePath,readSession,chatUnavailable} from './protocol.mjs?v=2';
+import {SiteGuide} from './runtime/site-guide.mjs?v=5';
+import {pageLayout,bubblePlacement,pointerTarget} from './runtime/page-layout.mjs?v=5';
+import {localizedPages,localizePath,findPageTarget,pendingGuide,targetRect} from './runtime/page-targets.mjs?v=5';
+import {PageObstacles,visibleSpot,guideSpot,fits,atFoot} from './runtime/clear-space.mjs?v=5';
+import {PageMotion,containRover} from './runtime/page-motion.mjs?v=5';
+import {validReply,readSession,chatUnavailable} from './protocol.mjs?v=3';
 
 const root=document.querySelector('#yuki-companion');
 if(root)start().catch(()=>{root.textContent='';}); // Portfolio remains usable on failure.
@@ -17,11 +18,11 @@ async function start(){
  const tr=(en,jp)=>ja?jp:en,$=s=>root.querySelector(s),media=matchMedia('(prefers-reduced-motion: reduce)');
  let saved={};try{saved=readSession(sessionStorage);}catch{}
  let messages=saved.messages??[],companion,guide,renderer,clips,bodyHeight=155,last=0,loading=0,busy=false,pendingCue=null,controller,token='',widget=null;
- let hidden=saved.hidden??false,paused=saved.paused??false,roam=saved.roam??false,open=false,ready=false;
+ let hidden=saved.hidden??false,paused=saved.paused??false,roam=saved.mobilityVersion===2?saved.roam:true,open=false,ready=false;
  const viewportLayout=()=>pageLayout(document.documentElement.clientWidth||innerWidth,innerHeight);
- let layout=viewportLayout(),shownFoot=layout.home,chatAnchor=null,followTimer=0,followSerial=0,following=false,guideTarget=null,highlightUntil=0,knowledge=[];
- const pageScroll=()=>scrollY,obstacleReader=new PageObstacles(document,root);
- let obstacles=[],clear=true,relocateAt=0,launcherSpot=null;
+ let layout=viewportLayout(),shownFoot=layout.home,motion,guideTarget=null,highlightUntil=0,knowledge=[];
+ const obstacleReader=new PageObstacles(document,root);
+ let obstacles=[],clear=true,lastMeasure=-Infinity,movementTarget=layout.home,guideScrollUntil=0;
  const paths={projects:'/projects/',essays:'/essays/',unreal:'/unreal-journey/',resume:'/resume.html'};
  const names={projects:'Projects',essays:'Essays',unreal:'Unreal Journey',resume:'Resume'};
  const endpoint=(()=>{try{const u=new URL(root.dataset.endpoint);return u.protocol==='https:'?u.href:'';}catch{return '';}})();
@@ -31,7 +32,7 @@ async function start(){
  <svg class="yuki-guide-line" aria-hidden="true" hidden><path></path><circle r="5"></circle></svg><div class="yuki-target-ring" hidden></div>
  <button class="yuki-launcher" hidden aria-expanded="false" aria-controls="yuki-panel" aria-label="${tr('Wake Yuki and chat','ゆきを起こして話す')}"><span>ゆき</span><span>${tr('Tap to wake & chat','タップして起こす')}</span></button>
  <section class="yuki-panel" id="yuki-panel" role="dialog" aria-modal="false" aria-labelledby="yuki-title" hidden>
- <div class="yuki-panel-inner"><header class="yuki-heading"><h2 id="yuki-title">ゆき <small>${tr('Your little guide','小さな案内役')}</small></h2><button class="yuki-menu" aria-expanded="false" aria-controls="yuki-more" aria-label="${tr('Guide, history and settings','案内・履歴・設定')}">⋯</button><button class="yuki-close" aria-label="${tr('Close chat','チャットを閉じる')}">×</button></header>
+ <div class="yuki-panel-inner"><header class="yuki-heading"><h2 id="yuki-title">ゆき <span class="yuki-beta">BETA</span><small>${tr('Your little guide','小さな案内役')}</small></h2><button class="yuki-menu" aria-expanded="false" aria-controls="yuki-more" aria-label="${tr('Guide, history and settings','案内・履歴・設定')}">⋯</button><button class="yuki-close" aria-label="${tr('Close chat','チャットを閉じる')}">×</button></header>
  <div class="yuki-speech" role="log" aria-live="polite" aria-atomic="true" aria-label="${tr('Yuki says','ゆきの返事')}"></div><p class="yuki-status" role="status"></p>
  <form class="yuki-form"><textarea maxlength="1000" rows="1" aria-label="${tr('Message Yuki','ゆきへのメッセージ')}" placeholder="${tr('Talk to Yuki…','ゆきに話しかける…')}" ${online?'':'disabled'}></textarea><button type="submit" ${online?'':'disabled'}>${tr('Send','送信')}</button>
  <details class="yuki-setup"><summary>${tr('Enable AI chat · Privacy','AIチャットの利用設定')}</summary><div class="yuki-privacy"><label><input type="checkbox" class="yuki-consent" ${online?'':'disabled'}>${tr('Send my message and recent chat to Cloudflare Workers AI and load Cloudflare’s bot check. Please don’t share sensitive information.','メッセージと直近の会話をCloudflare Workers AIに送信し、Cloudflareのボット認証を読み込みます。個人情報・機密情報は入力しないでください。')}</label><span>${tr('Free AI has usage limits. Recent messages stay in this tab for 30 minutes. Clear them in the menu.','無料AIには利用上限があります。会話はこのタブ内で30分間保持され、メニューから消去できます。')}</span></div><div class="yuki-verification"></div></details></form>
@@ -52,12 +53,12 @@ async function start(){
    $('.yuki-speech').replaceChildren(p);$('.yuki-speech').scrollTop=0;
   }if(remember)save();
  }
- function save(){try{const r=companion?.rover;sessionStorage.setItem('yuki-session-v1',JSON.stringify({savedAt:Date.now(),awake:companion?companion.lifecycle.state!=='sleep':saved.awake,hidden,paused,roam,messages,x:r?r.foot.x/innerWidth:saved.x,y:r?r.foot.y/innerHeight:saved.y}));}catch{}}
+ function save(){try{const r=companion?.rover;sessionStorage.setItem('yuki-session-v1',JSON.stringify({savedAt:Date.now(),mobilityVersion:2,awake:companion?companion.lifecycle.state!=='sleep':saved.awake,hidden,paused,roam,messages,x:r?r.foot.x/innerWidth:saved.x,y:r?r.foot.y/innerHeight:saved.y}));}catch{}}
  function settingLabels(){for(const [k,text] of Object.entries({roam:roam?tr('Stay nearby','ここで休む'):tr('Explore','お散歩'),pause:paused?tr('Resume','再開'):tr('Pause','一時停止'),hide:hidden?tr('Show Yuki','ゆきを表示'):tr('Hide Yuki','ゆきを隠す')}))$(`[data-action="${k}"]`).textContent=text;}
  drawMessages();status(online?tr('Ready when you are.','いつでもどうぞ。'):offline);settingLabels();
- function panel(value){open=value;$('.yuki-panel').hidden=!value;$('.yuki-launcher').setAttribute('aria-expanded',String(value));
-  if(value){if(hidden){hidden=false;sync();}chatAnchor={...(clear?shownFoot:launcherSpot??layout.home)};wake();companion?.rover.setWander(false);$('.yuki-close').focus({preventScroll:true});}
-  else{chatAnchor=null;const returnFocus=clear&&!hidden?$('.yuki-hit'):$('.yuki-launcher');if(!returnFocus.hidden)returnFocus.focus({preventScroll:true});if(companion)companion.rover.setWander(roam);queueFollow();}placeBubble();save();}
+ function panel(value,{restoreFocus=true}={}){open=value;$('.yuki-panel').hidden=!value;$('.yuki-launcher').setAttribute('aria-expanded',String(value));
+  if(value){if(hidden){hidden=false;sync();}wake();$('.yuki-close').focus({preventScroll:true});}
+  else if(restoreFocus){const returnFocus=!hidden?$('.yuki-hit'):$('.yuki-launcher');if(!returnFocus.hidden)returnFocus.focus({preventScroll:true});}placeBubble();save();}
  $('.yuki-launcher').onclick=()=>panel(!open);$('.yuki-close').onclick=()=>panel(false);$('.yuki-hit').onclick=()=>panel(true);
  $('.yuki-menu').onclick=()=>{const more=$('.yuki-more');more.hidden=!more.hidden;$('.yuki-menu').setAttribute('aria-expanded',String(!more.hidden));placeBubble();};
  $('textarea').oninput=()=>{const field=$('textarea');field.style.height='42px';field.style.height=Math.min(90,field.scrollHeight)+'px';placeBubble();};
@@ -82,16 +83,13 @@ async function start(){
   finally{loading--;}
  }
  const travel=['rest','takeoff','landing','flight','flightHover','flightLeft','flightRight','pointLeft','pointRight'];
- async function prepareTravel(){await ensure([...travel,'wake','bedtime','crash']);companion.lifecycle.crashChance=.02;companion.lifecycle.inactivityMs=90000;}
+ async function prepareTravel(){await ensure([...travel,'wake','bedtime','crash']);companion.lifecycle.crashChance=.02;companion.lifecycle.inactivityMs=90000;if(motion)motion.prepared=true;}
  async function wake(){if(!ready)return;try{await ensure(['wake','bedtime']);companion.lifecycle.inactivityMs=90000;companion.lifecycle.wake();companion.lifecycle.activity();save();}catch{status(tr('Some animation artwork could not load. Please try again.','アニメーションを読み込めませんでした。もう一度お試しください。'));}}
  const elements=Object.entries(paths).map(([id,path])=>({id,name:names[id],el:document.querySelector(id==='projects'?'#projects, .fp-project-list':id==='essays'?'#essays, .fp-essay-list':id==='unreal'?'#unreal-journey, .fp-timeline':'.fp-resume-head')})).filter(d=>d.el);
  function measure(){
   layout=viewportLayout();bodyHeight=layout.bodyHeight;
   obstacles=obstacleReader.read(layout.width,layout.height);
-  const scroll=pageScroll(),p=[{id:'home',...layout.home,y:layout.home.y+scroll},{id:'nearby',...layout.alternate,y:layout.alternate.y+scroll}];
-  // Keep existing document positions on ordinary scroll. Updating a perch every
-  // scroll event would pin/snap her to the viewport instead of letting her fly.
-  if(companion){const r=companion.rover;for(const point of p)if(point.id!==r.at&&point.id!==r.wanted)upsert(point);}
+  const p=[{id:'home',...layout.home},{id:'nearby',...layout.alternate}];
   placeBubble();return p;
  }
  function poseExtent(p){
@@ -111,19 +109,10 @@ async function start(){
   const pos=bubblePlacement(shownFoot,{...layout,height},panel.offsetWidth,panel.offsetHeight,offset);
   Object.assign(panel.style,{left:pos.left+'px',top:pos.top+'px'});panel.style.setProperty('--yuki-tail',pos.tail+'px');panel.dataset.below=String(pos.below);
  }
- function queueFollow(){clearTimeout(followTimer);followTimer=setTimeout(()=>follow().catch(()=>{}),360);}
- async function follow(){
-  if(!ready||hidden||paused||open||busy||guide.active||following)return;
-  const r=companion.rover;if(clear&&!needsFollow(r.position,pageScroll(),layout))return;
-  if(r.graph.state!=='rest'&&r.wanted.startsWith('follow-'))return;
-  following=true;
-  try{obstacles=obstacleReader.read(layout.width,layout.height);const target=safeSpot(restingExtent(),obstacles,layout,layout.home);if(!target)return;
-   await prepareTravel();if(hidden||paused||open||guide.active)return;
-   const id='follow-'+(++followSerial%2);
-   if(r.graph.state==='rest'){const visible=visibleFoot(r.position,pageScroll(),layout);r.position={...visible,y:visible.y+pageScroll()};upsert({id:r.at,...r.position,autonomous:false});}
-   upsert({id,...target,y:target.y+pageScroll(),autonomous:false});r.setArrivalStyle('land');r.request(id);
-   // Lifecycle wakes a sleeping pet when it sees this queued destination.
-  }finally{following=false;}
+ function chooseMovementTarget(){
+  const opposite=shownFoot.x>layout.width/2?layout.alternate:layout.home;
+  const preferred=motion?.scrolling?{x:shownFoot.x,y:layout.height*.76}:opposite;
+  return visibleSpot(restingExtent(),obstacles,layout,preferred);
  }
  function sync(){measure();if(companion){companion.rover.hidden=hidden;companion.rover.playing=!paused;companion.setLessMotion(media.matches);}settingLabels();save();render();}
 
@@ -145,38 +134,38 @@ async function start(){
  }
  async function showElement(d){
   if(!ready)return;status(tr('I’ll show you…','ご案内します…'));
-  try{await prepareTravel();await wake();paused=false;hidden=false;roam=false;sync();
-   guide.destinations.set(d.id,d);panel(false);guide.request(d.id);
+  try{await prepareTravel();await wake();paused=false;hidden=false;sync();
+   guide.destinations.set(d.id,d);panel(false,{restoreFocus:false});document.activeElement?.blur();guide.request(d.id);
   }catch{d.el.scrollIntoView({block:'center'});status(tr('The item is here; my flight could not load.','こちらの項目です。飛行アニメーションを読み込めませんでした。'));}
  }
  function revealTarget(id){
   const d=guide.destinations.get(id);if(!d?.el?.isConnected)return;
   const card=d.el.closest('.fp-feature');if(card)card.dispatchEvent(new CustomEvent('yuki:reveal-card',{bubbles:true}));
+  guideScrollUntil=performance.now()+400;
   d.el.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});
-  const rect=d.el.getBoundingClientRect();guideTarget=d;highlightUntil=Infinity;
+  const rect=targetRect(d.el);guideTarget=d;highlightUntil=Infinity;
   obstacles=obstacleReader.read(layout.width,layout.height);
-  const target=safeSpot(restingExtent(),obstacles,layout,{x:Math.min(layout.width-76,rect.right+bodyHeight),y:Math.min(layout.height-24,rect.bottom+bodyHeight*.5)})??layout.home;
-  const r=companion.rover;if(r.graph.state==='rest'){r.position={...shownFoot,y:shownFoot.y+pageScroll()};upsert({id:r.at,...r.position,autonomous:false});}
-  upsert({id,...target,y:target.y+pageScroll(),autonomous:false});r.setArrivalStyle('land');
+  const target=guideSpot(rect,restingExtent(),obstacles,layout,bodyHeight);
+  const r=companion.rover;upsert({id,...target,autonomous:false});r.setArrivalStyle('land');
  }
  function drawPointer(){
   const svg=$('.yuki-guide-line'),ring=$('.yuki-target-ring'),el=guideTarget?.el;
   const show=!hidden&&!open&&el?.isConnected&&performance.now()<highlightUntil;
-  svg.hidden=!show||!clear;ring.hidden=!show;if(!show)return;
-  const rect=el.getBoundingClientRect();if(rect.bottom<0||rect.top>layout.readingHeight||rect.right<0||rect.left>layout.readingWidth){svg.hidden=ring.hidden=true;return;}
+  root.dataset.guiding=String(Boolean(show));svg.hidden=!show;ring.hidden=!show;if(!show)return;
+  const rect=targetRect(el);if(rect.bottom<0||rect.top>layout.readingHeight||rect.right<0||rect.left>layout.readingWidth){svg.hidden=ring.hidden=true;return;}
   const start={x:shownFoot.x,y:shownFoot.y-bodyHeight*.52},end=pointerTarget(rect,start);
   const steps=Math.max(1,Math.ceil(Math.hypot(end.x-start.x,end.y-start.y)/4));
   // Hide the leader if its straight route crosses other writing. The outline
   // still identifies the exact requested element without drawing over words.
   for(let i=1;i<steps;i++){const x=start.x+(end.x-start.x)*i/steps,y=start.y+(end.y-start.y)*i/steps;
-   if(obstacles.some(r=>x>r.left-2&&x<r.right+2&&y>r.top-2&&y<r.bottom+2)){svg.hidden=true;break;}}
+   if(obstacles.some(r=>!(r.left<=rect.left&&r.right>=rect.right&&r.top<=rect.top&&r.bottom>=rect.bottom)&&x>r.left-2&&x<r.right+2&&y>r.top-2&&y<r.bottom+2)){svg.hidden=true;break;}}
   svg.querySelector('path').setAttribute('d',`M ${start.x} ${start.y} L ${end.x} ${end.y}`);
   svg.querySelector('circle').setAttribute('cx',end.x);svg.querySelector('circle').setAttribute('cy',end.y);
   Object.assign(ring.style,{left:rect.left-4+'px',top:rect.top-4+'px',width:rect.width+8+'px',height:rect.height+8+'px'});
  }
  for(const b of root.querySelectorAll('[data-action]'))b.onclick=async()=>{const a=b.dataset.action;if(a==='clear'){controller?.abort();reactionVersion++;messages=[];drawMessages();status(online?tr('Conversation cleared.','会話を消去しました。'):offline);pendingCue=null;}
   if(a==='hide'){hidden=!hidden;if(hidden){controller?.abort();reactionVersion++;pendingCue=null;panel(false);}}if(a==='pause')paused=!paused;
-  if(a==='roam'&&ready){b.disabled=true;try{await prepareTravel();await wake();roam=!roam;companion.rover.setWander(roam);}catch{status(tr('Flight artwork is unavailable. Please retry.','飛行アニメーションを読み込めませんでした。'));}finally{b.disabled=false;}}
+  if(a==='roam'&&ready){b.disabled=true;try{await prepareTravel();await wake();roam=!roam;if(roam)motion.nextRoam=motion.clock;}catch{status(tr('Flight artwork is unavailable. Please retry.','飛行アニメーションを読み込めませんでした。'));}finally{b.disabled=false;}}
   sync();};
  for(const b of root.querySelectorAll('[data-guide]'))b.onclick=async()=>{
   const id=b.dataset.guide,d=elements.find(d=>d.id===id);b.disabled=true;
@@ -209,31 +198,28 @@ async function start(){
   }catch(error){if(!controller.signal.aborted)status(chatUnavailable(error.message,ja?'ja':'en',error.reference));reactionVersion++;pendingCue=null;}
   finally{clearTimeout(timer);busy=false;$('button[type=submit]').disabled=false;token='';if(widget!==null)window.turnstile.reset(widget);save();}
  };
- function render(){if(!companion)return;const r=companion.rover,life=companion.lifecycle,p=projectFrame(companion,clips,bodyHeight);if(!p.frame?.image)return;
-  obstacles=obstacleReader.read(layout.width,layout.height);
-  const anchor=chatAnchor??{x:r.position.x,y:r.position.y-pageScroll()};
-  p.x+=anchor.x-r.position.x;p.y+=anchor.y-r.position.y;
-  shownFoot={x:anchor.x+(p.foot.x-r.position.x),y:anchor.y+(p.foot.y-r.position.y)};
+ function render(){if(!companion)return;const r=companion.rover,life=companion.lifecycle;
+  let p=projectFrame(companion,clips,bodyHeight);if(!p.frame?.image)return;
+  containRover(r,restingExtent(),layout);p=projectFrame(companion,clips,bodyHeight);
+  shownFoot={...p.foot};
   const occupied=atFoot(shownFoot,poseExtent(p)),b=life.bubble;
   if(b){const [nx,ny]=p.frame.nose,rad=(media.matches?12:b.radius)*p.scale;occupied.left=Math.min(occupied.left,p.x+nx*p.scale-1.8*rad);occupied.top=Math.min(occupied.top,p.y+ny*p.scale-.4*rad);occupied.right=Math.max(occupied.right,p.x+nx*p.scale+.2*rad);occupied.bottom=Math.max(occupied.bottom,p.y+ny*p.scale+1.6*rad);}
   clear=fits(occupied,obstacles,layout);
-  // The same gate covers sleep, wake, flight, landing and every reaction. No
-  // drawing is allowed to occlude content, even during a fast scroll or resize.
-  const pet=$('.yuki-pet'),img=pet.querySelector('img'),canvas=pet.querySelector('canvas');pet.hidden=hidden||!clear;if(img.src!==p.frame.image.src)img.src=p.frame.image.src;
+  // Content avoidance picks the destination, never toggles frame visibility.
+  // Both dimensions use the same scale; no crowd-dependent compression.
+  const pet=$('.yuki-pet'),img=pet.querySelector('img'),canvas=pet.querySelector('canvas');pet.hidden=hidden;if(img.src!==p.frame.image.src)img.src=p.frame.image.src;
   const breathing=!life.locked&&r.graph.state==='rest'&&!p.isGreeting&&!p.isEmotion&&!p.isAttention&&!media.matches&&companion.idle.amount>0;
   const drawn=breathing&&renderer?.draw(p.frame.image,companion.idle.pose,p.info.width*p.scale);canvas.hidden=!drawn;img.style.visibility=drawn?'hidden':'visible';
   Object.assign(pet.style,{width:p.info.width*p.scale+'px',height:p.info.height*p.scale+'px',transform:`translate3d(${p.x}px,${p.y}px,0)`});
-  const box=p.frame.pixelBounds??[210,170,515,615],hit=$('.yuki-hit');hit.hidden=hidden||!clear;Object.assign(hit.style,{left:p.x+box[0]*p.scale+'px',top:p.y+box[1]*p.scale+'px',width:(box[2]-box[0])*p.scale+'px',height:(box[3]-box[1])*p.scale+'px'});
+  const box=p.frame.pixelBounds??[210,170,515,615],hit=$('.yuki-hit');hit.hidden=hidden;Object.assign(hit.style,{left:p.x+box[0]*p.scale+'px',top:p.y+box[1]*p.scale+'px',width:(box[2]-box[0])*p.scale+'px',height:(box[3]-box[1])*p.scale+'px'});
+  hit.title=tr('Yuki · BETA','ゆき · BETA');
   hit.setAttribute('aria-label',life.state==='sleep'?tr('Wake Yuki and chat','ゆきを起こして話す'):tr('Chat with Yuki','ゆきと話す'));
   const bubble=$('.yuki-bubble');bubble.hidden=!b||hidden;if(b){const [nx,ny]=p.frame.nose,rad=(media.matches?12:b.radius)*p.scale;Object.assign(bubble.style,{left:nx*p.scale-1.8*rad+'px',top:ny*p.scale-.4*rad+'px',width:2*rad+'px',height:2*rad+'px'});}
   Object.assign(pet.dataset,{state:r.graph.state,lifecycle:life.state,breathing:String(Boolean(drawn)),art:p.frame.file,emotion:companion.emotion.kind??'neutral',clear:String(clear),bounds:JSON.stringify(occupied)});
   $('.yuki-launcher span:last-child').textContent=hidden?tr('Show Yuki','ゆきを表示'):life.state==='sleep'?tr('Tap to wake & chat','タップして起こす'):tr('Talk to Yuki','ゆきと話す');
-  const launcher=$('.yuki-launcher'),buttonExtent={left:-18,right:18,top:-18,bottom:18};
+  const launcher=$('.yuki-launcher');
   launcher.setAttribute('aria-label',hidden?tr('Show Yuki','ゆきを表示'):tr('Chat with Yuki','ゆきと話す'));
-  if((!clear||hidden)&&!open){if(!launcherSpot||!fits(atFoot(launcherSpot,buttonExtent),obstacles,layout))launcherSpot=safeSpot(buttonExtent,obstacles,layout,{x:layout.width-30,y:layout.height-30});
-   launcher.hidden=!launcherSpot;if(launcherSpot)Object.assign(launcher.style,{left:launcherSpot.x-18+'px',top:launcherSpot.y-18+'px'});
-  }else launcher.hidden=true;
-  if(!clear&&!open&&performance.now()>relocateAt){relocateAt=performance.now()+1200;queueFollow();}
+  launcher.hidden=!hidden||open;Object.assign(launcher.style,{left:layout.width-50+'px',top:layout.height-50+'px'});
   placeBubble();drawPointer();
  }
  let lastTrim=0;
@@ -242,34 +228,41 @@ async function start(){
   const keep=new Set(['rest','sleep','wake','bedtime',companion.emotion.kind]);
   if(companion.greeting.active||companion.greeting.requested)keep.add('greeting');
   if(companion.lifecycle.locked)keep.add(companion.lifecycle.state);
-  if(roam||guide.active||companion.rover.graph.state!=='rest')for(const k of [...travel,'crash'])keep.add(k);
+  if(motion?.prepared||guide.active||companion.rover.graph.state!=='rest')for(const k of [...travel,'crash'])keep.add(k);
   if(companion.airReaction){keep.add(companion.airReaction.key);keep.add(companion.airReaction.transitionKey??'hoverTransition');}
   let count=[...loaded.keys()].reduce((n,k)=>n+clips[k].frames.length,0);
   for(const k of [...loaded.keys()].sort((a,b)=>(used.get(a)||0)-(used.get(b)||0))){if(count<=180)break;if(keep.has(k))continue;count-=clips[k].frames.length;loaded.delete(k);for(const f of clips[k].frames)delete f.image;}
   const referenced=new Set(Object.values(clips).flatMap(c=>c.frames.filter(f=>f.image).map(f=>f.file)));
   for(const file of images.keys())if(!referenced.has(file))images.delete(file);
  }
- function tick(t){const dt=Math.min(64,Math.max(0,t-last));last=t;if(companion&&!document.hidden){if(open||busy)companion.lifecycle.activity();companion.update(dt);guide.update();
+ function tick(t){const dt=Math.min(64,Math.max(0,t-last));last=t;if(companion&&!document.hidden){if(open||busy)companion.lifecycle.activity();
+   if(t-lastMeasure>200){obstacles=obstacleReader.read(layout.width,layout.height);movementTarget=chooseMovementTarget();lastMeasure=t;}
+   const canImprove=fits(atFoot(movementTarget,restingExtent()),obstacles,layout);
+   motion.update(dt,{hidden,paused,guiding:guide.active,open,roam,target:movementTarget,currentClear:clear||!canImprove});companion.update(dt);guide.update();
    if(pendingCue&&performance.now()>pendingCue.expires)pendingCue=null;
    if(pendingCue&&applyReplyCue(companion,pendingCue).animationAccepted)pendingCue=null;render();if(t-lastTrim>5000){trimArt();lastTrim=t;}}requestAnimationFrame(tick);}
  try{
   const res=await fetch(new URL('manifest.json',assets));if(!res.ok)throw Error('manifest');({clips}=await res.json());await ensure(['sleep','rest']);
   const timing={rest:clips.rest.frames.map(f=>f.durationMs),flight:clips.flight.frames.map(f=>f.durationMs??60),takeoff:takeoffMs,landing:landingMs};
   companion=new Companion(timing,measure(),{motion:contactPhases,idle:{},lifecycle:{clips,startAsleep:!saved.awake,inactivityMs:Infinity,crashChance:0},greeting:clips.greeting.playback,emotions:{...emotionPlayback(clips),pointLeft:clips.pointLeft.playback,pointRight:clips.pointRight.playback},airClips});
+  motion=new PageMotion(companion);
   companion.rover.setArrivalStyle('land');try{renderer=new IdleRenderer($('.yuki-pet canvas'));}catch{}
-  guide=new SiteGuide(companion,{destinations:elements,reveal:revealTarget,direction:id=>{const d=guide.destinations.get(id);return pointerTarget(d.el.getBoundingClientRect(),shownFoot).kind;},arrive:id=>{highlightUntil=performance.now()+10000;status(tr(`Here we are: ${guide.destinations.get(id).name}.`,`こちらが${guide.destinations.get(id).name}です。`));}});
+  guide=new SiteGuide(companion,{destinations:elements,reveal:revealTarget,direction:id=>{const d=guide.destinations.get(id);return pointerTarget(targetRect(d.el),shownFoot).kind;},arrive:id=>{highlightUntil=performance.now()+10000;motion.nextRoam=motion.clock+18000;status(tr(`Here we are: ${guide.destinations.get(id).name}.`,`こちらが${guide.destinations.get(id).name}です。`));}});
   obstacles=obstacleReader.read(layout.width,layout.height);
-  const initial=safeSpot(restingExtent(),obstacles,layout,layout.home);
-  if(initial){companion.rover.position={...initial,y:initial.y+pageScroll()};upsert({id:'home',...companion.rover.position});}
+  const initial=visibleSpot(restingExtent(),obstacles,layout,layout.home);
+  companion.rover.position={...initial};upsert({id:'home',...initial});
   ready=true;sync();last=performance.now();requestAnimationFrame(tick);
-  if(saved.awake||open)await wake();if(roam){await prepareTravel();companion.rover.setWander(true);}
+  if(saved.awake||open)await wake();prepareTravel().catch(()=>status(tr('Some flight drawings could not load. Please reload to retry.','飛行画像を読み込めませんでした。再読み込みしてください。')));
   fetch(new URL('knowledge.json',assets)).then(r=>r.ok?r.json():Promise.reject()).then(k=>{knowledge=Array.isArray(k.pages)?k.pages:[];destinationList();}).catch(()=>{});
   let requested;try{requested=pendingGuide(sessionStorage.getItem('yuki-guide-v1'),location.pathname);sessionStorage.removeItem('yuki-guide-v1');}catch{}
   if(requested){const el=findPageTarget(document,requested,location.pathname);if(el)await showElement({id:'requested-page',name:el.textContent.trim(),el});}
  }catch{status(tr('Yuki’s artwork could not load. The website and links still work.','ゆきの画像を読み込めませんでした。サイトとリンクは利用できます。'));}
  for(const name of ['pointerdown','keydown','wheel','touchstart'])addEventListener(name,()=>companion?.lifecycle.activity(),{passive:true,capture:true});
- media.addEventListener('change',sync);addEventListener('resize',()=>{measure();chatAnchor=open?{...layout.home}:null;queueFollow();});
- addEventListener('scroll',queueFollow,{passive:true,capture:true});
+ media.addEventListener('change',sync);addEventListener('resize',()=>{measure();lastMeasure=-Infinity;});
+ addEventListener('scroll',()=>{if(!ready)return;lastMeasure=-Infinity;if(performance.now()<guideScrollUntil)return;
+  // A visitor changing the view takes priority over a stale guided route.
+  if(guideTarget){guide.reset();guideTarget=null;highlightUntil=0;}
+  motion.scroll();},{passive:true});
  window.visualViewport?.addEventListener('resize',placeBubble);window.visualViewport?.addEventListener('scroll',placeBubble);
  addEventListener('pagehide',save);
  document.addEventListener('visibilitychange',()=>{last=performance.now();if(document.hidden)save();});

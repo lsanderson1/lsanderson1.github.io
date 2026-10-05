@@ -1,9 +1,9 @@
 // All positions are measured in CSS pixels. The original drawings stay unchanged.
 export const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 export function pageLayout(width,height){
- const bodyHeight=width>=1100?118:height<430?66:90;
+ const bodyHeight=width>=700?155:138;
  return {bodyHeight,width,height,readingWidth:width,readingHeight:height,
-  home:{x:width-76,y:height-24},alternate:{x:76,y:height-24}};
+  home:{x:width-bodyHeight*.72,y:height-24},alternate:{x:bodyHeight*.72,y:height-24}};
 }
 export function visibleFoot(foot,scroll,layout){
  return {x:clamp(foot.x,45,layout.width-45),

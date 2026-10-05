@@ -8,18 +8,20 @@
 #yuki-companion button:disabled{opacity:.55;cursor:wait}
 #yuki-companion :focus-visible{outline:3px solid #aa4861;outline-offset:2px}
 .yuki-pet{position:absolute;top:0;left:0;pointer-events:none;will-change:transform}
-.yuki-pet img,.yuki-pet canvas{width:100%;height:100%;position:absolute;inset:0;pointer-events:none}
+.yuki-pet img,.yuki-pet canvas{width:100%;height:100%;max-width:none;max-height:none;object-fit:contain;position:absolute;inset:0;pointer-events:none;outline:0;border:0;box-shadow:none}
 .yuki-hit{position:absolute;pointer-events:auto;border:0!important;padding:0!important;background:transparent!important;border-radius:40%!important}
 .yuki-hit:focus-visible{outline-offset:0!important}
+#yuki-companion[data-guiding=true] .yuki-hit{outline:none!important;box-shadow:none!important}
 .yuki-bubble{position:absolute;border:1px solid #b6d8e7;border-radius:50%;background:radial-gradient(circle at 30% 25%,#ffffffc9 0 13%,#e3faff3b 28%,#cceeff25 65%,#fff8 90%);box-shadow:inset -2px -2px 4px #9dccdf30;pointer-events:none}
 .yuki-launcher{position:absolute;pointer-events:auto;width:36px;height:36px;padding:0!important;border-radius:50%!important;box-shadow:0 2px 10px #150b1a30;font-size:13px!important}
 .yuki-launcher span:last-child{display:none}
 .yuki-panel{position:absolute;width:min(316px,calc(100vw - 20px));pointer-events:auto;filter:drop-shadow(0 8px 20px #150b1a35)}
-.yuki-panel::after{content:"";position:absolute;left:var(--yuki-tail,70%);bottom:-9px;width:18px;height:18px;transform:rotate(45deg);background:#fffaf7;border-right:1px solid #e3cdd3;border-bottom:1px solid #e3cdd3;z-index:-1}
-.yuki-panel[data-below=true]::after{bottom:auto;top:-9px;transform:rotate(225deg)}
+.yuki-panel::after{content:"";position:absolute;left:calc(var(--yuki-tail,70%) - 16px);bottom:-15px;width:32px;height:17px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 17'%3E%3Cpath d='M0 0 C8 0 9 11 16 15 C18 16 19 9 22 6 C25 2 28 0 32 0' fill='%23fffaf7' stroke='%23e3cdd3' stroke-width='1'/%3E%3C/svg%3E") no-repeat;pointer-events:none}
+.yuki-panel[data-below=true]::after{bottom:auto;top:-15px;transform:rotate(180deg)}
 .yuki-panel-inner{background:#fffaf7;border:1px solid #e3cdd3;border-radius:20px;padding:12px;max-height:var(--yuki-bubble-max,65dvh);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
 .yuki-heading{display:flex;align-items:center;gap:6px;margin-bottom:6px}
 .yuki-heading h2{font:600 14px/1.3 system-ui;margin:0;flex:1}.yuki-heading small{font-size:11px;color:#907079;margin-left:4px}
+.yuki-beta{display:inline-block;font:700 9px/1.5 system-ui;letter-spacing:.08em;color:#803d51;background:#f6e1e9;border-radius:5px;padding:1px 5px;margin-left:5px;vertical-align:middle}
 .yuki-heading button{padding:2px 8px!important;min-height:32px;border:0!important;font-size:17px!important;background:transparent!important}
 .yuki-speech{max-height:min(220px,29dvh);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;font-size:14px}
 .yuki-message{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;padding:2px 2px 8px}.yuki-message strong{display:none}

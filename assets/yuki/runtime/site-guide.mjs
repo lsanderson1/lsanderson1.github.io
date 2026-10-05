@@ -25,15 +25,6 @@ export class SiteGuide {
    }
    if(r.graph.state!=='rest'||r.wanted!==r.at||c.greeting.active||c.greeting.requested||c.emotion.active||c.emotion.requested)return;
    this.reveal(this.target);
-   this.stage='orienting';return;
-  }
-  if(this.stage==='orienting'){
-   this.pointKind=this.direction(this.target);
-   if(c.express(this.pointKind))this.stage='pointing';
-   return;
-  }
-  if(this.stage==='pointing'){
-   if(c.emotion.active||c.emotion.requested)return;
    r.request(this.target);this.stage='travel';return;
   }
   if(this.stage==='travel'){
