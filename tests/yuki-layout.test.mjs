@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {pageLayout,visibleFoot,bubblePlacement,pointerTarget,needsFollow} from '../assets/yuki/runtime/page-layout.mjs';
-import {localizedPages,localizePath,findPageTarget,pendingGuide} from '../assets/yuki/runtime/page-targets.mjs';
-import {safeSpot,fits,atFoot,overlaps} from '../assets/yuki/runtime/clear-space.mjs';
+import {localizedPages,localizePath,findPageTarget,pendingGuide,targetRect} from '../assets/yuki/runtime/page-targets.mjs';
+import {safeSpot,visibleSpot,guideSpot,clampFoot,fits,atFoot,overlaps} from '../assets/yuki/runtime/clear-space.mjs';
 
 for(const [w,h] of [[320,568],[390,844],[768,1024],[1024,768],[1440,900],[1920,1080],[390,330]]){
  test(`original reading area and compact bubble fit ${w}×${h}`,()=>{
@@ -63,4 +63,30 @@ test('small restore button stays inside the usable viewport beside a scrollbar',
  const v=pageLayout(375,844),extent={left:-18,right:18,top:-18,bottom:18};
  const p=safeSpot(extent,[],v,{x:390-30,y:844-30});
  assert(p);assert(atFoot(p,extent).right<=367);assert(fits(atFoot(p,extent),[],v));
+});
+
+test('crowded mobile fallback stays full-sized and on screen, never null',()=>{
+ const viewport={width:320,height:568},extent={left:-92,right:92,top:-148,bottom:8};
+ const p=visibleSpot(extent,[{left:0,top:0,right:320,bottom:568}],viewport,{x:280,y:540});
+ assert(p);assert(fits(atFoot(p,extent),[],viewport));assert.equal(atFoot(p,extent).right-atFoot(p,extent).left,184);
+});
+test('visible fallback still chooses genuinely empty space first',()=>{
+ const viewport={width:390,height:844},extent={left:-80,right:80,top:-145,bottom:8};
+ const obstacles=[{left:0,top:0,right:390,bottom:450}];
+ assert(fits(atFoot(visibleSpot(extent,obstacles,viewport,{x:300,y:220}),extent),obstacles,viewport));
+});
+test('orientation and crowding never reduce the chosen body height',()=>{
+ assert.equal(pageLayout(390,844).bodyHeight,pageLayout(390,330).bodyHeight);
+ assert(pageLayout(390,844).bodyHeight>=138);
+ const extent={left:-100,right:100,top:-160,bottom:8};
+ assert.deepEqual(clampFoot({x:-100,y:9999},extent,{width:390,height:844}),{x:108,y:828});
+});
+test('title highlight measures actual text with finite width and height',()=>{
+ const el={getBoundingClientRect:()=>({left:20,right:700,top:200,bottom:240}),ownerDocument:{createRange:()=>({selectNodeContents:()=>{},getClientRects:()=>[{left:20,right:230,top:202,bottom:236,width:210,height:34}]})}};
+ assert.deepEqual(targetRect(el),{left:20,right:230,top:202,bottom:236,width:210,height:34});
+});
+test('guide presents beside the title instead of below the description',()=>{
+ const title={left:64,right:316,top:346,bottom:374},extent={left:-98,right:98,top:-163,bottom:8},obstacles=[{left:64,right:584,top:64,bottom:448}];
+ const p=guideSpot(title,extent,obstacles,{width:1265,height:720},155);
+ assert(p.x-98>584);assert(Math.abs(p.y-155*.52-360)<1);
 });
