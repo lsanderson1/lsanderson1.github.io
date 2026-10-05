@@ -140,5 +140,9 @@
   if (previous) previous.addEventListener('click', () => goTo(index - 1));
   if (next) next.addEventListener('click', () => goTo(index + 1));
   window.addEventListener('resize', () => goTo(index, false));
+  carousel.addEventListener('yuki:reveal-card', event => {
+    const targetIndex = cards.indexOf(event.target.closest('.fp-feature'));
+    if (targetIndex >= 0) goTo(targetIndex, false);
+  });
   updatePosition();
 })();

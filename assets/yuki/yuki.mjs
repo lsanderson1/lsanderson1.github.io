@@ -4,7 +4,10 @@ import {IdleRenderer} from './runtime/idle-renderer.mjs';
 import {takeoffMs,landingMs,contactPhases} from './runtime/timing.mjs';
 import {airClips} from './runtime/air-reactions.mjs';
 import {emotionPlayback,applyReplyCue} from './runtime/reply-cues.mjs';
-import {SiteGuide,elementPerch} from './runtime/site-guide.mjs';
+import {SiteGuide} from './runtime/site-guide.mjs?v=4';
+import {pageLayout,visibleFoot,bubblePlacement,pointerTarget,needsFollow} from './runtime/page-layout.mjs';
+import {localizedPages,localizePath,findPageTarget,pendingGuide} from './runtime/page-targets.mjs';
+import {PageObstacles,safeSpot,fits,atFoot} from './runtime/clear-space.mjs';
 import {validReply,safeSitePath,readSession,chatUnavailable} from './protocol.mjs?v=2';
 
 const root=document.querySelector('#yuki-companion');
@@ -15,41 +18,66 @@ async function start(){
  let saved={};try{saved=readSession(sessionStorage);}catch{}
  let messages=saved.messages??[],companion,guide,renderer,clips,bodyHeight=155,last=0,loading=0,busy=false,pendingCue=null,controller,token='',widget=null;
  let hidden=saved.hidden??false,paused=saved.paused??false,roam=saved.roam??false,open=false,ready=false;
+ const viewportLayout=()=>pageLayout(document.documentElement.clientWidth||innerWidth,innerHeight);
+ let layout=viewportLayout(),shownFoot=layout.home,chatAnchor=null,followTimer=0,followSerial=0,following=false,guideTarget=null,highlightUntil=0,knowledge=[];
+ const pageScroll=()=>scrollY,obstacleReader=new PageObstacles(document,root);
+ let obstacles=[],clear=true,relocateAt=0,launcherSpot=null;
  const paths={projects:'/projects/',essays:'/essays/',unreal:'/unreal-journey/',resume:'/resume.html'};
  const names={projects:'Projects',essays:'Essays',unreal:'Unreal Journey',resume:'Resume'};
  const endpoint=(()=>{try{const u=new URL(root.dataset.endpoint);return u.protocol==='https:'?u.href:'';}catch{return '';}})();
  const online=Boolean(endpoint&&root.dataset.siteKey);
  root.innerHTML=`<div class="yuki-pet" aria-hidden="true" hidden><img alt="" draggable="false"><canvas hidden></canvas><span class="yuki-bubble" hidden></span></div>
  <button class="yuki-hit" hidden aria-label="${tr('Wake Yuki and chat','ゆきを起こして話す')}"></button>
- <button class="yuki-launcher" aria-expanded="false" aria-controls="yuki-panel"><span>ゆき</span><span>${tr('A little company','小さな案内役')}</span><span class="yuki-dot"></span></button>
+ <svg class="yuki-guide-line" aria-hidden="true" hidden><path></path><circle r="5"></circle></svg><div class="yuki-target-ring" hidden></div>
+ <button class="yuki-launcher" hidden aria-expanded="false" aria-controls="yuki-panel" aria-label="${tr('Wake Yuki and chat','ゆきを起こして話す')}"><span>ゆき</span><span>${tr('Tap to wake & chat','タップして起こす')}</span></button>
  <section class="yuki-panel" id="yuki-panel" role="dialog" aria-modal="false" aria-labelledby="yuki-title" hidden>
- <header class="yuki-heading"><div><h2 id="yuki-title">ゆき <small>Yuki</small></h2><small>${tr('Your little portfolio companion','ポートフォリオの小さな案内役')}</small></div><button class="yuki-close" aria-label="${tr('Close chat','チャットを閉じる')}">×</button></header>
- <div class="yuki-log" role="log" aria-live="polite" aria-label="${tr('Conversation','会話')}"></div><p class="yuki-status" role="status"></p>
- <div class="yuki-guide">${Object.keys(paths).map(k=>`<button data-guide="${k}">${names[k]} ↗</button>`).join('')}</div>
- <form class="yuki-form"><label class="yuki-privacy">${tr('Ask about Yuki or the portfolio.','ゆきや作品について聞いてみてください。')}</label><textarea maxlength="1000" rows="2" aria-label="${tr('Message Yuki','ゆきへのメッセージ')}" placeholder="${tr('What would you like to explore?','何を見てみたいですか？')}" ${online?'':'disabled'}></textarea><button type="submit" ${online?'':'disabled'}>${tr('Send','送信')}</button>
- <div class="yuki-privacy"><label><input type="checkbox" class="yuki-consent" ${online?'':'disabled'}>${tr('Send my message and recent chat to Cloudflare Workers AI and load Cloudflare’s bot check. Please don’t share sensitive information.','メッセージと直近の会話をCloudflare Workers AIに送信し、Cloudflareのボット認証を読み込みます。個人情報・機密情報は入力しないでください。')}</label><span>${tr('Free AI chat has usage limits. This tab remembers recent messages for 30 minutes. Clear them below.','無料AIチャットには利用上限があります。直近の会話はこのタブ内で30分間保持されます。下のボタンで消去できます。')}</span></div><div class="yuki-verification"></div></form>
- <div class="yuki-settings"><button data-action="roam"></button><button data-action="pause"></button><button data-action="hide"></button><button data-action="clear">${tr('Clear chat','会話を消去')}</button></div></section>`;
+ <div class="yuki-panel-inner"><header class="yuki-heading"><h2 id="yuki-title">ゆき <small>${tr('Your little guide','小さな案内役')}</small></h2><button class="yuki-menu" aria-expanded="false" aria-controls="yuki-more" aria-label="${tr('Guide, history and settings','案内・履歴・設定')}">⋯</button><button class="yuki-close" aria-label="${tr('Close chat','チャットを閉じる')}">×</button></header>
+ <div class="yuki-speech" role="log" aria-live="polite" aria-atomic="true" aria-label="${tr('Yuki says','ゆきの返事')}"></div><p class="yuki-status" role="status"></p>
+ <form class="yuki-form"><textarea maxlength="1000" rows="1" aria-label="${tr('Message Yuki','ゆきへのメッセージ')}" placeholder="${tr('Talk to Yuki…','ゆきに話しかける…')}" ${online?'':'disabled'}></textarea><button type="submit" ${online?'':'disabled'}>${tr('Send','送信')}</button>
+ <details class="yuki-setup"><summary>${tr('Enable AI chat · Privacy','AIチャットの利用設定')}</summary><div class="yuki-privacy"><label><input type="checkbox" class="yuki-consent" ${online?'':'disabled'}>${tr('Send my message and recent chat to Cloudflare Workers AI and load Cloudflare’s bot check. Please don’t share sensitive information.','メッセージと直近の会話をCloudflare Workers AIに送信し、Cloudflareのボット認証を読み込みます。個人情報・機密情報は入力しないでください。')}</label><span>${tr('Free AI has usage limits. Recent messages stay in this tab for 30 minutes. Clear them in the menu.','無料AIには利用上限があります。会話はこのタブ内で30分間保持され、メニューから消去できます。')}</span></div><div class="yuki-verification"></div></details></form>
+ <div class="yuki-more" id="yuki-more" hidden><div class="yuki-guide">${Object.keys(paths).map(k=>`<button data-guide="${k}">${names[k]} ↗</button>`).join('')}</div>
+ <input class="yuki-search" type="search" aria-label="${tr('Find a page or section','ページや項目を探す')}" placeholder="${tr('Find a project, page or section…','作品・ページ・項目を探す…')}"><div class="yuki-destinations"></div>
+ <details class="yuki-history"><summary>${tr('Conversation history','会話の履歴')}</summary><div class="yuki-log" aria-label="${tr('Conversation','会話')}"></div></details>
+ <div class="yuki-settings"><button data-action="roam"></button><button data-action="pause"></button><button data-action="hide"></button><button data-action="clear">${tr('Clear chat','会話を消去')}</button></div></div></div></section>`;
  const status=text=>{$('.yuki-status').textContent=text;};
  const offline=chatUnavailable('not-connected',ja?'ja':'en');
  const welcome=tr("Hi, I’m Yuki! A sleepy little dragon who loves exploring Lloyd’s work with you.",'こんにちは、ゆきです！ロイドの作品をご案内する、ちょっと眠たがりな小さなドラゴンです。');
- function drawMessages(){const log=$('.yuki-log');log.replaceChildren();if(!messages.length)addMessage('assistant',welcome,false);else for(const m of messages)addMessage(m.role,m.text,false);}
+ function drawMessages(){const log=$('.yuki-log');log.replaceChildren();$('.yuki-speech').replaceChildren();if(!messages.length)addMessage('assistant',welcome,false);else for(const m of messages)addMessage(m.role,m.text,false);}
  function addMessage(role,text,remember=true,sources=[]){
   if(remember){messages.push({role,text});messages=messages.slice(-12);}
   const p=document.createElement('p');p.className='yuki-message';p.dataset.role=role;const label=document.createElement('strong');label.textContent=role==='user'?tr('YOU','あなた'):'ゆき';p.append(label,document.createTextNode(text));
-  if(sources.length){const links=document.createElement('span');links.className='yuki-sources';for(const s of sources){const url=safeSitePath(s.url,base);if(!url)continue;const a=document.createElement('a');a.href=url;a.textContent=s.title;links.append(a);}p.append(links);}
-  $('.yuki-log').append(p);$('.yuki-log').scrollTop=$('.yuki-log').scrollHeight;if(remember)save();
+  $('.yuki-log').append(p.cloneNode(true));$('.yuki-log').scrollTop=$('.yuki-log').scrollHeight;
+  if(role==='assistant'){
+   if(sources.length){const links=document.createElement('span');links.className='yuki-sources';for(const s of sources){const url=localizePath(s.url,knowledge,ja?'ja':'en',base);if(!url)continue;const a=document.createElement('a');a.href=url;a.textContent=s.title;const show=document.createElement('button');show.textContent=tr('Show me','案内して');show.setAttribute('aria-label',tr('Show me: ','案内して：')+s.title);show.onclick=()=>visit(url,s.title);links.append(a,show);}p.append(links);}
+   $('.yuki-speech').replaceChildren(p);$('.yuki-speech').scrollTop=0;
+  }if(remember)save();
  }
  function save(){try{const r=companion?.rover;sessionStorage.setItem('yuki-session-v1',JSON.stringify({savedAt:Date.now(),awake:companion?companion.lifecycle.state!=='sleep':saved.awake,hidden,paused,roam,messages,x:r?r.foot.x/innerWidth:saved.x,y:r?r.foot.y/innerHeight:saved.y}));}catch{}}
  function settingLabels(){for(const [k,text] of Object.entries({roam:roam?tr('Stay nearby','ここで休む'):tr('Explore','お散歩'),pause:paused?tr('Resume','再開'):tr('Pause','一時停止'),hide:hidden?tr('Show Yuki','ゆきを表示'):tr('Hide Yuki','ゆきを隠す')}))$(`[data-action="${k}"]`).textContent=text;}
  drawMessages();status(online?tr('Ready when you are.','いつでもどうぞ。'):offline);settingLabels();
- function panel(value){open=value;$('.yuki-panel').hidden=!value;$('.yuki-launcher').setAttribute('aria-expanded',String(value));if(value){if(hidden){hidden=false;sync();}wake();if(companion){companion.rover.setWander(false);}if(online)$('textarea').focus();else $('.yuki-close').focus();}else{$('.yuki-launcher').focus();if(companion)companion.rover.setWander(roam);}measure();save();}
+ function panel(value){open=value;$('.yuki-panel').hidden=!value;$('.yuki-launcher').setAttribute('aria-expanded',String(value));
+  if(value){if(hidden){hidden=false;sync();}chatAnchor={...(clear?shownFoot:launcherSpot??layout.home)};wake();companion?.rover.setWander(false);$('.yuki-close').focus({preventScroll:true});}
+  else{chatAnchor=null;const returnFocus=clear&&!hidden?$('.yuki-hit'):$('.yuki-launcher');if(!returnFocus.hidden)returnFocus.focus({preventScroll:true});if(companion)companion.rover.setWander(roam);queueFollow();}placeBubble();save();}
  $('.yuki-launcher').onclick=()=>panel(!open);$('.yuki-close').onclick=()=>panel(false);$('.yuki-hit').onclick=()=>panel(true);
+ $('.yuki-menu').onclick=()=>{const more=$('.yuki-more');more.hidden=!more.hidden;$('.yuki-menu').setAttribute('aria-expanded',String(!more.hidden));placeBubble();};
+ $('textarea').oninput=()=>{const field=$('textarea');field.style.height='42px';field.style.height=Math.min(90,field.scrollHeight)+'px';placeBubble();};
+ $('textarea').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();$('.yuki-form').requestSubmit();}};
+ new ResizeObserver(()=>placeBubble()).observe($('.yuki-panel-inner'));
  root.addEventListener('keydown',e=>{if(e.key==='Escape'&&open){e.preventDefault();panel(false);}});
- const images=new Map(),loaded=new Map(),used=new Map();
+ const images=new Map(),loaded=new Map(),used=new Map(),pixelBounds=new WeakMap();
+ const boundsCanvas=document.createElement('canvas'),boundsContext=boundsCanvas.getContext('2d',{willReadFrequently:true});
+ function artworkBounds(im){
+  if(pixelBounds.has(im))return pixelBounds.get(im);
+  boundsCanvas.width=im.naturalWidth;boundsCanvas.height=im.naturalHeight;boundsContext.drawImage(im,0,0);
+  const {width:w,height:h}=boundsCanvas,data=boundsContext.getImageData(0,0,w,h).data;
+  let left=w,top=h,right=0,bottom=0;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(data[(y*w+x)*4+3]){left=Math.min(left,x);right=Math.max(right,x+1);top=Math.min(top,y);bottom=Math.max(bottom,y+1);}
+  const bounds=[left,top,right,bottom];pixelBounds.set(im,bounds);return bounds;
+ }
  async function ensure(keys){
   loading++;
   try{await Promise.all([...new Set(keys)].map(key=>{used.set(key,performance.now());if(loaded.has(key))return loaded.get(key);const info=clips[key];if(!info)throw Error('Missing clip');
-   const promise=(async()=>{for(let i=0;i<info.frames.length;i+=4)await Promise.all(info.frames.slice(i,i+4).map(async f=>{let p=images.get(f.file);if(!p){p=(async()=>{const im=new Image();im.src=new URL(f.file,assets).href;await im.decode();return im;})();images.set(f.file,p);p.catch(()=>images.delete(f.file));}f.image=await p;}));})();
+   const promise=(async()=>{for(let i=0;i<info.frames.length;i+=4)await Promise.all(info.frames.slice(i,i+4).map(async f=>{let p=images.get(f.file);if(!p){p=(async()=>{const im=new Image();im.src=new URL(f.file,assets).href;await im.decode();return im;})();images.set(f.file,p);p.catch(()=>images.delete(f.file));}f.image=await p;f.pixelBounds=artworkBounds(f.image);}));})();
    loaded.set(key,promise);promise.catch(()=>loaded.delete(key));return promise;}));}
   finally{loading--;}
  }
@@ -57,27 +85,102 @@ async function start(){
  async function prepareTravel(){await ensure([...travel,'wake','bedtime','crash']);companion.lifecycle.crashChance=.02;companion.lifecycle.inactivityMs=90000;}
  async function wake(){if(!ready)return;try{await ensure(['wake','bedtime']);companion.lifecycle.inactivityMs=90000;companion.lifecycle.wake();companion.lifecycle.activity();save();}catch{status(tr('Some animation artwork could not load. Please try again.','アニメーションを読み込めませんでした。もう一度お試しください。'));}}
  const elements=Object.entries(paths).map(([id,path])=>({id,name:names[id],el:document.querySelector(id==='projects'?'#projects, .fp-project-list':id==='essays'?'#essays, .fp-essay-list':id==='unreal'?'#unreal-journey, .fp-timeline':'.fp-resume-head')})).filter(d=>d.el);
- function measure(){bodyHeight=innerWidth<700?112:155;const margin=Math.min(innerWidth*.25,bodyHeight*.75),bottom=innerHeight-82;
-  const leftY=open&&innerWidth<600?Math.max(bodyHeight+22,$('.yuki-panel').getBoundingClientRect().top-14):bottom;
-  const p=[{id:'home',name:'Nearby',x:margin,y:leftY},{id:'right',name:'Right side',x:innerWidth-margin,y:bottom},{id:'high',name:'High perch',x:innerWidth-margin,y:Math.max(bodyHeight+80,innerHeight*.42)}];
-  if(saved.awake&&Number.isFinite(saved.x))p.push({id:'last-position',name:'Last resting place',x:Math.max(margin,Math.min(innerWidth-margin,saved.x*innerWidth)),y:Math.max(bodyHeight+22,Math.min(bottom,saved.y*innerHeight)),autonomous:false});
-  for(const d of elements)p.push(elementPerch(d.el.getBoundingClientRect(),{...d,width:innerWidth,height:innerHeight,bodyHeight}));
-  if(open){const box=$('.yuki-panel').getBoundingClientRect(),clearance=bodyHeight*.9+12;
-   for(const perch of p)if(perch.x+clearance>box.left&&perch.x-clearance<box.right&&perch.y>box.top&&perch.y-bodyHeight<box.bottom){
-    if(box.left>clearance*2+12)perch.x=box.left-clearance-12;
-    else perch.y=Math.max(bodyHeight+22,box.top-14);
-   }
-  }
-  companion?.rover.setPerches(p);return p;
+ function measure(){
+  layout=viewportLayout();bodyHeight=layout.bodyHeight;
+  obstacles=obstacleReader.read(layout.width,layout.height);
+  const scroll=pageScroll(),p=[{id:'home',...layout.home,y:layout.home.y+scroll},{id:'nearby',...layout.alternate,y:layout.alternate.y+scroll}];
+  // Keep existing document positions on ordinary scroll. Updating a perch every
+  // scroll event would pin/snap her to the viewport instead of letting her fly.
+  if(companion){const r=companion.rover;for(const point of p)if(point.id!==r.at&&point.id!==r.wanted)upsert(point);}
+  placeBubble();return p;
  }
- function sync(){if(companion){companion.rover.hidden=hidden;companion.rover.playing=!paused;companion.setLessMotion(media.matches);}settingLabels();save();render();}
+ function poseExtent(p){
+  const b=p.frame.pixelBounds??[0,0,p.info.width,p.info.height];
+  return {left:(b[0]-p.info.width/2)*p.scale-5,right:(b[2]-p.info.width/2)*p.scale+5,top:(b[1]-p.anchor)*p.scale-8,bottom:(b[3]-p.anchor)*p.scale+5};
+ }
+ function restingExtent(){
+  // Room for head, paws, tail and subtle idle breathing, not just the torso.
+  const extent={left:-bodyHeight*.63,right:bodyHeight*.63,top:-bodyHeight*1.05,bottom:8};
+  if(companion){const p=projectFrame(companion,clips,bodyHeight),e=poseExtent(p);for(const k of ['left','top'])extent[k]=Math.min(extent[k],e[k]);for(const k of ['right','bottom'])extent[k]=Math.max(extent[k],e[k]);}
+  return extent;
+ }
+ function upsert(point){const r=companion.rover,i=r.points.findIndex(p=>p.id===point.id);if(i<0)r.points.push(point);else r.points[i]=point;}
+ function placeBubble(){if(!open)return;const panel=$('.yuki-panel'),vv=window.visualViewport;
+  const height=vv?.height??innerHeight,offset=vv?.offsetTop??0;
+  panel.style.setProperty('--yuki-bubble-max',Math.max(100,height-24)+'px');
+  const pos=bubblePlacement(shownFoot,{...layout,height},panel.offsetWidth,panel.offsetHeight,offset);
+  Object.assign(panel.style,{left:pos.left+'px',top:pos.top+'px'});panel.style.setProperty('--yuki-tail',pos.tail+'px');panel.dataset.below=String(pos.below);
+ }
+ function queueFollow(){clearTimeout(followTimer);followTimer=setTimeout(()=>follow().catch(()=>{}),360);}
+ async function follow(){
+  if(!ready||hidden||paused||open||busy||guide.active||following)return;
+  const r=companion.rover;if(clear&&!needsFollow(r.position,pageScroll(),layout))return;
+  if(r.graph.state!=='rest'&&r.wanted.startsWith('follow-'))return;
+  following=true;
+  try{obstacles=obstacleReader.read(layout.width,layout.height);const target=safeSpot(restingExtent(),obstacles,layout,layout.home);if(!target)return;
+   await prepareTravel();if(hidden||paused||open||guide.active)return;
+   const id='follow-'+(++followSerial%2);
+   if(r.graph.state==='rest'){const visible=visibleFoot(r.position,pageScroll(),layout);r.position={...visible,y:visible.y+pageScroll()};upsert({id:r.at,...r.position,autonomous:false});}
+   upsert({id,...target,y:target.y+pageScroll(),autonomous:false});r.setArrivalStyle('land');r.request(id);
+   // Lifecycle wakes a sleeping pet when it sees this queued destination.
+  }finally{following=false;}
+ }
+ function sync(){measure();if(companion){companion.rover.hidden=hidden;companion.rover.playing=!paused;companion.setLessMotion(media.matches);}settingLabels();save();render();}
+
+ const sections=[...document.querySelectorAll('main h1, main h2, main h3')].filter(el=>el.textContent.trim()).map((el,i)=>({id:'section-'+i,name:el.textContent.trim(),el}));
+ function destinationList(){
+  const q=$('.yuki-search').value.trim().toLocaleLowerCase(),list=$('.yuki-destinations');list.replaceChildren();
+  const items=[...sections.map(s=>({title:s.name,action:()=>showElement(s)})),...localizedPages(knowledge,ja?'ja':'en',base).map(p=>({...p,action:()=>visit(p.url,p.title)}))];
+  const seen=new Set();for(const item of items){if(!item.title.toLocaleLowerCase().includes(q)||seen.has(item.title))continue;seen.add(item.title);const b=document.createElement('button');b.textContent=item.title;b.onclick=item.action;list.append(b);}
+  if(!list.childElementCount)list.textContent=tr('No matching page or section.','一致するページ・項目がありません。');
+ }
+ $('.yuki-search').oninput=destinationList;destinationList();
+ async function visit(path,title){
+  const url=localizePath(path,knowledge,ja?'ja':'en',base);if(!url)return;
+  const el=findPageTarget(document,url,location.pathname);
+  // Navigation links aren't a substitute for a project's actual page/card.
+  if(el&&!el.closest('.fp-nav')){await showElement({id:'page-'+url,name:title,el});return;}
+  try{sessionStorage.setItem('yuki-guide-v1',JSON.stringify({url,at:Date.now()}));}catch{}
+  save();location.assign(url);
+ }
+ async function showElement(d){
+  if(!ready)return;status(tr('I’ll show you…','ご案内します…'));
+  try{await prepareTravel();await wake();paused=false;hidden=false;roam=false;sync();
+   guide.destinations.set(d.id,d);panel(false);guide.request(d.id);
+  }catch{d.el.scrollIntoView({block:'center'});status(tr('The item is here; my flight could not load.','こちらの項目です。飛行アニメーションを読み込めませんでした。'));}
+ }
+ function revealTarget(id){
+  const d=guide.destinations.get(id);if(!d?.el?.isConnected)return;
+  const card=d.el.closest('.fp-feature');if(card)card.dispatchEvent(new CustomEvent('yuki:reveal-card',{bubbles:true}));
+  d.el.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});
+  const rect=d.el.getBoundingClientRect();guideTarget=d;highlightUntil=Infinity;
+  obstacles=obstacleReader.read(layout.width,layout.height);
+  const target=safeSpot(restingExtent(),obstacles,layout,{x:Math.min(layout.width-76,rect.right+bodyHeight),y:Math.min(layout.height-24,rect.bottom+bodyHeight*.5)})??layout.home;
+  const r=companion.rover;if(r.graph.state==='rest'){r.position={...shownFoot,y:shownFoot.y+pageScroll()};upsert({id:r.at,...r.position,autonomous:false});}
+  upsert({id,...target,y:target.y+pageScroll(),autonomous:false});r.setArrivalStyle('land');
+ }
+ function drawPointer(){
+  const svg=$('.yuki-guide-line'),ring=$('.yuki-target-ring'),el=guideTarget?.el;
+  const show=!hidden&&!open&&el?.isConnected&&performance.now()<highlightUntil;
+  svg.hidden=!show||!clear;ring.hidden=!show;if(!show)return;
+  const rect=el.getBoundingClientRect();if(rect.bottom<0||rect.top>layout.readingHeight||rect.right<0||rect.left>layout.readingWidth){svg.hidden=ring.hidden=true;return;}
+  const start={x:shownFoot.x,y:shownFoot.y-bodyHeight*.52},end=pointerTarget(rect,start);
+  const steps=Math.max(1,Math.ceil(Math.hypot(end.x-start.x,end.y-start.y)/4));
+  // Hide the leader if its straight route crosses other writing. The outline
+  // still identifies the exact requested element without drawing over words.
+  for(let i=1;i<steps;i++){const x=start.x+(end.x-start.x)*i/steps,y=start.y+(end.y-start.y)*i/steps;
+   if(obstacles.some(r=>x>r.left-2&&x<r.right+2&&y>r.top-2&&y<r.bottom+2)){svg.hidden=true;break;}}
+  svg.querySelector('path').setAttribute('d',`M ${start.x} ${start.y} L ${end.x} ${end.y}`);
+  svg.querySelector('circle').setAttribute('cx',end.x);svg.querySelector('circle').setAttribute('cy',end.y);
+  Object.assign(ring.style,{left:rect.left-4+'px',top:rect.top-4+'px',width:rect.width+8+'px',height:rect.height+8+'px'});
+ }
  for(const b of root.querySelectorAll('[data-action]'))b.onclick=async()=>{const a=b.dataset.action;if(a==='clear'){controller?.abort();reactionVersion++;messages=[];drawMessages();status(online?tr('Conversation cleared.','会話を消去しました。'):offline);pendingCue=null;}
-  if(a==='hide'){hidden=!hidden;if(hidden){controller?.abort();reactionVersion++;pendingCue=null;}}if(a==='pause')paused=!paused;
+  if(a==='hide'){hidden=!hidden;if(hidden){controller?.abort();reactionVersion++;pendingCue=null;panel(false);}}if(a==='pause')paused=!paused;
   if(a==='roam'&&ready){b.disabled=true;try{await prepareTravel();await wake();roam=!roam;companion.rover.setWander(roam);}catch{status(tr('Flight artwork is unavailable. Please retry.','飛行アニメーションを読み込めませんでした。'));}finally{b.disabled=false;}}
   sync();};
  for(const b of root.querySelectorAll('[data-guide]'))b.onclick=async()=>{
-  const id=b.dataset.guide,d=elements.find(d=>d.id===id);if(!d){await wake();save();location.assign(base+(ja?'/ja':'')+paths[id]);return;}
-  b.disabled=true;try{status(tr('Getting ready to show you…','ご案内の準備中です…'));await prepareTravel();await wake();paused=false;hidden=false;roam=false;sync();panel(false);guide.request(id);}catch{status(tr('I couldn’t load the flight. The section is still available below.','飛行を読み込めませんでした。目的の項目は下にあります。'));d.el.scrollIntoView({block:'start'});}finally{b.disabled=false;}
+  const id=b.dataset.guide,d=elements.find(d=>d.id===id);b.disabled=true;
+  try{if(d)await showElement({...d,el:d.el.querySelector('h1,h2,h3')??d.el});else await visit(base+(ja?'/ja':'')+paths[id],names[id]);}finally{b.disabled=false;}
  };
  let reactionVersion=0;
  async function react(cue){const version=++reactionVersion;if(cue.emotion==='neutral'&&cue.gesture==='none')cue={...cue,gesture:'talkExplain'};
@@ -89,32 +192,49 @@ async function start(){
   if(!online||!$('.yuki-consent').checked)return;
   if(!window.turnstile){if(!verificationScript)verificationScript=new Promise((resolve,reject)=>{const script=document.createElement('script');script.id='yuki-turnstile-script';script.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';script.onload=resolve;script.onerror=()=>{script.remove();verificationScript=null;reject(Error('Verification unavailable'));};document.head.append(script);});await verificationScript;}
   if(!$('.yuki-consent').checked)return;
-  if(widget===null)widget=window.turnstile.render($('.yuki-verification'),{sitekey:root.dataset.siteKey,action:'yuki-chat',callback:v=>{token=v;},'expired-callback':()=>{token='';},'error-callback':()=>{token='';}});
+  if(widget===null)widget=window.turnstile.render($('.yuki-verification'),{sitekey:root.dataset.siteKey,action:'yuki-chat',size:'flexible',callback:v=>{token=v;$('.yuki-setup').open=false;status(tr('Ready when you are.','いつでもどうぞ。'));},'expired-callback':()=>{token='';},'error-callback':()=>{token='';$('.yuki-setup').open=true;}});
  }
  $('.yuki-consent').onchange=()=>{if($('.yuki-consent').checked)verification().catch(()=>status(tr('Verification could not load. Please retry.','認証を読み込めませんでした。もう一度お試しください。')));else{controller?.abort();reactionVersion++;pendingCue=null;status(tr('Chat consent withdrawn. You can still use the guide buttons.','送信への同意を取り消しました。案内ボタンは引き続き使えます。'));token='';if(widget!==null){window.turnstile.remove(widget);widget=null;}}};
  $('.yuki-form').onsubmit=async e=>{
   e.preventDefault();if(!online||busy)return;const text=$('textarea').value.trim();if(!text)return;
-  if(!$('.yuki-consent').checked){status(tr('Please allow sending your message first.','送信への同意を確認してください。'));return;}
-  if(!token){status(tr('Please complete the verification first.','先に認証を完了してください。'));await verification().catch(()=>{});return;}
+  if(!$('.yuki-consent').checked){$('.yuki-setup').open=true;status(tr('Please allow sending your message first.','送信への同意を確認してください。'));$('.yuki-consent').focus();return;}
+  if(!token){$('.yuki-setup').open=true;status(tr('Please complete the verification first.','先に認証を完了してください。'));await verification().catch(()=>{});return;}
   const history=messages.slice(-6).map(m=>({role:m.role,content:m.text}));addMessage('user',text);$('textarea').value='';busy=true;$('button[type=submit]').disabled=true;controller=new AbortController();const timer=setTimeout(()=>{status(tr('Yuki took too long to answer. Please try again.','回答が時間内に届きませんでした。もう一度お試しください。'));controller.abort();},45000);
   try{await wake();status(tr('Yuki is thinking…','ゆきが考えています…'));react({text:'…',emotion:'thoughtful',gesture:'none'}).catch(()=>{});
    const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history,lang:ja?'ja':'en',page:location.pathname,token}),signal:controller.signal,credentials:'omit'});
    if(!response.ok){const detail=await response.json().catch(()=>({}));throw Object.assign(Error(response.status===429?'limit':response.status===403?'verification':'request'),{reference:detail.reference});}
    const cue=validReply(await response.json());if(controller.signal.aborted)return;addMessage('assistant',cue.text,true,cue.sources);
-   if(paths[cue.destination]){const button=document.createElement('button');button.textContent=tr('Show me: ','案内して：')+names[cue.destination];button.onclick=()=>$(`[data-guide="${cue.destination}"]`).click();$('.yuki-log').lastElementChild.append(button);}
+   if(paths[cue.destination]&&!cue.sources.length){const button=document.createElement('button');button.textContent=tr('Show me: ','案内して：')+names[cue.destination];button.onclick=()=>$(`[data-guide="${cue.destination}"]`).click();$('.yuki-speech').lastElementChild.append(button);}
    status(tr('AI can make mistakes. Check the linked portfolio pages.','AIは誤ることがあります。リンク先の作品ページもご確認ください。'));react(cue).catch(()=>{});
   }catch(error){if(!controller.signal.aborted)status(chatUnavailable(error.message,ja?'ja':'en',error.reference));reactionVersion++;pendingCue=null;}
   finally{clearTimeout(timer);busy=false;$('button[type=submit]').disabled=false;token='';if(widget!==null)window.turnstile.reset(widget);save();}
  };
  function render(){if(!companion)return;const r=companion.rover,life=companion.lifecycle,p=projectFrame(companion,clips,bodyHeight);if(!p.frame?.image)return;
-  const pet=$('.yuki-pet'),img=pet.querySelector('img'),canvas=pet.querySelector('canvas');pet.hidden=hidden;if(img.src!==p.frame.image.src)img.src=p.frame.image.src;
+  obstacles=obstacleReader.read(layout.width,layout.height);
+  const anchor=chatAnchor??{x:r.position.x,y:r.position.y-pageScroll()};
+  p.x+=anchor.x-r.position.x;p.y+=anchor.y-r.position.y;
+  shownFoot={x:anchor.x+(p.foot.x-r.position.x),y:anchor.y+(p.foot.y-r.position.y)};
+  const occupied=atFoot(shownFoot,poseExtent(p)),b=life.bubble;
+  if(b){const [nx,ny]=p.frame.nose,rad=(media.matches?12:b.radius)*p.scale;occupied.left=Math.min(occupied.left,p.x+nx*p.scale-1.8*rad);occupied.top=Math.min(occupied.top,p.y+ny*p.scale-.4*rad);occupied.right=Math.max(occupied.right,p.x+nx*p.scale+.2*rad);occupied.bottom=Math.max(occupied.bottom,p.y+ny*p.scale+1.6*rad);}
+  clear=fits(occupied,obstacles,layout);
+  // The same gate covers sleep, wake, flight, landing and every reaction. No
+  // drawing is allowed to occlude content, even during a fast scroll or resize.
+  const pet=$('.yuki-pet'),img=pet.querySelector('img'),canvas=pet.querySelector('canvas');pet.hidden=hidden||!clear;if(img.src!==p.frame.image.src)img.src=p.frame.image.src;
   const breathing=!life.locked&&r.graph.state==='rest'&&!p.isGreeting&&!p.isEmotion&&!p.isAttention&&!media.matches&&companion.idle.amount>0;
   const drawn=breathing&&renderer?.draw(p.frame.image,companion.idle.pose,p.info.width*p.scale);canvas.hidden=!drawn;img.style.visibility=drawn?'hidden':'visible';
   Object.assign(pet.style,{width:p.info.width*p.scale+'px',height:p.info.height*p.scale+'px',transform:`translate3d(${p.x}px,${p.y}px,0)`});
-  const box=p.frame.bounds??[210,170,515,615],hit=$('.yuki-hit');hit.hidden=hidden||paused;Object.assign(hit.style,{left:p.x+box[0]*p.scale+'px',top:p.y+box[1]*p.scale+'px',width:(box[2]-box[0])*p.scale+'px',height:(box[3]-box[1])*p.scale+'px'});
+  const box=p.frame.pixelBounds??[210,170,515,615],hit=$('.yuki-hit');hit.hidden=hidden||!clear;Object.assign(hit.style,{left:p.x+box[0]*p.scale+'px',top:p.y+box[1]*p.scale+'px',width:(box[2]-box[0])*p.scale+'px',height:(box[3]-box[1])*p.scale+'px'});
   hit.setAttribute('aria-label',life.state==='sleep'?tr('Wake Yuki and chat','ゆきを起こして話す'):tr('Chat with Yuki','ゆきと話す'));
-  const bubble=$('.yuki-bubble'),b=life.bubble;bubble.hidden=!b||hidden;if(b){const [nx,ny]=p.frame.nose,rad=(media.matches?12:b.radius)*p.scale;Object.assign(bubble.style,{left:nx*p.scale-1.8*rad+'px',top:ny*p.scale-.4*rad+'px',width:2*rad+'px',height:2*rad+'px'});}
-  Object.assign(pet.dataset,{state:r.graph.state,lifecycle:life.state,breathing:String(Boolean(drawn)),art:p.frame.file,emotion:companion.emotion.kind??'neutral'});
+  const bubble=$('.yuki-bubble');bubble.hidden=!b||hidden;if(b){const [nx,ny]=p.frame.nose,rad=(media.matches?12:b.radius)*p.scale;Object.assign(bubble.style,{left:nx*p.scale-1.8*rad+'px',top:ny*p.scale-.4*rad+'px',width:2*rad+'px',height:2*rad+'px'});}
+  Object.assign(pet.dataset,{state:r.graph.state,lifecycle:life.state,breathing:String(Boolean(drawn)),art:p.frame.file,emotion:companion.emotion.kind??'neutral',clear:String(clear),bounds:JSON.stringify(occupied)});
+  $('.yuki-launcher span:last-child').textContent=hidden?tr('Show Yuki','ゆきを表示'):life.state==='sleep'?tr('Tap to wake & chat','タップして起こす'):tr('Talk to Yuki','ゆきと話す');
+  const launcher=$('.yuki-launcher'),buttonExtent={left:-18,right:18,top:-18,bottom:18};
+  launcher.setAttribute('aria-label',hidden?tr('Show Yuki','ゆきを表示'):tr('Chat with Yuki','ゆきと話す'));
+  if((!clear||hidden)&&!open){if(!launcherSpot||!fits(atFoot(launcherSpot,buttonExtent),obstacles,layout))launcherSpot=safeSpot(buttonExtent,obstacles,layout,{x:layout.width-30,y:layout.height-30});
+   launcher.hidden=!launcherSpot;if(launcherSpot)Object.assign(launcher.style,{left:launcherSpot.x-18+'px',top:launcherSpot.y-18+'px'});
+  }else launcher.hidden=true;
+  if(!clear&&!open&&performance.now()>relocateAt){relocateAt=performance.now()+1200;queueFollow();}
+  placeBubble();drawPointer();
  }
  let lastTrim=0;
  function trimArt(){
@@ -136,12 +256,21 @@ async function start(){
   const res=await fetch(new URL('manifest.json',assets));if(!res.ok)throw Error('manifest');({clips}=await res.json());await ensure(['sleep','rest']);
   const timing={rest:clips.rest.frames.map(f=>f.durationMs),flight:clips.flight.frames.map(f=>f.durationMs??60),takeoff:takeoffMs,landing:landingMs};
   companion=new Companion(timing,measure(),{motion:contactPhases,idle:{},lifecycle:{clips,startAsleep:!saved.awake,inactivityMs:Infinity,crashChance:0},greeting:clips.greeting.playback,emotions:{...emotionPlayback(clips),pointLeft:clips.pointLeft.playback,pointRight:clips.pointRight.playback},airClips});
-  if(saved.awake&&Number.isFinite(saved.x)){companion.rover.at='last-position';companion.rover.wanted='last-position';companion.rover.position={...companion.rover.point('last-position')};}
-  companion.rover.setArrivalStyle('auto');try{renderer=new IdleRenderer($('.yuki-pet canvas'));}catch{}
-  guide=new SiteGuide(companion,{destinations:elements,reveal:id=>{elements.find(d=>d.id===id).el.scrollIntoView({block:'center',behavior:'instant'});measure();},arrive:id=>status(tr(`Here we are: ${names[id]}.`,`こちらが${names[id]}です。`))});ready=true;sync();last=performance.now();requestAnimationFrame(tick);
+  companion.rover.setArrivalStyle('land');try{renderer=new IdleRenderer($('.yuki-pet canvas'));}catch{}
+  guide=new SiteGuide(companion,{destinations:elements,reveal:revealTarget,direction:id=>{const d=guide.destinations.get(id);return pointerTarget(d.el.getBoundingClientRect(),shownFoot).kind;},arrive:id=>{highlightUntil=performance.now()+10000;status(tr(`Here we are: ${guide.destinations.get(id).name}.`,`こちらが${guide.destinations.get(id).name}です。`));}});
+  obstacles=obstacleReader.read(layout.width,layout.height);
+  const initial=safeSpot(restingExtent(),obstacles,layout,layout.home);
+  if(initial){companion.rover.position={...initial,y:initial.y+pageScroll()};upsert({id:'home',...companion.rover.position});}
+  ready=true;sync();last=performance.now();requestAnimationFrame(tick);
   if(saved.awake||open)await wake();if(roam){await prepareTravel();companion.rover.setWander(true);}
+  fetch(new URL('knowledge.json',assets)).then(r=>r.ok?r.json():Promise.reject()).then(k=>{knowledge=Array.isArray(k.pages)?k.pages:[];destinationList();}).catch(()=>{});
+  let requested;try{requested=pendingGuide(sessionStorage.getItem('yuki-guide-v1'),location.pathname);sessionStorage.removeItem('yuki-guide-v1');}catch{}
+  if(requested){const el=findPageTarget(document,requested,location.pathname);if(el)await showElement({id:'requested-page',name:el.textContent.trim(),el});}
  }catch{status(tr('Yuki’s artwork could not load. The website and links still work.','ゆきの画像を読み込めませんでした。サイトとリンクは利用できます。'));}
  for(const name of ['pointerdown','keydown','wheel','touchstart'])addEventListener(name,()=>companion?.lifecycle.activity(),{passive:true,capture:true});
- media.addEventListener('change',sync);addEventListener('resize',measure);let scrollFrame=0;addEventListener('scroll',()=>{if(!scrollFrame)scrollFrame=requestAnimationFrame(()=>{scrollFrame=0;measure();});},{passive:true});addEventListener('pagehide',save);
+ media.addEventListener('change',sync);addEventListener('resize',()=>{measure();chatAnchor=open?{...layout.home}:null;queueFollow();});
+ addEventListener('scroll',queueFollow,{passive:true,capture:true});
+ window.visualViewport?.addEventListener('resize',placeBubble);window.visualViewport?.addEventListener('scroll',placeBubble);
+ addEventListener('pagehide',save);
  document.addEventListener('visibilitychange',()=>{last=performance.now();if(document.hidden)save();});
 }
