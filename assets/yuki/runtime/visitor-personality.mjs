@@ -219,6 +219,11 @@ export class VisitorPersonality {
  }
  opening(text){return {text,emotion:this.seen?'neutral':'delighted',gesture:this.seen?'talkOpen':'wave',firstMeeting:!this.seen};}
 }
+// A remembered opening is part of this tab's conversation, not a new reply on
+// every bubble click. Any existing exchange (even a failed first send) resumes.
+export function conversationOpening(messages,personality,lang='en'){
+ return messages.length?null:personality.opening(personality.next(lang));
+}
 export function replySequence(cue,{firstMeeting=false,talk='talkOpen'}={}){
  if(firstMeeting)return [{...cue,emotion:'delighted',gesture:'wave',firstMeeting:true}];
  // The greeting wave is reserved for the first meeting. Respond emotionally,

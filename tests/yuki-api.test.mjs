@@ -12,7 +12,7 @@ test('baby-dragon personality maps every emotion without weakening factual or co
  const prompt=modelRequest(input,selectKnowledge(knowledge,input)).messages[0].content;
  for(const kind of ['delighted','amused','shy','proud','thoughtful','confused','surprised','reassuring'])assert(prompt.includes(kind));
  assert.match(prompt,/do not request wave/);assert.match(prompt,/Never invent credentials/);assert.match(prompt,/not misspelled baby talk/);
- assert.match(prompt,/cute and gently quirky/);assert.match(prompt,/mixing softer greetings/);assert.match(prompt,/not a joke in every reply/);assert.match(prompt,/Answer the actual question first/);
+ assert.match(prompt,/cute and gently quirky/);assert.match(prompt,/Do not add another greeting/);assert.match(prompt,/not a joke in every reply/);assert.match(prompt,/Answer the actual question first/);
 });
 test('chat omits permanent category shortcuts but keeps contextual destination guiding',()=>{
  const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');

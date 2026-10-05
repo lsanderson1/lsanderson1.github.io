@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {ReadingMemory,pageTitle,readPageTitle,readingDetail,readPageSection,chooseReadingSection,guideReference,followUpReference,readingMemoryKey} from '../assets/yuki/runtime/reading-context.mjs';
+import {ReadingMemory,pageTitle,readPageTitle,readingDetail,readPageDisplaySection,readPageSection,chooseReadingSection,guideReference,followUpReference,readingMemoryKey} from '../assets/yuki/runtime/reading-context.mjs';
 import {validateContext,textChunks,retrieveKnowledge} from '../services/yuki-api/knowledge.mjs';
 import {validateInput,modelRequest,parseModel,createHandler} from '../services/yuki-api/worker.mjs';
 import {findPageTarget} from '../assets/yuki/runtime/page-targets.mjs';
@@ -44,6 +44,35 @@ test('in-view detail complements page title, suppresses duplicate main headings 
  assert.equal(readingDetail({title:'Overhead room',kind:'image'},'Museum'),'Image: Overhead room');
  assert.equal(readingDetail({title:'展示室の全景',kind:'image'},'Museum','ja'),'画像：展示室の全景');
  assert.equal(readingDetail(null,'Museum'),'');
+});
+test('homepage shows no detail at the top, then its broad sections throughout their cards',()=>{
+ let scroll=0;
+ const area=(title,top,bottom,id)=>({getClientRects:()=>[1],closest:()=>null,getBoundingClientRect:()=>({top:top-scroll,bottom:bottom-scroll}),querySelector:()=>({textContent:title,dataset:{yukiSection:id}})});
+ const doc={querySelectorAll:()=>[area('Featured Projects',1000,1800,'s2'),area('Essays',1900,2700,'s7')]};
+ for(const path of ['/','/index.html','/portfolio/','/portfolio/index.html']){
+  const read=()=>readPageDisplaySection(doc,{path,base:path.startsWith('/portfolio')?'/portfolio':'',height:800,header:60});
+  scroll=0;assert.equal(read(),null);
+  scroll=750;assert.equal(read().title,'Featured Projects');
+  scroll=1300;assert.equal(read().title,'Featured Projects');
+  scroll=1700;assert.equal(read().title,'Essays');
+  scroll=2200;assert.equal(read().title,'Essays');
+  scroll=2700;assert.equal(read(),null);
+ }
+});
+test('homepage display takes translated and newly added section headings from the page',()=>{
+ let title='注目のプロジェクト';
+ const area={getClientRects:()=>[1],closest:()=>null,getBoundingClientRect:()=>({top:100,bottom:900}),querySelector:()=>({textContent:title,dataset:{yukiSection:'s15'}})};
+ const doc={querySelectorAll:()=>[area]};
+ for(const path of ['/ja/','/ja/index.html'])assert.equal(readPageDisplaySection(doc,{path,lang:'ja',height:800}).title,title);
+ title='New section';assert.equal(readPageDisplaySection(doc,{path:'/',height:800}).title,title);
+ area.closest=()=>({});assert.equal(readPageDisplaySection(doc,{path:'/',height:800}),null);
+});
+test('individual pages retain the precise section or image display',()=>{
+ const heading={dataset:{yukiSection:'s2'},tagName:'H2',textContent:'Interaction system',getAttribute:()=>null,getClientRects:()=>[1],closest:()=>null,getBoundingClientRect:()=>({left:50,right:950,top:100,bottom:130})};
+ const main={getBoundingClientRect:()=>({bottom:1000}),querySelectorAll:()=>[heading]};
+ const doc={documentElement:{clientWidth:1000},querySelector:()=>main,querySelectorAll:()=>{throw Error('Should not use homepage grouping');}};
+ assert.equal(readPageDisplaySection(doc,{path:'/museum.html',height:800}).title,'Interaction system');
+ assert.equal(readPageDisplaySection(doc,{path:'/ja/museum.html',lang:'ja',height:800}).id,'s2');
 });
 
 test('visible reading section follows viewport, not the last guide or chat location',()=>{
