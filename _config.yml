@@ -25,6 +25,16 @@ exclude:
   - Gemfile.lock
   - LICENSE
   - README.md
+  - scripts
+  - tests
+  - services
+  - docs
+  - package.json
+  - package-lock.json
+  - .yuki-cache
+  - node_modules
+  - .env
+  - .dev.vars
 include:
   - .nojekyll
   - _data

@@ -39,3 +39,6 @@ With Ruby and Bundler installed, run `bundle install` and then
 `bundle exec jekyll serve`. Check both `/` and `/ja/`. A production build can be
 checked with `bundle exec jekyll build` before deployment through the existing
 GitHub Actions workflow.
+# Yuki companion
+
+The portfolio includes the approved Yuki artwork, page-guidance controls and an optional Cloudflare Workers AI text-chat connection. The setup targets **Workers Free only**, with no OpenAI key, paid-provider fallback, or automatic retries. Live AI remains disabled until a free account and bot protection are configured. See [Yuki setup](docs/yuki-setup.md) for activation, free-tier limits and verification. Never put secrets in `_data/yuki.json` or browser code.

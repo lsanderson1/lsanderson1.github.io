@@ -1,0 +1,5 @@
+{
+  "enabled": true,
+  "chat_endpoint": "https://yuki-portfolio-chat.lsanderson1-github-io.workers.dev/chat",
+  "turnstile_site_key": "0x4AAAAAAFOFIN7xPRQPUV4Q"
+}

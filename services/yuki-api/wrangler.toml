@@ -1,0 +1,33 @@
+name = "yuki-portfolio-chat"
+account_id = "79112fcf75b2a091649477b713550e95"
+main = "worker.mjs"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[vars]
+SITE_ORIGIN = "https://lsanderson1.github.io"
+CHAT_ENABLED = "false"
+FREE_PLAN_CONFIRMED = "false"
+# Application-enforced request ceilings, not just spending-alert emails.
+DAILY_REQUEST_LIMIT = "100"
+VISITOR_DAILY_LIMIT = "20"
+VISITOR_MINUTE_LIMIT = "4"
+
+[ai]
+binding = "AI"
+
+[[durable_objects.bindings]]
+name = "QUOTA"
+class_name = "YukiQuota"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["YukiQuota"]
+
+[observability]
+enabled = false
+
+# Use Workers Free only. Do not enable a paid plan or AI Gateway credits.
+# FREE_PLAN_CONFIRMED is an owner acknowledgement, not a billing-plan check.
+# Set TURNSTILE_SECRET and IP_HASH_SECRET with wrangler secret put.
+# Never paste secrets into this file or _data/yuki.json.

@@ -6,3 +6,11 @@ _site/
 Gemfile.lock
 .idea
 .unreal-package/
+.yuki-cache/
+node_modules/
+.wrangler/
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*

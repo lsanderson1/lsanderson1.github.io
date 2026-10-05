@@ -1,0 +1,20 @@
+---
+layout: null
+---
+{
+ "owner": {{ site.data.bio.basics.name | jsonify }},
+ "bio": {"en": {{ site.data.bio.basics.summary | jsonify }}, "ja": {{ site.data.bio_ja.basics.summary | jsonify }}},
+ "skills": {{ site.data.bio.skills | jsonify }},
+ "pages": [
+ {"id":"resume","lang":"en","url":{{ '/resume.html' | relative_url | jsonify }},"title":"Resume","summary":{{ site.data.bio.basics.label | jsonify }},"text":{{ site.data.bio.education | jsonify | jsonify }}},
+ {"id":"resume","lang":"ja","url":{{ '/ja/resume.html' | relative_url | jsonify }},"title":"Resume","summary":{{ site.data.bio_ja.basics.label | jsonify }},"text":{{ site.data.bio_ja.education | jsonify | jsonify }}}
+ {% for entry in site.pages %}
+ {% assign include_entry = false %}
+ {% if entry.type == 'project' or entry.type == 'essay' %}{% if entry.published == true %}{% assign include_entry = true %}{% endif %}{% endif %}
+ {% if entry.type == 'unreal-journey' and entry.draft != true and entry.published != false %}{% assign include_entry = true %}{% endif %}
+ {% if include_entry and entry.draft != true %}
+ {% assign entry_id = entry.url %}{% if entry.lang == 'ja' %}{% assign entry_id = entry.url | remove_first: '/ja' %}{% endif %}
+ ,{"id":{{ entry_id | jsonify }},"lang":{{ entry.lang | default: 'en' | jsonify }},"url":{{ entry.url | relative_url | jsonify }},"title":{{ entry.title | jsonify }},"summary":{{ entry.summary | default: entry.description | jsonify }},"text":{{ entry.content | strip_html | normalize_whitespace | truncate: 5000 | jsonify }}}
+ {% endif %}{% endfor %}
+ ]
+}
