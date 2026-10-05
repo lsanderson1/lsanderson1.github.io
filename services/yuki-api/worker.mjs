@@ -41,7 +41,8 @@ Return only one JSON object matching this schema, with no Markdown fences or rea
 PUBLIC SITE DATA (JSON):\n${JSON.stringify(knowledge)}`;
  // Qwen's documented soft switch keeps simple mascot replies out of thinking
  // mode. This is not a spending safeguard; the hard output cap still applies.
- return {messages:[{role:'system',content:instructions},...input.history,{role:'user',content:input.message+'\n/no_think'}],stream:false,max_tokens:700,temperature:0.6,response_format:{type:'json_schema',json_schema:schema}};
+ const focusInstruction=knowledge.view?.focus?'\nFOCUSED GUIDE EXPLANATION: The visitor clicked Explain after being shown view.focus. This is the subject, not an earlier conversation topic. Begin by identifying this particular heading or image. For an image, say what its published description says it shows, then relate that to the documented project; do not pretend to inspect its pixels. Cite view.focus.sourceId among the supporting sourceIds. If its description is sparse, say so rather than substituting a different subject.':'';
+ return {messages:[{role:'system',content:instructions+focusInstruction},...(knowledge.view?.focus?[]:input.history),{role:'user',content:input.message+'\n/no_think'}],stream:false,max_tokens:700,temperature:0.6,response_format:{type:'json_schema',json_schema:schema}};
 }
 export function parseModel(data,knowledge){
  if(!data||typeof data!=='object'||JSON.stringify(data).length>32000||data.error||data.success===false)throw failure(502,'Reply unavailable');

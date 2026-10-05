@@ -24,19 +24,26 @@ export function textChunks(text,size=1700){
  }return out;
 }
 const canonical=path=>path.replace(/^\/ja(?=\/)/,'');
+const guideExplanation=message=>[
+ 'Please explain what you just showed me in more detail. How does it relate to this project?',
+ 'さっき案内してくれたところを、もう少し詳しく説明して。この作品とどう関係しているの？'
+].includes(message.trim());
 function resolve(pages,ref){
  if(!ref)return null;
  const page=pages.find(p=>p.url===ref.page)??pages.find(p=>canonical(p.url)===canonical(ref.page));if(!page)return null;
  // Section identifiers are local to a language's rendered document.
  const section=page.url===ref.page?page.sections?.find(s=>s.id===ref.section):null;
- return {page:page.url,title:page.title,section:section?.id??'',heading:section?.title??'',sourceId:section?`${page.id}::${section.id}`:page.id};
+ return {page:page.url,title:page.title,section:section?.id??'',heading:section?.title??'',kind:section?.kind==='image'?'image':section?'section':'page',sourceId:section?`${page.id}::${section.id}`:page.id};
 }
 export function retrieveKnowledge(k,input){
  if(!k||typeof k.owner!=='string'||!k.bio||!Array.isArray(k.pages))throw Error('Site information unavailable');
  const pages=k.pages.filter(p=>p&&p.lang===input.lang&&typeof p.id==='string'&&typeof p.title==='string'&&safeSitePath(p.url)&&typeof p.text==='string').map(p=>({id:p.id,url:p.url,lang:p.lang,title:p.title,summary:clean(p.summary).slice(0,500),text:p.text,sections:Array.isArray(p.sections)?p.sections.filter(s=>sectionKey(s?.id)&&typeof s.title==='string'&&typeof s.text==='string'):[]}));
  const current=resolve(pages,{page:input.page,section:input.context?.section});
  const lastGuided=resolve(pages,input.context?.lastGuide);
- const query=queryWords(input.message),history=queryWords((input.history??[]).filter(m=>m.role==='user').slice(-2).map(m=>m.content).join(' '));
+ // The guide's explicit Explain button starts a new subject. Stale conversation
+ // must not pull retrieval or the model back to an earlier, unrelated target.
+ const focus=guideExplanation(input.message)?lastGuided:null;
+ const query=queryWords(focus?focus.heading:input.message),history=focus?[]:queryWords((input.history??[]).filter(m=>m.role==='user').slice(-2).map(m=>m.content).join(' '));
  const score=(text,words)=>words.reduce((n,w)=>n+(text.includes(w)?1:0),0);
  const chunks=[];
  for(const p of pages){
@@ -47,14 +54,14 @@ export function retrieveKnowledge(k,input){
    textChunks(s.text).forEach((text,i)=>chunks.push({id:`${p.id}::${s.id||'body'}${i?'::'+i:''}`,url:p.url+(safeAnchor?'#'+safeAnchor:''),title:p.title+(s.id?' — '+s.title:''),text,page:p.url,section:s.id,part:i}));
   }
  }
- const ranked=chunks.map((c,i)=>{
+ const ranked=chunks.filter(c=>!focus||c.page===focus.page).map((c,i)=>{
   const title=c.title.toLowerCase(),body=c.text.toLowerCase();
   return {...c,order:i,score:score(title,query)*8+score(body,query)*3+score(title+' '+body,history)*.35+(c.page===current?.page?2:0)+(c.page===lastGuided?.page?1:0)};
  }).sort((a,b)=>b.score-a.score||a.order-b.order);
  const chosen=[];const add=c=>{if(c&&!chosen.some(x=>x.id===c.id)&&chosen.length<6)chosen.push(c);};
  // Always supply the currently displayed section and recent guided target;
  // explicit questions can still retrieve a different passage anywhere in a page.
- for(const ref of [current,lastGuided])if(ref){const c=ranked.find(c=>c.page===ref.page&&c.section===ref.section);add(c);if(c)ref.sourceId=c.id;}
+ for(const ref of focus?[focus]:[current,lastGuided])if(ref){const c=ranked.find(c=>c.page===ref.page&&c.section===ref.section);add(c);if(c)ref.sourceId=c.id;}
  for(const c of ranked)add(c);
- return {owner:k.owner,bio:clean(k.bio[input.lang]).slice(0,2000),skills:JSON.stringify(k.skills||[]).slice(0,2000),view:{current,lastGuided},pages:chosen.map(({id,url,title,text})=>({id,url,title,text}))};
+ return {owner:k.owner,bio:clean(k.bio[input.lang]).slice(0,2000),skills:JSON.stringify(k.skills||[]).slice(0,2000),view:{current,lastGuided,focus},pages:chosen.map(({id,url,title,text})=>({id,url,title,text}))};
 }

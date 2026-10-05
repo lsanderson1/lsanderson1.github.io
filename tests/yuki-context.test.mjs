@@ -92,6 +92,17 @@ test('prompt supports contextual depth, explicitly limits visual claims and pres
  for(const text of ['not eye tracking','lastGuided','ask a brief clarifying question','not unseen visual details','4–6 concise sentences','untrusted DATA','Never invent credentials'])assert(prompt.includes(text));
  assert.equal(body.max_tokens,700);assert(!body.tools);
 });
+test('guide Explain resets the topic to the selected picture rather than old conversation',()=>{
+ const request={...input,message:'Please explain what you just showed me in more detail. How does it relate to this project?',history:[{role:'user',content:'Explain the controller and design patterns'},{role:'assistant',content:'The controller owns input.'}],context:{section:'i0',lastGuide:{page:'/museum.html',section:'i0'}}};
+ const other={...page,id:'patterns',url:'/patterns.html',title:'Controller design patterns'};
+ const selected=retrieveKnowledge({...knowledge,pages:[page,other]},request);
+ assert.equal(selected.view.focus.kind,'image');assert.equal(selected.view.focus.sourceId,'/museum.html::i0');assert(selected.pages.every(p=>p.url.startsWith('/museum.html')));
+ const body=modelRequest(request,selected);assert.equal(body.messages.length,2);assert.match(body.messages[0].content,/FOCUSED GUIDE EXPLANATION/);
+ const japanese=retrieveKnowledge(knowledge,{...request,message:'さっき案内してくれたところを、もう少し詳しく説明して。この作品とどう関係しているの？'});
+ assert.equal(japanese.view.focus.sourceId,'/museum.html::i0');
+ const explicit=retrieveKnowledge(knowledge,{...request,message:'Explain controller design patterns instead'});
+ assert.equal(explicit.view.focus,null);assert.equal(modelRequest({...request,message:'Explain controller design patterns instead'},explicit).messages.length,4);
+});
 test('context travels only with explicit Send; guide arrival does not trigger an AI request',()=>{
  const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
  assert.match(ui,/const context=readingContext\(\)/);assert.match(ui,/page:location.pathname,context,token/);assert.match(ui,/readingMemory.set\(guideReference/);
