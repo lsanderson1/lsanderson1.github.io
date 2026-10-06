@@ -1,10 +1,10 @@
 // Whole drawn poses; no sprite stretching. Optional so older studies are unchanged.
 export class Lifecycle {
- constructor(companion,{clips,inactivityMs=90000,crashChance=.02,crashCooldownMs=300000,startAsleep=true}={}){
+ constructor(companion,{clips,inactivityMs=90000,crashChance=.02,crashCooldownMs=300000,crashCooldownRemainingMs=0,onCrash=()=>{},startAsleep=true}={}){
   this.c=companion;this.clips=clips;this.inactivityMs=inactivityMs;
   this.crashChance=crashChance;this.crashCooldownMs=crashCooldownMs;
   this.state=startAsleep?'sleep':'awake';this.frame=0;this.elapsed=0;this.age=0;
-  this.inactive=0;this.clock=0;this.lastCrash=0;this.pendingSleep=false;this.forceCrash=false;
+  this.inactive=0;this.clock=0;this.lastCrash=Math.max(0,Math.min(crashCooldownMs,crashCooldownRemainingMs))-crashCooldownMs;this.onCrash=onCrash;this.pendingSleep=false;this.forceCrash=false;
  }
  get locked(){return this.state!=='awake';}
  activity(){this.inactive=0;this.pendingSleep=false;}
@@ -38,7 +38,7 @@ export class Lifecycle {
   if(previous!=='landing'&&r.graph.state==='landing'){
    const crash=this.forceCrash||(this.clock-this.lastCrash>=this.crashCooldownMs&&r.random()<this.crashChance);
    this.forceCrash=false;
-   if(crash){this.lastCrash=this.clock;this.neutralize();this.enter('crash');}
+   if(crash){this.lastCrash=this.clock;this.neutralize();this.enter('crash');this.onCrash();}
   }
  }
  step(dt){

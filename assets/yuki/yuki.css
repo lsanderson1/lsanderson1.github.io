@@ -19,6 +19,9 @@
 .yuki-panel::after{content:"";position:absolute;left:calc(var(--yuki-tail,70%) - 16px);bottom:-15px;width:32px;height:17px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 17'%3E%3Cpath d='M0 0 C8 0 9 11 16 15 C18 16 19 9 22 6 C25 2 28 0 32 0' fill='%23fffaf7' stroke='%23e3cdd3' stroke-width='1'/%3E%3C/svg%3E") no-repeat;pointer-events:none}
 .yuki-panel[data-below=true]::after{bottom:auto;top:-15px;transform:rotate(180deg)}
 .yuki-panel-inner{background:#fffaf7;border:1px solid #e3cdd3;border-radius:20px;padding:12px;max-height:var(--yuki-bubble-max,65dvh);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.yuki-route-actions{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.yuki-route-actions button{font-size:12px!important;padding:5px 9px!important}
+/* Applied to the real link itself, so a sticky header cannot hide its marker. */
+.yuki-route-target{outline:2px solid #df7598!important;outline-offset:5px;border-radius:4px;box-shadow:0 0 0 6px #df75981a!important}
 .yuki-heading{display:flex;align-items:center;gap:6px;margin-bottom:6px}
 .yuki-heading h2{font:600 14px/1.3 system-ui;margin:0;flex:1}.yuki-heading small{font-size:11px;color:#907079;margin-left:4px}
 .yuki-beta{display:inline-block;font:700 9px/1.5 system-ui;letter-spacing:.08em;color:#803d51;background:#f6e1e9;border-radius:5px;padding:1px 5px;margin-left:5px;vertical-align:middle}

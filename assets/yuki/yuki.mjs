@@ -1,4 +1,4 @@
-import {Companion} from './runtime/companion.mjs';
+import {Companion} from './runtime/companion.mjs?v=2';
 import {projectFrame} from './runtime/projection.mjs';
 import {IdleRenderer} from './runtime/idle-renderer.mjs';
 import {takeoffMs,landingMs,contactPhases} from './runtime/timing.mjs';
@@ -7,13 +7,14 @@ import {emotionPlayback,applyReplyCue} from './runtime/reply-cues.mjs';
 import {SiteGuide} from './runtime/site-guide.mjs?v=5';
 import {pageLayout,bubblePlacement,bubbleHeightLimit,pointerTarget} from './runtime/page-layout.mjs?v=9';
 import {localizedPages,localizePath,findPageTarget,pendingGuide,targetRect,curateDestinations} from './runtime/page-targets.mjs?v=9';
-import {PageObstacles,visibleSpot,guideSpot,fits,atFoot} from './runtime/clear-space.mjs?v=5';
+import {PageObstacles,visibleSpot,guideSpot,clampFoot,fits,atFoot} from './runtime/clear-space.mjs?v=5';
+import {GuideJourney,guideTarget as checkedGuideTarget,isGuideRequest,resolveGuideRequest,planGuideStep,findGuideElement,guideCopy} from './runtime/guide-journey.mjs?v=1';
 import {PageMotion,pageProjection,inViewport,prepareCall,containPageRover} from './runtime/page-motion.mjs?v=7';
 import {CallPerches} from './runtime/call-perches.mjs?v=7';
-import {VisitorPersonality,conversationOpening,localizeGreetingMessages,replySequence,cueArtwork} from './runtime/visitor-personality.mjs?v=9';
+import {VisitorPersonality,conversationOpening,replySequence,cueArtwork} from './runtime/visitor-personality.mjs?v=9';
 import {ChatPermission,ChatVerification,chatEnvironment,chatConsentKey,searchConsentKey} from './runtime/chat-access.mjs?v=2';
 import {ReadingMemory,readPageTitle,readingDetail,readPageDisplaySection,readPageSection,guideReference,followUpReference} from './runtime/reading-context.mjs?v=3';
-import {validReply,readSession,chatUnavailable} from './protocol.mjs?v=6';
+import {validReply,readSession,chatUnavailable} from './protocol.mjs?v=7';
 import {safeWebURL} from './runtime/web-sources.mjs?v=1';
 import {cleanVariety,rememberReply,packChatRequest} from './runtime/reply-variety.mjs?v=1';
 
@@ -22,10 +23,14 @@ if(root)start().catch(()=>{root.textContent='';}); // Portfolio remains usable o
 async function start(){
  const ja=document.documentElement.lang==='ja',base=root.dataset.base||'',assets=new URL(root.dataset.assets,location.href);
  const tr=(en,jp)=>ja?jp:en,$=s=>root.querySelector(s),media=matchMedia('(prefers-reduced-motion: reduce)');
- let saved={};try{saved=readSession(sessionStorage);}catch{}
+ let saved={};try{saved=readSession(sessionStorage,Date.now(),ja?'ja':'en');}catch{}
  let readingStorage;try{readingStorage=sessionStorage;}catch{}const readingMemory=new ReadingMemory(readingStorage);
+ let lastFlop=0;try{const stamp=Number(readingStorage?.getItem('yuki-last-flop-v1'));if(Number.isFinite(stamp)&&stamp>0&&stamp<=Date.now())lastFlop=stamp;}catch{}
+ const flopRemaining=()=>{try{const stamp=Number(readingStorage?.getItem('yuki-last-flop-v1'));if(Number.isFinite(stamp)&&stamp>0&&stamp<=Date.now())lastFlop=Math.max(lastFlop,stamp);}catch{}return Math.max(0,300000-(Date.now()-lastFlop));};
+ const rememberFlop=()=>{lastFlop=Date.now();try{readingStorage?.setItem('yuki-last-flop-v1',String(lastFlop));}catch{}};
+ let journey=new GuideJourney(readingStorage),journeySerial=0,journeyStep=null,markedTarget=null,knowledgeReady;
  let visitorStorage;try{visitorStorage=localStorage;}catch{}const personality=new VisitorPersonality(visitorStorage);
- let messages=localizeGreetingMessages(saved.messages??[],ja?'ja':'en'),variety=cleanVariety(saved.variety),companion,guide,renderer,clips,bodyHeight=155,last=0,loading=0,busy=false,pendingCue=null,controller;
+ let messages=saved.messages??[],variety=cleanVariety(saved.variety),companion,guide,renderer,clips,bodyHeight=155,last=0,loading=0,busy=false,pendingCue=null,controller;
  let hidden=saved.hidden??false,paused=saved.paused??false,roam=saved.mobilityVersion===2?saved.roam:true,open=false,ready=false,onScreen=true,calling=false,callLoading=false;
  const viewportLayout=()=>pageLayout(document.documentElement.clientWidth||innerWidth,innerHeight);
  let layout=viewportLayout(),shownFoot=layout.home,motion,guideTarget=null,highlightUntil=0,knowledge=[];
@@ -47,7 +52,8 @@ async function start(){
  <div class="yuki-panel-inner"><header class="yuki-heading"><h2 id="yuki-title">ゆき <span class="yuki-beta">BETA</span><small>${tr('Your little guide','小さな案内役')}</small></h2><button class="yuki-menu" aria-expanded="false" aria-controls="yuki-more" aria-label="${tr('Guide, history and settings','案内・履歴・設定')}">⋯</button><button class="yuki-close" aria-label="${tr('Close chat','チャットを閉じる')}">×</button></header>
  <div class="yuki-speech" role="log" aria-live="polite" aria-atomic="true" aria-label="${tr('Yuki says','ゆきの返事')}"></div><p class="yuki-status" role="status"></p>
  <p class="yuki-reading"><span class="yuki-page"></span><span class="yuki-view"></span><button class="yuki-explain" type="button" hidden>${tr('Explain what you showed me','案内したところを説明して')}</button></p>
- <form class="yuki-form"><textarea maxlength="1000" rows="1" aria-label="${tr('Message Yuki','ゆきへのメッセージ')}" placeholder="${tr('Talk to Yuki…','ゆきに話しかける…')}" ${online?'':'disabled'}></textarea><button type="submit" ${online?'':'disabled'}>${tr('Send','送信')}</button>
+ <div class="yuki-route-actions" hidden></div>
+ <form class="yuki-form"><textarea maxlength="1000" rows="1" aria-label="${tr('Message Yuki','ゆきへのメッセージ')}" placeholder="${tr('Talk to Yuki…','ゆきに話しかける…')}"></textarea><button type="submit">${tr('Send','送信')}</button>
  <details class="yuki-setup"><summary></summary><div class="yuki-privacy"><label><input type="checkbox" class="yuki-consent" ${online?'':'disabled'}>${tr('Allow my messages, recent chat, current page/section and recent guide target to be sent to Cloudflare Workers AI, and load Cloudflare’s bot check when I open chat. Remember this permission on this browser across pages and visits; I can turn it off here anytime. Please don’t share sensitive information.','メッセージ・直近の会話・現在のページや項目・直近の案内先をCloudflare Workers AIに送信し、チャットを開くとCloudflareのボット認証を読み込むことに同意します。このブラウザーではページ移動後や次回の訪問にも同意を記憶します。ここでいつでも解除できます。個人情報・機密情報は入力しないでください。')}</label><span>${tr('Free AI has usage limits. Recent messages and guide context stay in this tab for 30 minutes. Clear them in the menu.','無料AIには利用上限があります。会話と案内先はこのタブ内で30分間保持され、メニューから消去できます。')}</span><p class="yuki-consent-note" hidden></p></div></details>
  <div class="yuki-check"><p class="yuki-verification-status" role="status"></p><div class="yuki-verification"></div><button class="yuki-retry" type="button" hidden>${tr('Retry verification','認証をやり直す')}</button><button class="yuki-cancel" type="button" hidden>${tr('Cancel sending','送信をキャンセル')}</button></div></form>
  <p class="yuki-preview" hidden><a class="yuki-live-link" target="_blank" rel="noopener noreferrer">${tr('Open this page on the live website ↗','公開サイトの同じページを開く ↗')}</a></p>
@@ -56,6 +62,7 @@ async function start(){
  <details class="yuki-history"><summary>${tr('Conversation history','会話の履歴')}</summary><div class="yuki-log" aria-label="${tr('Conversation','会話')}"></div></details>
  <div class="yuki-settings"><button data-action="roam"></button><button data-action="pause"></button><button data-action="hide"></button><button data-action="clear">${tr('Clear chat','会話を消去')}</button></div></div></div></section>`;
  const varietyNote=document.createElement('p');varietyNote.textContent=tr('To reduce repetition, this tab also keeps Yuki’s discussed story topics, recent reply openings and similarity fingerprints with the chat. They are sent with your next message, cleared with Clear chat, and use the same session expiry. A near-duplicate answer may use one extra AI rewrite within the same free usage limits.','繰り返しを減らすため、ゆきが話した物語の項目、直近の返事の書き出し、類似度を確認するためのデータも会話と同じタブに保存し、次のメッセージと一緒に送信します。「会話を消去」で削除され、保持期限も会話と同じです。よく似た回答は、同じ無料利用上限の範囲内で一度だけAIが書き直す場合があります。');$('.yuki-privacy').append(varietyNote);
+ const languageNote=document.createElement('p');languageNote.textContent=tr('Switching languages clears the conversation and reply memory. An active guided route continues in the new language.','言語を切り替えると会話と返事の記憶を消去します。案内中の行き先は引き継ぎ、新しい言語で案内を続けます。');$('.yuki-privacy').append(languageNote);
  const searchLabel=document.createElement('label'),searchBox=document.createElement('input');searchBox.type='checkbox';searchBox.className='yuki-search-consent';searchBox.disabled=!online;
  searchLabel.append(searchBox,document.createTextNode(tr('Optional: let Yuki send a short public-topic query to Tavily when an answer needs web information. This adds another provider; your full chat is not sent to Tavily. Do not include private or sensitive information. Remember this choice; you can turn it off here anytime. Search has shared free limits, and normal chat works without it.','任意：ウェブ情報が必要な回答では、ゆきが短い公開トピックの検索語をTavilyに送信することを許可します。送信先が追加されますが、会話全体はTavilyに送りません。個人情報・機密情報は入力しないでください。この設定を記憶し、ここでいつでも解除できます。検索には共有の無料上限があります。通常の会話は検索なしでも利用できます。')));$('.yuki-privacy').append(searchLabel);
  const status=text=>{$('.yuki-status').textContent=text;};
@@ -91,7 +98,7 @@ async function start(){
    $('.yuki-speech').replaceChildren(p);$('.yuki-speech').scrollTop=0;
   }if(remember)save();
  }
- function save(){try{const r=companion?.rover;sessionStorage.setItem('yuki-session-v1',JSON.stringify({savedAt:Date.now(),mobilityVersion:2,awake:companion?companion.lifecycle.state!=='sleep':saved.awake,hidden,paused,roam,messages,variety,x:r?r.foot.x/innerWidth:saved.x,y:r?r.foot.y/innerHeight:saved.y}));}catch{}}
+ function save(){try{const r=companion?.rover;sessionStorage.setItem('yuki-session-v1',JSON.stringify({savedAt:Date.now(),language:ja?'ja':'en',mobilityVersion:2,awake:companion?companion.lifecycle.state!=='sleep':saved.awake,hidden,paused,roam,messages,variety,x:r?r.foot.x/innerWidth:saved.x,y:r?r.foot.y/innerHeight:saved.y}));}catch{}}
  function settingLabels(){for(const [k,text] of Object.entries({roam:roam?tr('Occasional flights: on','たまにお散歩：オン'):tr('Occasional flights: off','たまにお散歩：オフ'),pause:paused?tr('Resume','再開'):tr('Pause','一時停止'),hide:hidden?tr('Show Yuki','ゆきを表示'):tr('Hide Yuki','ゆきを隠す')}))$(`[data-action="${k}"]`).textContent=text;}
  drawMessages();status(online?tr('Ready when you are.','いつでもどうぞ。'):offline);settingLabels();
  function panel(value,{restoreFocus=true}={}){open=value;$('.yuki-panel').hidden=!value;$('.yuki-hit').setAttribute('aria-expanded',String(value));motion?.defer();
@@ -129,7 +136,7 @@ async function start(){
   finally{loading--;}
  }
  const travel=['rest','takeoff','landing','flight','flightHover','flightLeft','flightRight','pointLeft','pointRight','attention'];
- async function prepareTravel(){await ensure([...travel,'wake','bedtime','crash']);companion.lifecycle.crashChance=.02;companion.lifecycle.inactivityMs=90000;if(motion)motion.prepared=true;}
+ async function prepareTravel(){await ensure([...travel,'wake','bedtime','crash']);companion.lifecycle.crashChance=.08;companion.lifecycle.inactivityMs=90000;if(motion)motion.prepared=true;}
  async function wake(){if(!ready)return;try{await ensure(['wake','bedtime']);companion.lifecycle.inactivityMs=90000;companion.lifecycle.wake();companion.lifecycle.activity();save();}catch{status(tr('Some animation artwork could not load. Please try again.','アニメーションを読み込めませんでした。もう一度お試しください。'));}}
  const elements=Object.entries(paths).map(([id,path])=>({id,name:names[id],el:document.querySelector(id==='projects'?'#projects, .fp-project-list':id==='essays'?'#essays, .fp-essay-list':id==='unreal'?'#unreal-journey, .fp-timeline':'.fp-resume-head')})).filter(d=>d.el);
  function measure(){
@@ -168,6 +175,7 @@ async function start(){
  }
  async function callYuki(){
   if(!ready||calling||callLoading)return;const button=$('.yuki-launcher');callLoading=true;button.disabled=true;
+  stopJourney();
   try{await prepareTravel();await wake();hidden=false;paused=false;guide.reset();guideTarget=null;highlightUntil=0;sync();
    const extent=restingExtent(),target=chooseLandingSpot();
    prepareCall(companion.rover,extent,layout,scrollY);calling=true;motion.travel({...target,y:target.y+scrollY});
@@ -185,22 +193,24 @@ async function start(){
   if(!list.childElementCount)list.textContent=tr('No matching page or section.','一致するページ・項目がありません。');
  }
  $('.yuki-search').oninput=destinationList;destinationList();
+ knowledgeReady=fetch(new URL('knowledge.json',assets)).then(r=>r.ok?r.json():Promise.reject()).then(k=>{knowledge=Array.isArray(k.pages)?k.pages:[];destinationList();if(open)updateReading();return knowledge;}).catch(()=>[]);
  async function visit(path,title){
-  const url=localizePath(path,knowledge,ja?'ja':'en',base);if(!url)return;
-  const el=findPageTarget(document,url,location.pathname);
-  // Navigation links aren't a substitute for a project's actual page/card.
-  if(el&&!el.closest('.fp-nav')){await showElement({id:'page-'+url,name:title,el,url});return;}
-  try{sessionStorage.setItem('yuki-guide-v1',JSON.stringify({url,at:Date.now()}));}catch{}
-  save();location.assign(url);
+  await knowledgeReady;
+  const target=checkedGuideTarget(path,knowledge,ja?'ja':'en',base);if(target){await beginJourney(target);return;}
+  status(tr('I couldn’t confirm that destination in the published page map. Please choose a listed page.','公開ページの地図で行き先を確認できなかったの。一覧から選んでね。'));
  }
  async function showElement(d){
-  if(!ready)return;status(tr('I’ll show you…','ご案内します…'));
-  try{await prepareTravel();await wake();paused=false;hidden=false;sync();
+  if(!ready)return;if(d.journeySerial===undefined)stopJourney();status(tr('I’ll show you…','ご案内します…'));
+  try{await prepareTravel();await wake();
+   if(d.journeySerial!==undefined&&d.journeySerial!==journeySerial)return;
+   paused=false;hidden=false;sync();
    calling=false;reactionVersion++;pendingCue=null;guide.destinations.set(d.id,d);panel(false,{restoreFocus:false});document.activeElement?.blur();guide.request(d.id);
-  }catch{d.el.scrollIntoView({block:'center'});readingMemory.set(guideReference(d.el,location.pathname,d.url));if(open)updateReading();status(tr('The item is here; my flight could not load.','こちらの項目です。飛行アニメーションを読み込めませんでした。'));}
+  }catch{if(d.journeySerial!==undefined&&d.journeySerial!==journeySerial)return;d.el.scrollIntoView({block:'center'});readingMemory.set(guideReference(d.el,location.pathname,d.url));if(d.journeySerial!==undefined){clearRouteMarker();markedTarget=d.el;markedTarget.classList.add('yuki-route-target');journeyArrived(d);}if(open)updateReading();status(tr('The item is highlighted; my flight could not load. You can still click the link.','こちらの項目を光らせたよ。飛行画像は読み込めなかったけれど、リンクはクリックできるよ。'));}
  }
  function revealTarget(id){
   const d=guide.destinations.get(id);if(!d?.el?.isConnected)return;
+  if(markedTarget)markedTarget.classList.remove('yuki-route-target');markedTarget=null;
+  if(d.journeySerial!==undefined){markedTarget=d.el;markedTarget.classList.add('yuki-route-target');}
   const card=d.el.closest('.fp-feature');if(card)card.dispatchEvent(new CustomEvent('yuki:reveal-card',{bubbles:true}));
   guideScrollUntil=performance.now()+400;
   d.el.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});
@@ -211,7 +221,7 @@ async function start(){
  }
  function drawPointer(){
   const svg=$('.yuki-guide-line'),ring=$('.yuki-target-ring'),el=guideTarget?.el;
-  const show=!hidden&&!open&&el?.isConnected&&performance.now()<highlightUntil;
+  const show=!hidden&&(!open||guideTarget?.journeySerial!==undefined)&&el?.isConnected&&performance.now()<highlightUntil;
   root.dataset.guiding=String(Boolean(show));svg.hidden=!show;ring.hidden=!show;if(!show)return;
   const rect=targetRect(el);if(rect.bottom<0||rect.top>layout.readingHeight||rect.right<0||rect.left>layout.readingWidth){svg.hidden=ring.hidden=true;return;}
   const start={x:shownFoot.x,y:shownFoot.y-bodyHeight*.52},end=pointerTarget(rect,start);
@@ -224,14 +234,58 @@ async function start(){
   svg.querySelector('circle').setAttribute('cx',end.x);svg.querySelector('circle').setAttribute('cy',end.y);
   Object.assign(ring.style,{left:rect.left-4+'px',top:rect.top-4+'px',width:rect.width+8+'px',height:rect.height+8+'px'});
  }
- for(const b of root.querySelectorAll('[data-action]'))b.onclick=async()=>{const a=b.dataset.action;if(a==='clear'){controller?.abort();reactionVersion++;messages=[];variety=cleanVariety();readingMemory.clear();updateReading();drawMessages();status(online?tr('Conversation cleared.','会話を消去しました。'):offline);pendingCue=null;}
-  if(a==='hide'){hidden=!hidden;if(hidden){calling=false;controller?.abort();reactionVersion++;pendingCue=null;panel(false);}}if(a==='pause')paused=!paused;
+ for(const b of root.querySelectorAll('[data-action]'))b.onclick=async()=>{const a=b.dataset.action;if(a==='clear'){stopJourney();controller?.abort();reactionVersion++;messages=[];variety=cleanVariety();readingMemory.clear();updateReading();drawMessages();status(online?tr('Conversation cleared.','会話を消去しました。'):offline);pendingCue=null;}
+  if(a==='hide'){hidden=!hidden;if(hidden){stopJourney();calling=false;controller?.abort();reactionVersion++;pendingCue=null;panel(false);}}if(a==='pause')paused=!paused;
   if(a==='roam'&&ready){b.disabled=true;try{await prepareTravel();roam=!roam;motion.defer();}catch{status(tr('Flight artwork is unavailable. Please retry.','飛行アニメーションを読み込めませんでした。'));}finally{b.disabled=false;}}
   sync();};
  async function guideDestination(id){
   if(!paths[id])return;
-  const d=elements.find(d=>d.id===id);
-  if(d)await showElement({...d,el:d.el.querySelector('h1,h2,h3')??d.el});else await visit(base+(ja?'/ja':'')+paths[id],names[id]);
+  await visit(base+(ja?'/ja':'')+paths[id],names[id]);
+ }
+ function clearRouteMarker(){markedTarget?.classList.remove('yuki-route-target');markedTarget=null;}
+ function stopJourney(){journeySerial++;journey.clear();journeyStep=null;clearRouteMarker();guide?.reset();guideTarget=null;highlightUntil=0;$('.yuki-route-actions').replaceChildren();$('.yuki-route-actions').hidden=true;}
+ function cancelJourney(){stopJourney();addMessage('assistant',tr('Okay! Little map tucked away. What caught your eye here?','はーい、小さな地図をしまうね。ここでは何が気になった？'));status(tr('Explore at your own pace.','好きなペースで見てみよう！'));}
+ function routeButtons(items){const box=$('.yuki-route-actions');box.replaceChildren();box.hidden=!items.length;for(const [label,action] of items){const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=action;box.append(b);}placeBubble();}
+ function routeOptions(targets){routeButtons(targets.filter(Boolean).map(t=>[t.title,()=>beginJourney(t)]));}
+ async function beginJourney(target){
+  const checked=checkedGuideTarget(target?.url,knowledge,ja?'ja':'en',base);if(!checked)return;
+  stopJourney();journey.start(checked.url,location.pathname);await leadJourney();
+ }
+ async function leadJourney(){
+  if(!journey.active||!ready)return;
+  const target=checkedGuideTarget(journey.state.target,knowledge,ja?'ja':'en',base);
+  const step=planGuideStep(target,location.pathname,knowledge,{lang:ja?'ja':'en',base});
+  if(!step){stopJourney();return;}
+  const el=findGuideElement(document,step);
+  if(!el){panel(true);addMessage('assistant',tr('I found the page in my map, but not its clickable link here. I won’t point at the wrong thing. You can open the exact page below.','地図にはあるけれど、このページに案内できるリンクが見つからないの。違うところは指さないよ。下のリンクから正しいページを開けるよ。'));
+   const a=document.createElement('a');a.href=target.url;a.textContent=target.title;$('.yuki-speech').lastElementChild.append(a);routeButtons([[tr('Stop leading','案内を終了'),cancelJourney]]);return;}
+  journeyStep=step;journey.expect(step.kind==='arrive'?target.url:step.url,location.pathname);
+  routeButtons([[tr('Stop leading','案内を終了'),cancelJourney]]);
+  await showElement({id:'journey-'+journeySerial+'-'+step.kind,name:step.title,el,url:step.url,journeySerial});
+ }
+ function journeyArrived(d){
+  if(!journey.active||d.journeySerial!==journeySerial||!journeyStep)return;
+  const step=journeyStep;
+  panel(true);addMessage('assistant',guideCopy(step,{lang:ja?'ja':'en'}));
+  status(tr('Guided route · click the highlighted link yourself.','道案内中・光っているリンクをクリックしてね。'));
+  highlightUntil=Infinity;
+  if(step.kind==='arrive'){
+   journey.clear();status(tr('You’ve arrived. What would you like to explore?','到着したよ。どこから見てみようか？'));
+   const page=knowledge.find(p=>p.url===step.url.split('#')[0]);
+   const sections=(page?.sections??[]).filter(s=>s.id!=='s0'&&s.kind!=='image'&&s.anchor&&s.anchor!==step.url.split('#')[1]).slice(0,2);
+   routeButtons([[tr('Explain this','ここを説明して'),()=>{if(online)$('.yuki-explain').click();else status(offline);}],...sections.map(s=>[s.title,()=>beginJourney(checkedGuideTarget(page.url+'#'+s.anchor,knowledge,ja?'ja':'en',base))]),[tr('All done','案内ありがとう'),()=>{stopJourney();panel(false);}]]);
+  }else routeButtons([[tr('Point again','もう一度指して'),()=>leadJourney()],[tr('Stop leading','案内を終了'),cancelJourney]]);
+ }
+ async function resumeJourney(){
+  if(!journey.active)return;
+  const target=checkedGuideTarget(journey.state.target,knowledge,ja?'ja':'en',base);
+  if(!target){stopJourney();return;}
+  const result=journey.enter(location.pathname,base);
+  if(result==='detour'){
+   panel(true);addMessage('assistant',guideCopy({title:target.title},{lang:ja?'ja':'en',detour:true}));
+   routeButtons([[tr('Continue guiding','案内を続けて'),()=>leadJourney()],[tr('Explore here instead','ここを見てみる'),cancelJourney]]);return;
+  }
+  await leadJourney();
  }
  let reactionVersion=0;
  let talkTurn=0;
@@ -271,11 +325,17 @@ async function start(){
  $('.yuki-cancel').onclick=()=>{controller?.abort();verification.stop();status(tr('Sending cancelled.','送信をキャンセルしました。'));};
  addEventListener('storage',e=>{if(e.storageArea!==visitorStorage||![chatConsentKey,searchConsentKey,null].includes(e.key))return;const wasAllowed=permission.allowed,wasSearch=searchPermission.allowed;permission.reload();searchPermission.reload();permissionUI();if(wasSearch&&!searchPermission.allowed&&busy)controller?.abort();if(!permission.allowed)withdrawPermission();else if(!wasAllowed)prepareVerification();});
  $('.yuki-form').onsubmit=async e=>{
-  e.preventDefault();if(!online||busy)return;const text=$('textarea').value.trim();if(!text)return;
+  e.preventDefault();if(busy||!ready)return;const text=$('textarea').value.trim();if(!text)return;
+  if(journey.active&&/^(?:stop(?: guiding| leading)?|cancel(?: guide)?|案内をやめて|案内を終了)[.!。！]?$/i.test(text)){addMessage('user',text);$('textarea').value='';stopJourney();addMessage('assistant',tr('Okay! I’ll put my little map away. We can explore at your pace.','はーい、小さな地図をしまうね。好きなペースで見てみよう！'));return;}
+  if(journey.active&&/^(?:continue(?: guiding| leading)?|resume(?: guide)?|案内を続けて|続けて)[.!。！]?$/i.test(text)){addMessage('user',text);$('textarea').value='';await leadJourney();return;}
+  const requested=resolveGuideRequest(text,knowledge,location.pathname,{lang:ja?'ja':'en',base});
+  if(requested?.target){addMessage('user',text);$('textarea').value='';await beginJourney(requested.target);return;}
+  if(requested?.choices?.length){addMessage('user',text);$('textarea').value='';addMessage('assistant',tr('A few places match! Which one shall my little wings lead you to?','いくつか見つかったよ！どこへ案内しようか？'));routeOptions(requested.choices);return;}
+  if(!online||busy){status(offline);if(requested){addMessage('user',text);$('textarea').value='';addMessage('assistant',tr('Which page did you mean? Try a project title or choose a section below. I can lead you without AI; open the live site for explanations.','どのページかな？作品名を教えるか、下から選んでね。AIなしでも案内できるよ。詳しいお話は公開サイトでできるよ。'));routeOptions(Object.values(paths).map(path=>checkedGuideTarget(base+(ja?'/ja':'')+path,knowledge,ja?'ja':'en',base)));}return;}
   if(!permission.allowed){$('.yuki-setup').open=true;status(tr('Please allow sending your message first.','送信への同意を確認してください。'));$('.yuki-consent').focus();return;}
   busy=true;$('button[type=submit]').disabled=true;$('textarea').readOnly=true;$('.yuki-cancel').hidden=false;
   const context=readingContext();updateReading();
-  const requestController=new AbortController();controller=requestController;let timer,tokenUsed=false;
+  const requestController=new AbortController();controller=requestController;let timer,tokenUsed=false,deferredGuide=null;
   try{
    status(tr('Preparing your message…','メッセージを送る準備中…'));
    const token=await verification.takeToken(requestController.signal);
@@ -289,10 +349,18 @@ async function start(){
    const cue=validReply(await response.json());if(requestController.signal.aborted||!permission.allowed)return;
    const followUp=followUpReference(cue,context.lastGuide,knowledge);if(followUp)readingMemory.set(followUp);else readingMemory.clear();
    addMessage('assistant',cue.text,true,cue.sources,cue.storyTopics);
+   if(isGuideRequest(text)){
+    const targets=cue.sources.map(s=>checkedGuideTarget(s.url,knowledge,ja?'ja':'en',base)).filter(Boolean);
+    const unique=[...new Map(targets.map(t=>[t.url,t])).values()];
+    if(unique.length===1)deferredGuide=unique[0];
+    else if(unique.length>1)routeOptions(unique);
+    else if(paths[cue.destination])deferredGuide=checkedGuideTarget(base+(ja?'/ja':'')+paths[cue.destination],knowledge,ja?'ja':'en',base);
+   }
    if(paths[cue.destination]&&!cue.sources.length){const button=document.createElement('button');button.textContent=tr('Show me: ','案内して：')+names[cue.destination];button.onclick=async()=>{button.disabled=true;try{await guideDestination(cue.destination);}finally{button.disabled=false;}};$('.yuki-speech').lastElementChild.append(button);}
    status(cue.searchStatus==='limit'?tr('The free search limit was reached; no live web information was verified.','無料検索の上限に達したため、最新のウェブ情報は確認できませんでした。'):cue.searchStatus==='unavailable'?tr('Web lookup was unavailable; no live web information was verified.','ウェブ検索を利用できず、最新の情報は確認できませんでした。'):tr('AI can make mistakes. Check the linked sources.','AIは誤ることがあります。リンク先の出典もご確認ください。'));react(cue).catch(()=>{});
   }catch(error){if(!requestController.signal.aborted)status(error.message==='cancelled'?tr('Sending cancelled.','送信をキャンセルしました。'):chatUnavailable(error.message,ja?'ja':'en',error.reference));reactionVersion++;pendingCue=null;}
-  finally{clearTimeout(timer);busy=false;updateReading();$('button[type=submit]').disabled=!online;$('textarea').readOnly=false;$('.yuki-cancel').hidden=true;if(online&&permission.allowed&&open&&!document.hidden){if(tokenUsed)verification.refresh();if(verification.state==='off')prepareVerification();}save();}
+  finally{clearTimeout(timer);busy=false;updateReading();$('button[type=submit]').disabled=false;$('textarea').readOnly=false;$('.yuki-cancel').hidden=true;if(online&&permission.allowed&&open&&!document.hidden){if(tokenUsed)verification.refresh();if(verification.state==='off')prepareVerification();}save();}
+  if(deferredGuide&&!requestController.signal.aborted)await beginJourney(deferredGuide);
  };
  function render(){if(!companion)return;const r=companion.rover,life=companion.lifecycle;
   let p=projectFrame(companion,clips,bodyHeight);if(!p.frame?.image)return;
@@ -331,9 +399,9 @@ async function start(){
   const referenced=new Set(Object.values(clips).flatMap(c=>c.frames.filter(f=>f.image).map(f=>f.file)));
   for(const file of images.keys())if(!referenced.has(file))images.delete(file);
  }
- function tick(t){const dt=Math.min(64,Math.max(0,t-last));last=t;if(companion&&!document.hidden){if((open&&onScreen)||busy)companion.lifecycle.activity();
+ function tick(t){const dt=Math.min(64,Math.max(0,t-last));last=t;if(companion&&!document.hidden){if((open&&onScreen)||busy||journey.active)companion.lifecycle.activity();
    if(t-lastMeasure>200){measureHeader();obstacles=obstacleReader.read(layout.width,layout.height);lastMeasure=t;}
-   motion.update(dt,{hidden,paused,guiding:guide.active,open,roam,target:chooseMovementTarget,visible:onScreen,reacting:Boolean(pendingCue)});companion.update(dt);guide.update();
+   motion.update(dt,{hidden,paused,guiding:guide.active||journey.active,open,roam,target:chooseMovementTarget,visible:onScreen,reacting:Boolean(pendingCue)});companion.update(dt);guide.update();
    if(calling&&companion.rover.graph.state==='rest'&&companion.rover.at===companion.rover.wanted&&!companion.lifecycle.locked){calling=false;status(tr('Here I am! Phew, little wings.','着いたよ！ふぅ、小さな羽、がんばった。'));}
    if(pendingCue&&performance.now()>pendingCue.expires)pendingCue=null;
    if(pendingCue&&onScreen){const cue=pendingCue.sequence[0];
@@ -342,19 +410,21 @@ async function start(){
    }render();if(t-lastTrim>5000){trimArt();lastTrim=t;}}requestAnimationFrame(tick);}
  try{
   const res=await fetch(new URL('manifest.json',assets));if(!res.ok)throw Error('manifest');({clips}=await res.json());await ensure(['sleep','rest']);
+  await knowledgeReady;if(journey.active&&!checkedGuideTarget(journey.state.target,knowledge,ja?'ja':'en',base))journey.clear();
   const timing={rest:clips.rest.frames.map(f=>f.durationMs),flight:clips.flight.frames.map(f=>f.durationMs??60),takeoff:takeoffMs,landing:landingMs};
-  companion=new Companion(timing,measure(),{motion:contactPhases,idle:{},lifecycle:{clips,startAsleep:!saved.awake,inactivityMs:Infinity,crashChance:0},greeting:clips.greeting.playback,emotions:{...emotionPlayback(clips),pointLeft:clips.pointLeft.playback,pointRight:clips.pointRight.playback},airClips});
+  companion=new Companion(timing,measure(),{motion:contactPhases,idle:{},lifecycle:{clips,startAsleep:!saved.awake&&!journey.active,inactivityMs:Infinity,crashChance:0,crashCooldownRemainingMs:flopRemaining(),onCrash:rememberFlop},greeting:clips.greeting.playback,emotions:{...emotionPlayback(clips),pointLeft:clips.pointLeft.playback,pointRight:clips.pointRight.playback},airClips});
   motion=new PageMotion(companion);
   companion.rover.setArrivalStyle('land');try{renderer=new IdleRenderer($('.yuki-pet canvas'));}catch{}
-  guide=new SiteGuide(companion,{destinations:elements,reveal:revealTarget,direction:id=>{const d=guide.destinations.get(id);return pointerTarget(targetRect(d.el),shownFoot).kind;},arrive:id=>{const d=guide.destinations.get(id);readingMemory.set(guideReference(d.el,location.pathname,d.url));if(open)updateReading();highlightUntil=performance.now()+10000;motion.defer();status(tr(`Ta-da! Here’s ${d.name}.`,`じゃーん！${d.name}だよ。`));}});
+  guide=new SiteGuide(companion,{destinations:elements,reveal:revealTarget,direction:id=>{const d=guide.destinations.get(id);return pointerTarget(targetRect(d.el),shownFoot).kind;},arrive:id=>{const d=guide.destinations.get(id);readingMemory.set(guideReference(d.el,location.pathname,d.url));if(open)updateReading();highlightUntil=performance.now()+10000;motion.defer();status(tr(`Ta-da! Here’s ${d.name}.`,`じゃーん！${d.name}だよ。`));if(d.journeySerial!==undefined)journeyArrived(d);}});
   obstacles=obstacleReader.read(layout.width,layout.height);
-  const initial=visibleSpot(restingExtent(),obstacles,layout,layout.home);
+  const carriedPosition=journey.position(layout);
+  const initial=carriedPosition?clampFoot(carriedPosition,restingExtent(),layout):visibleSpot(restingExtent(),obstacles,layout,layout.home);
   companion.rover.position={...initial,y:initial.y+scrollY};upsert({id:'home',...initial,y:initial.y+scrollY});
   ready=true;sync();last=performance.now();requestAnimationFrame(tick);
-  if(saved.awake||open)await wake();prepareTravel().then(()=>companion.attention.setTracking(!media.matches)).catch(()=>status(tr('Some flight drawings could not load. Please reload to retry.','飛行画像を読み込めませんでした。再読み込みしてください。')));
-  fetch(new URL('knowledge.json',assets)).then(r=>r.ok?r.json():Promise.reject()).then(k=>{knowledge=Array.isArray(k.pages)?k.pages:[];destinationList();if(open)updateReading();}).catch(()=>{});
+  if(saved.awake||open||journey.active)await wake();prepareTravel().then(()=>companion.attention.setTracking(!media.matches)).catch(()=>status(tr('Some flight drawings could not load. Please reload to retry.','飛行画像を読み込めませんでした。再読み込みしてください。')));
+  if(journey.active)await resumeJourney();
   let requested;try{requested=pendingGuide(sessionStorage.getItem('yuki-guide-v1'),location.pathname);sessionStorage.removeItem('yuki-guide-v1');}catch{}
-  if(requested){const el=findPageTarget(document,requested,location.pathname);if(el)await showElement({id:'requested-page',name:(el.getAttribute('alt')||el.textContent).trim(),el,url:requested});}
+  if(requested&&!journey.active){const target=checkedGuideTarget(requested,knowledge,ja?'ja':'en',base);if(target)await beginJourney(target);}
  }catch{status(tr('Yuki’s artwork could not load. The website and links still work.','ゆきの画像を読み込めませんでした。サイトとリンクは利用できます。'));}
  for(const name of ['pointerdown','keydown','wheel','touchstart'])addEventListener(name,()=>companion?.lifecycle.activity(),{passive:true,capture:true});
  addEventListener('pointermove',e=>{if(ready&&onScreen&&!open&&e.pointerType!=='touch'&&Math.abs(e.clientY-shownFoot.y)<bodyHeight*2)companion.pointer(e.clientX);},{passive:true});
@@ -367,10 +437,10 @@ async function start(){
  const featureTrack=document.querySelector('[data-feature-track]');if(featureTrack)new MutationObserver(scheduleReading).observe(featureTrack,{attributes:true,attributeFilter:['style']});
  addEventListener('scroll',()=>{if(!ready)return;lastMeasure=-Infinity;if(performance.now()<guideScrollUntil)return;
   // A visitor changing the view takes priority over a stale guided route.
-  if(guideTarget){guide.reset();guideTarget=null;highlightUntil=0;}
+  if(guideTarget){guide.reset();guideTarget=null;highlightUntil=0;clearRouteMarker();}
   motion.scroll();},{passive:true});
  window.visualViewport?.addEventListener('resize',placeBubble);window.visualViewport?.addEventListener('scroll',placeBubble);
- addEventListener('pagehide',()=>{save();controller?.abort();verification.stop();});
- addEventListener('pageshow',e=>{if(e.persisted){permission.reload();permissionUI();if(!permission.allowed)withdrawPermission();}prepareVerification();});
+ addEventListener('pagehide',()=>{save();if(journey.active&&companion)journey.depart({x:companion.rover.foot.x,y:companion.rover.foot.y-scrollY},layout);controller?.abort();verification.stop();});
+ addEventListener('pageshow',e=>{if(e.persisted){const restored=readSession(readingStorage,Date.now(),ja?'ja':'en');messages=restored.messages??[];variety=cleanVariety(restored.variety);drawMessages();save();permission.reload();permissionUI();if(!permission.allowed)withdrawPermission();if(companion)companion.lifecycle.lastCrash=companion.lifecycle.clock+flopRemaining()-companion.lifecycle.crashCooldownMs;journey=new GuideJourney(readingStorage);clearRouteMarker();if(journey.active)void resumeJourney();else stopJourney();}prepareVerification();});
  document.addEventListener('visibilitychange',()=>{last=performance.now();if(document.hidden){save();verification.stop();}else prepareVerification();});
 }
