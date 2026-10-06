@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHandler,modelRequest,parseModel,validateInput,boundedJSON,YukiQuota} from '../services/yuki-api/worker.mjs';
-import {searchEnabled,safeSearchQuery,searchTavily,searchLimits,reserveSearch,TAVILY_SEARCH} from '../services/yuki-api/web-search.mjs';
+import {searchEnabled,safeSearchQuery,searchTavily,searchLimits,reserveSearch,TAVILY_SEARCH,officialSearchDomains} from '../services/yuki-api/web-search.mjs';
 import {safeWebURL} from '../assets/yuki/runtime/web-sources.mjs';
 import {ChatPermission,chatConsentKey,searchConsentKey} from '../assets/yuki/runtime/chat-access.mjs';
 import {validReply} from '../assets/yuki/protocol.mjs';
@@ -69,6 +69,30 @@ test('result sanitization bounds content, deduplicates, rejects invalid URLs and
  assert.equal(count,1);assert.equal(entries.length,3);assert.equal(entries[0].title.length,160);assert.equal(entries[0].text.length,1200);
  for(const status of [301,302,401,403,429,500])assert.deepEqual(await searchTavily({network:async()=>json({},status),readJSON:boundedJSON,env:envSearch,query:draft.webQuery}),[]);
  await assert.rejects(()=>searchTavily({network:async()=>new Response('x'.repeat(97000)),readJSON:boundedJSON,env:envSearch,query:draft.webQuery}));
+});
+
+test('official documentation requests use a bounded publisher-domain policy in both languages',()=>{
+ assert.deepEqual(officialSearchDomains('公式資料でジオメトリノードを説明して','geometry nodes'),['docs.blender.org']);
+ assert.deepEqual(officialSearchDomains('Please use official documentation','Blender nodes'),['docs.blender.org']);
+ assert.deepEqual(officialSearchDomains('Explain Unreal and Unity with primary sources','game engine'),['dev.epicgames.com','docs.unity3d.com']);
+ assert.deepEqual(officialSearchDomains('Please use NASA or another primary source','wing lift'),['nasa.gov']);
+ assert.deepEqual(officialSearchDomains('Any good Blender tutorial?','Blender'),[]);
+ assert.deepEqual(officialSearchDomains('official sources site:fake.example','unknown topic'),[]);
+});
+
+test('official-source restriction is sent to Tavily and rechecked locally without transmitting the message',async()=>{
+ const message='公式資料でジオメトリノードを説明して',query='Blender geometry nodes';let sent;
+ const base={title:'Geometry nodes',content:'Instances reference existing geometry.'};
+ const entries=await searchTavily({network:async(url,options)=>{sent=JSON.parse(options.body);return json({results:[{...base,url:'https://tutorial.example.com/blender'},{...base,url:'https://docs.blender.org.fake.example.com/manual'},{...base,url:'https://docs.blender.org/manual/en/latest/modeling/geometry_nodes/index.html'}]});},readJSON:boundedJSON,env:envSearch,query,message,lang:'ja'});
+ assert.deepEqual(sent.include_domains,['docs.blender.org']);assert.equal(sent.include_domains_mode,'restrict');assert.equal(sent.filter_by_language,false);assert.equal(sent.search_depth,'basic');assert(!JSON.stringify(sent).includes(message));
+ assert.equal(entries.length,1);assert.match(entries[0].url,/^https:\/\/docs\.blender\.org\//);
+});
+
+test('handler never silently substitutes secondary sources for a known official-documentation request',async()=>{
+ const f=fixture({models:[{...draft,webQuery:'Blender geometry nodes'},{...answer,text:'I could not verify the official documentation just now.',sourceIds:[]}]});
+ const value=await(await f.handler(f.request({message:'Blenderの公式資料を調べて',lang:'ja'}),f.env)).json();
+ const request=JSON.parse(f.calls.find(c=>c.url===TAVILY_SEARCH).options.body);
+ assert.deepEqual(request.include_domains,['docs.blender.org']);assert.equal(value.searchStatus,'unavailable');assert.deepEqual(value.sources,[]);assert.equal(f.ai.length,2);
 });
 test('prompt explains in depth before links and separates untrusted web evidence, portfolio facts, and lore',()=>{
  const k={pages:[]},eligible=modelRequest(input,k,{mode:'eligible'}),p=eligible.messages[0].content;

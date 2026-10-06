@@ -170,7 +170,7 @@ export function createHandler(network=fetch){
      const budget=await monthly.fetch('https://quota.invalid/search',{method:'POST',body:JSON.stringify({hash,day}),signal:AbortSignal.timeout(1500)});
      if(budget.status===429)searchStatus='limit';
      if(budget.status===204&&!request.signal.aborted){
-      try{entries=await searchTavily({network,readJSON:boundedJSON,env,query:reply.webQuery,lang:input.lang,signal:AbortSignal.any([request.signal,AbortSignal.timeout(5000)])});}catch{/* Search failure is optional, never a chat failure. */}
+      try{entries=await searchTavily({network,readJSON:boundedJSON,env,query:reply.webQuery,lang:input.lang,message:input.message,signal:AbortSignal.any([request.signal,AbortSignal.timeout(5000)])});}catch{/* Search failure is optional, never a chat failure. */}
      }
      if(request.signal.aborted||remaining()<5000)throw Error('Not enough time');
      const evidence=entries.length?{mode:'results',entries,date:day}:{mode:'unavailable'};
