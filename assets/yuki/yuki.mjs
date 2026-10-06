@@ -10,7 +10,7 @@ import {localizedPages,localizePath,findPageTarget,pendingGuide,targetRect,curat
 import {PageObstacles,visibleSpot,guideSpot,fits,atFoot} from './runtime/clear-space.mjs?v=5';
 import {PageMotion,pageProjection,inViewport,prepareCall,containPageRover} from './runtime/page-motion.mjs?v=7';
 import {CallPerches} from './runtime/call-perches.mjs?v=7';
-import {VisitorPersonality,conversationOpening,replySequence,cueArtwork} from './runtime/visitor-personality.mjs?v=8';
+import {VisitorPersonality,conversationOpening,localizeGreetingMessages,replySequence,cueArtwork} from './runtime/visitor-personality.mjs?v=9';
 import {ChatPermission,ChatVerification,chatEnvironment,chatConsentKey,searchConsentKey} from './runtime/chat-access.mjs?v=2';
 import {ReadingMemory,readPageTitle,readingDetail,readPageDisplaySection,readPageSection,guideReference,followUpReference} from './runtime/reading-context.mjs?v=3';
 import {validReply,readSession,chatUnavailable} from './protocol.mjs?v=6';
@@ -25,7 +25,7 @@ async function start(){
  let saved={};try{saved=readSession(sessionStorage);}catch{}
  let readingStorage;try{readingStorage=sessionStorage;}catch{}const readingMemory=new ReadingMemory(readingStorage);
  let visitorStorage;try{visitorStorage=localStorage;}catch{}const personality=new VisitorPersonality(visitorStorage);
- let messages=saved.messages??[],variety=cleanVariety(saved.variety),companion,guide,renderer,clips,bodyHeight=155,last=0,loading=0,busy=false,pendingCue=null,controller;
+ let messages=localizeGreetingMessages(saved.messages??[],ja?'ja':'en'),variety=cleanVariety(saved.variety),companion,guide,renderer,clips,bodyHeight=155,last=0,loading=0,busy=false,pendingCue=null,controller;
  let hidden=saved.hidden??false,paused=saved.paused??false,roam=saved.mobilityVersion===2?saved.roam:true,open=false,ready=false,onScreen=true,calling=false,callLoading=false;
  const viewportLayout=()=>pageLayout(document.documentElement.clientWidth||innerWidth,innerHeight);
  let layout=viewportLayout(),shownFoot=layout.home,motion,guideTarget=null,highlightUntil=0,knowledge=[];
@@ -79,8 +79,8 @@ async function start(){
  }
  permissionUI();
  function drawMessages(){const log=$('.yuki-log');log.replaceChildren();$('.yuki-speech').replaceChildren();for(const m of messages)addMessage(m.role,m.text,false);}
- function addMessage(role,text,remember=true,sources=[],storyTopics=[]){
-  if(remember){messages.push({role,text});messages=messages.slice(-12);if(role==='assistant')variety=rememberReply(variety,text,storyTopics);}
+ function addMessage(role,text,remember=true,sources=[],storyTopics=[],greetingId){
+  if(remember){messages.push({role,text,...(Number.isInteger(greetingId)?{greetingId}:{})});messages=messages.slice(-12);if(role==='assistant')variety=rememberReply(variety,text,storyTopics);}
   const p=document.createElement('p');p.className='yuki-message';p.dataset.role=role;const label=document.createElement('strong');label.textContent=role==='user'?tr('YOU','あなた'):'ゆき';p.append(label,document.createTextNode(text));
   $('.yuki-log').append(p.cloneNode(true));$('.yuki-log').scrollTop=$('.yuki-log').scrollHeight;
   if(role==='assistant'){
@@ -101,7 +101,7 @@ async function start(){
  async function openConversation(){
   if(!ready||open)return;panel(true);
   const cue=conversationOpening(messages,personality,ja?'ja':'en');if(!cue)return;
-  addMessage('assistant',cue.text);
+  addMessage('assistant',cue.text,true,[],[],cue.greetingId);
   await react(cue,{firstMeeting:cue.firstMeeting}).catch(()=>{});
  }
  $('.yuki-launcher').onclick=()=>callYuki();$('.yuki-close').onclick=()=>panel(false);$('.yuki-hit').onclick=()=>openConversation();

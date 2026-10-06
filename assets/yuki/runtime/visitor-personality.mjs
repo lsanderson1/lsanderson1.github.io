@@ -222,7 +222,25 @@ export class VisitorPersonality {
 // A remembered opening is part of this tab's conversation, not a new reply on
 // every bubble click. Any existing exchange (even a failed first send) resumes.
 export function conversationOpening(messages,personality,lang='en'){
- return messages.length?null:personality.opening(personality.next(lang));
+ if(messages.length)return null;
+ const text=personality.next(lang);
+ return {...personality.opening(text),greetingId:greetings[lang].indexOf(text)};
+}
+// Translate the same authored opening, without inventing a new conversation
+// turn, consuming the greeting pool or replaying the first-meeting wave.
+// Older sessions contain only text: migrate an exact match at the start only.
+export function localizeGreetingMessages(messages,lang='en'){
+ const list=greetings[lang==='ja'?'ja':'en'];
+ return messages.map((message,position)=>{
+  if(message.role!=='assistant')return message;
+  let id=message.greetingId;
+  if(id===undefined&&position===0){
+   id=greetings.en.indexOf(message.text);
+   if(id<0)id=greetings.ja.indexOf(message.text);
+  }
+  if(!Number.isInteger(id)||id<0||id>=list.length||![greetings.en[id],greetings.ja[id]].includes(message.text))return message;
+  return {...message,text:list[id],greetingId:id};
+ });
 }
 export function replySequence(cue,{firstMeeting=false,talk='talkOpen'}={}){
  if(firstMeeting)return [{...cue,emotion:'delighted',gesture:'wave',firstMeeting:true}];
