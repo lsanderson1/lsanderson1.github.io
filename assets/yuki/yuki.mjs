@@ -11,9 +11,10 @@ import {PageObstacles,visibleSpot,guideSpot,fits,atFoot} from './runtime/clear-s
 import {PageMotion,pageProjection,inViewport,prepareCall,containPageRover} from './runtime/page-motion.mjs?v=7';
 import {CallPerches} from './runtime/call-perches.mjs?v=7';
 import {VisitorPersonality,conversationOpening,replySequence,cueArtwork} from './runtime/visitor-personality.mjs?v=8';
-import {ChatPermission,ChatVerification,chatEnvironment,chatConsentKey} from './runtime/chat-access.mjs?v=1';
+import {ChatPermission,ChatVerification,chatEnvironment,chatConsentKey,searchConsentKey} from './runtime/chat-access.mjs?v=2';
 import {ReadingMemory,readPageTitle,readingDetail,readPageDisplaySection,readPageSection,guideReference,followUpReference} from './runtime/reading-context.mjs?v=3';
-import {validReply,readSession,chatUnavailable} from './protocol.mjs?v=5';
+import {validReply,readSession,chatUnavailable} from './protocol.mjs?v=6';
+import {safeWebURL} from './runtime/web-sources.mjs?v=1';
 import {cleanVariety,rememberReply,packChatRequest} from './runtime/reply-variety.mjs?v=1';
 
 const root=document.querySelector('#yuki-companion');
@@ -37,6 +38,7 @@ async function start(){
  const endpoint=(()=>{try{const u=new URL(root.dataset.endpoint);return u.protocol==='https:'?u.href:'';}catch{return '';}})();
  const access=chatEnvironment({origin:location.origin,siteOrigin:root.dataset.siteOrigin,endpoint,siteKey:root.dataset.siteKey});
  const online=access.available,permission=new ChatPermission(visitorStorage);
+ const searchPermission=new ChatPermission(visitorStorage,searchConsentKey);
  root.innerHTML=`<div class="yuki-pet" aria-hidden="true" hidden><img alt="" draggable="false"><canvas hidden></canvas><span class="yuki-bubble" hidden></span></div>
  <button class="yuki-hit" hidden aria-label="${tr('Wake Yuki and chat','ゆきを起こして話す')}"></button>
  <svg class="yuki-guide-line" aria-hidden="true" hidden><path></path><circle r="5"></circle></svg><div class="yuki-target-ring" hidden></div>
@@ -54,6 +56,8 @@ async function start(){
  <details class="yuki-history"><summary>${tr('Conversation history','会話の履歴')}</summary><div class="yuki-log" aria-label="${tr('Conversation','会話')}"></div></details>
  <div class="yuki-settings"><button data-action="roam"></button><button data-action="pause"></button><button data-action="hide"></button><button data-action="clear">${tr('Clear chat','会話を消去')}</button></div></div></div></section>`;
  const varietyNote=document.createElement('p');varietyNote.textContent=tr('To reduce repetition, this tab also keeps Yuki’s discussed story topics, recent reply openings and similarity fingerprints with the chat. They are sent with your next message, cleared with Clear chat, and use the same session expiry. A near-duplicate answer may use one extra AI rewrite within the same free usage limits.','繰り返しを減らすため、ゆきが話した物語の項目、直近の返事の書き出し、類似度を確認するためのデータも会話と同じタブに保存し、次のメッセージと一緒に送信します。「会話を消去」で削除され、保持期限も会話と同じです。よく似た回答は、同じ無料利用上限の範囲内で一度だけAIが書き直す場合があります。');$('.yuki-privacy').append(varietyNote);
+ const searchLabel=document.createElement('label'),searchBox=document.createElement('input');searchBox.type='checkbox';searchBox.className='yuki-search-consent';searchBox.disabled=!online;
+ searchLabel.append(searchBox,document.createTextNode(tr('Optional: let Yuki send a short public-topic query to Tavily when an answer needs web information. This adds another provider; your full chat is not sent to Tavily. Do not include private or sensitive information. Remember this choice; you can turn it off here anytime. Search has shared free limits, and normal chat works without it.','任意：ウェブ情報が必要な回答では、ゆきが短い公開トピックの検索語をTavilyに送信することを許可します。送信先が追加されますが、会話全体はTavilyに送りません。個人情報・機密情報は入力しないでください。この設定を記憶し、ここでいつでも解除できます。検索には共有の無料上限があります。通常の会話は検索なしでも利用できます。')));$('.yuki-privacy').append(searchLabel);
  const status=text=>{$('.yuki-status').textContent=text;};
  function readingContext(){measureHeader();return {section:readPageSection(document,innerHeight,headerBottom)?.id??'',lastGuide:readingMemory.get()};}
  function updateReading(){
@@ -70,6 +74,7 @@ async function start(){
  if(access.reason==='preview'&&access.liveOrigin){$('.yuki-live-link').href=new URL(location.pathname,access.liveOrigin).href;$('.yuki-preview').hidden=false;}
  function permissionUI(){
   $('.yuki-consent').checked=online&&permission.allowed;
+  searchBox.checked=online&&searchPermission.allowed;
   $('.yuki-setup summary').textContent=!online?tr('AI chat · Privacy','AIチャット・プライバシー'):permission.allowed?tr('AI chat on · Privacy','AIチャット：オン・設定'):tr('Enable AI chat · Privacy','AIチャットを有効にする・設定');
  }
  permissionUI();
@@ -79,7 +84,10 @@ async function start(){
   const p=document.createElement('p');p.className='yuki-message';p.dataset.role=role;const label=document.createElement('strong');label.textContent=role==='user'?tr('YOU','あなた'):'ゆき';p.append(label,document.createTextNode(text));
   $('.yuki-log').append(p.cloneNode(true));$('.yuki-log').scrollTop=$('.yuki-log').scrollHeight;
   if(role==='assistant'){
-   if(sources.length){const links=document.createElement('span');links.className='yuki-sources';for(const s of sources){const url=localizePath(s.url,knowledge,ja?'ja':'en',base);if(!url)continue;const a=document.createElement('a');a.href=url;a.textContent=s.title;a.onclick=e=>{if(e.button===0&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey&&!e.altKey){if(new URL(url,location.href).pathname===location.pathname){e.preventDefault();void visit(url,s.title);}else{try{sessionStorage.setItem('yuki-guide-v1',JSON.stringify({url,at:Date.now()}));}catch{}}}};const show=document.createElement('button');show.textContent=tr('Show me','案内して');show.setAttribute('aria-label',tr('Show me: ','案内して：')+s.title);show.onclick=()=>visit(url,s.title);links.append(a,show);}p.append(links);}
+   if(sources.length){const links=document.createElement('span');links.className='yuki-sources';for(const s of sources){
+    const external=safeWebURL(s.url);
+    if(external){const a=document.createElement('a');a.href=external;a.target='_blank';a.rel='noopener noreferrer';a.textContent=s.title+' ↗';a.setAttribute('aria-label',tr('Web source (opens a new tab): ','ウェブ出典（新しいタブ）：')+s.title);links.append(a);continue;}
+    const url=localizePath(s.url,knowledge,ja?'ja':'en',base);if(!url)continue;const a=document.createElement('a');a.href=url;a.textContent=s.title;a.onclick=e=>{if(e.button===0&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey&&!e.altKey){if(new URL(url,location.href).pathname===location.pathname){e.preventDefault();void visit(url,s.title);}else{try{sessionStorage.setItem('yuki-guide-v1',JSON.stringify({url,at:Date.now()}));}catch{}}}};const show=document.createElement('button');show.textContent=tr('Show me','案内して');show.setAttribute('aria-label',tr('Show me: ','案内して：')+s.title);show.onclick=()=>visit(url,s.title);links.append(a,show);}p.append(links);}
    $('.yuki-speech').replaceChildren(p);$('.yuki-speech').scrollTop=0;
   }if(remember)save();
  }
@@ -258,8 +266,9 @@ async function start(){
   if(permission.allowed){status(tr('AI chat is enabled. You can turn it off in Privacy.','AIチャットを有効にしました。設定からいつでもオフにできます。'));prepareVerification();}else withdrawPermission();
  };
  $('.yuki-retry').onclick=()=>{verification.stop();prepareVerification();};
+ searchBox.onchange=()=>{if(!online)return;const remembered=searchPermission.set(searchBox.checked);if(!searchPermission.allowed&&busy)controller?.abort();status(searchPermission.allowed?tr('Optional web search allowed. Yuki only searches when useful.','必要なときだけウェブ検索を使えます。'):tr('Web search is off. Normal AI chat still works.','ウェブ検索はオフです。通常のAIチャットは使えます。'));if(!remembered)status(tr('Your browser could not save this choice; it applies only to this page.','この設定を保存できませんでした。このページ内でのみ有効です。'));};
  $('.yuki-cancel').onclick=()=>{controller?.abort();verification.stop();status(tr('Sending cancelled.','送信をキャンセルしました。'));};
- addEventListener('storage',e=>{if(e.storageArea!==visitorStorage||(e.key!==chatConsentKey&&e.key!==null))return;const wasAllowed=permission.allowed;permission.reload();permissionUI();if(!permission.allowed)withdrawPermission();else if(!wasAllowed)prepareVerification();});
+ addEventListener('storage',e=>{if(e.storageArea!==visitorStorage||![chatConsentKey,searchConsentKey,null].includes(e.key))return;const wasAllowed=permission.allowed,wasSearch=searchPermission.allowed;permission.reload();searchPermission.reload();permissionUI();if(wasSearch&&!searchPermission.allowed&&busy)controller?.abort();if(!permission.allowed)withdrawPermission();else if(!wasAllowed)prepareVerification();});
  $('.yuki-form').onsubmit=async e=>{
   e.preventDefault();if(!online||busy)return;const text=$('textarea').value.trim();if(!text)return;
   if(!permission.allowed){$('.yuki-setup').open=true;status(tr('Please allow sending your message first.','送信への同意を確認してください。'));$('.yuki-consent').focus();return;}
@@ -274,13 +283,13 @@ async function start(){
    await wake();if(requestController.signal.aborted||!permission.allowed)throw Error('cancelled');
    const history=messages.slice(-6).map(m=>({role:m.role,content:m.text}));addMessage('user',text);$('textarea').value='';
    status(tr('Yuki is thinking…','ゆきが考えています…'));react({text:'…',emotion:'thoughtful',gesture:'none'},{thinking:true}).catch(()=>{});
-   const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:packChatRequest({message:text,history,lang:ja?'ja':'en',page:location.pathname,context,token,variety}),signal:requestController.signal,credentials:'omit'});
+   const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:packChatRequest({message:text,history,lang:ja?'ja':'en',page:location.pathname,context,token,variety,webSearch:searchPermission.allowed}),signal:requestController.signal,credentials:'omit'});
    if(!response.ok){const detail=await response.json().catch(()=>({}));throw Object.assign(Error(response.status===429?'limit':response.status===403?'verification':'request'),{reference:detail.reference});}
    const cue=validReply(await response.json());if(requestController.signal.aborted||!permission.allowed)return;
    const followUp=followUpReference(cue,context.lastGuide,knowledge);if(followUp)readingMemory.set(followUp);else readingMemory.clear();
    addMessage('assistant',cue.text,true,cue.sources,cue.storyTopics);
    if(paths[cue.destination]&&!cue.sources.length){const button=document.createElement('button');button.textContent=tr('Show me: ','案内して：')+names[cue.destination];button.onclick=async()=>{button.disabled=true;try{await guideDestination(cue.destination);}finally{button.disabled=false;}};$('.yuki-speech').lastElementChild.append(button);}
-   status(tr('AI can make mistakes. Check the linked portfolio pages.','AIは誤ることがあります。リンク先の作品ページもご確認ください。'));react(cue).catch(()=>{});
+   status(cue.searchStatus==='limit'?tr('The free search limit was reached; no live web information was verified.','無料検索の上限に達したため、最新のウェブ情報は確認できませんでした。'):cue.searchStatus==='unavailable'?tr('Web lookup was unavailable; no live web information was verified.','ウェブ検索を利用できず、最新の情報は確認できませんでした。'):tr('AI can make mistakes. Check the linked sources.','AIは誤ることがあります。リンク先の出典もご確認ください。'));react(cue).catch(()=>{});
   }catch(error){if(!requestController.signal.aborted)status(error.message==='cancelled'?tr('Sending cancelled.','送信をキャンセルしました。'):chatUnavailable(error.message,ja?'ja':'en',error.reference));reactionVersion++;pendingCue=null;}
   finally{clearTimeout(timer);busy=false;updateReading();$('button[type=submit]').disabled=!online;$('textarea').readOnly=false;$('.yuki-cancel').hidden=true;if(online&&permission.allowed&&open&&!document.hidden){if(tokenUsed)verification.refresh();if(verification.state==='off')prepareVerification();}save();}
  };

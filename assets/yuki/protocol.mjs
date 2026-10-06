@@ -12,7 +12,7 @@ export function chatUnavailable(reason,lang='en',reference=''){
 }
 export function validReply(value){
  if(!value||typeof value.text!=='string'||!value.text.trim()||value.text.length>1000)throw Error('Invalid reply');
- return {text:value.text.trim(),emotion:emotions.includes(value.emotion)?value.emotion:'neutral',gesture:['none','wave','talkOpen','talkExplain'].includes(value.gesture)?value.gesture:'none',destination:destinations.includes(value.destination)?value.destination:'none',sources:Array.isArray(value.sources)?value.sources.filter(s=>s&&typeof s.title==='string'&&typeof s.url==='string').slice(0,3):[],storyTopics:cleanStoryTopics(value.storyTopics)};
+ return {text:value.text.trim(),emotion:emotions.includes(value.emotion)?value.emotion:'neutral',gesture:['none','wave','talkOpen','talkExplain'].includes(value.gesture)?value.gesture:'none',destination:destinations.includes(value.destination)?value.destination:'none',sources:Array.isArray(value.sources)?value.sources.filter(s=>s&&typeof s.title==='string'&&typeof s.url==='string').slice(0,3):[],storyTopics:cleanStoryTopics(value.storyTopics),...(['used','limit','unavailable'].includes(value.searchStatus)?{searchStatus:value.searchStatus}:{})};
 }
 export function safeSitePath(value,base=''){
  if(typeof value!=='string'||!value.startsWith('/')||value.startsWith('//')||/[\\\u0000-\u0020]/.test(value)||value.includes('%'))return null;
