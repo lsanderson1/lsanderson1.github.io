@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {VisitorPersonality,conversationOpening} from '../assets/yuki/runtime/visitor-personality.mjs';
+import {VisitorPersonality,conversationOpening,greetings,localizeGreetingMessages} from '../assets/yuki/runtime/visitor-personality.mjs';
 import {readSession} from '../assets/yuki/protocol.mjs';
 import {yukiStory,personalityInstructions} from '../services/yuki-api/personality.mjs';
 import {modelRequest,parseModel} from '../services/yuki-api/worker.mjs';
@@ -21,7 +21,7 @@ test('one greeting starts an empty conversation; reopening does not consume anot
  }
 });
 
-test('same-tab page, language and reload changes resume saved messages without another greeting',()=>{
+test('same-tab page and reload changes resume saved messages without another greeting',()=>{
  const local=memory(),session=memory(),person=new VisitorPersonality(local,()=>0);
  const opening=conversationOpening([],person,'en');person.markMet();
  for(const messages of [[{role:'assistant',text:opening.text}],[{role:'user',text:'A failed first send'}],[{role:'user',text:'Question'},{role:'assistant',text:'Reply'}]]){
@@ -33,6 +33,53 @@ test('same-tab page, language and reload changes resume saved messages without a
    assert.equal(next.used.en.length,1);assert.equal(next.used.ja.length,0);
   }
  }
+});
+
+test('all 100 authored openings translate EN ↔ JA without choosing a new greeting or changing the original',()=>{
+ assert.equal(greetings.en.length,greetings.ja.length);
+ for(let greetingId=0;greetingId<greetings.en.length;greetingId++){
+  const original=[{role:'assistant',text:greetings.en[greetingId],greetingId}];
+  const japanese=localizeGreetingMessages(original,'ja');
+  assert.equal(japanese.length,1);assert.equal(japanese[0].text,greetings.ja[greetingId]);
+  assert.deepEqual(localizeGreetingMessages(japanese,'en'),original);
+  assert.deepEqual(localizeGreetingMessages(japanese,'ja'),japanese);
+  assert.equal(original[0].text,greetings.en[greetingId]);
+ }
+});
+
+test('saved greeting identity survives reload and switches language without another wave or consuming a greeting',()=>{
+ const local=memory(),session=memory(),person=new VisitorPersonality(local,()=>0);
+ const opening=conversationOpening([],person,'en');person.markMet();
+ assert.equal(opening.greetingId,0);
+ const stored=[{role:'assistant',text:opening.text,greetingId:opening.greetingId}];
+ for(const lang of ['ja','ja','en','ja','en']){
+  session.setItem('yuki-session-v1',JSON.stringify({savedAt:1000,messages:stored}));
+  const messages=localizeGreetingMessages(readSession(session,2000).messages,lang);
+  assert.equal(messages[0].text,greetings[lang][0]);
+  assert.equal(conversationOpening(messages,person,lang),null);
+  stored.splice(0,stored.length,...messages);
+ }
+ assert.equal(person.seen,true);assert.deepEqual(person.used,{en:[0],ja:[]});
+});
+
+test('old plain-text greeting sessions migrate without clearing real messages or replacing the last AI reply',()=>{
+ for(const from of ['en','ja']){
+  const to=from==='en'?'ja':'en';
+  const messages=[{role:'assistant',text:greetings[from][24]},{role:'user',text:'Tell me about this project'},{role:'assistant',text:'This is the actual answer.',sources:[{title:'Project',url:'/projects/'}]}];
+  const localized=localizeGreetingMessages(messages,to);
+  assert.deepEqual(localized[0],{role:'assistant',text:greetings[to][24],greetingId:24});
+  assert.equal(localized[1],messages[1]);assert.equal(localized[2],messages[2]);assert.equal(localized.length,messages.length);
+ }
+});
+
+test('language switching never mistakes user text, ordinary AI replies or malformed metadata for a greeting',()=>{
+ for(const messages of [
+  [{role:'user',text:greetings.en[0]}],
+  [{role:'assistant',text:'A real answer, not a stock greeting.'}],
+  [{role:'user',text:'Please say hello'},{role:'assistant',text:greetings.en[0]}],
+  ...[-1,100,'0',NaN,null,0].map(greetingId=>[{role:'assistant',text:'Keep this actual reply',greetingId}]),
+ ])assert.deepEqual(localizeGreetingMessages(messages,'ja'),messages);
+ assert.deepEqual(localizeGreetingMessages([],'ja'),[]);
 });
 
 test('cleared or expired conversation may start anew without replaying the first-meeting wave',()=>{
