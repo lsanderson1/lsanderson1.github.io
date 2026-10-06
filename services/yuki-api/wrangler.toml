@@ -13,6 +13,14 @@ FREE_PLAN_CONFIRMED = "true"
 DAILY_REQUEST_LIMIT = "100"
 VISITOR_DAILY_LIMIT = "20"
 VISITOR_MINUTE_LIMIT = "4"
+# Owner stored TAVILY_API_KEY as a Worker secret; verified 2026-10-06.
+# These caps apply across all visitors; no auto-reload or paid Tavily plan.
+WEB_SEARCH_ENABLED = "true"
+# Dashboard verified 2026-10-06: Researcher, 0/1000, pay-as-you-go off.
+TAVILY_FREE_PLAN_CONFIRMED = "true"
+SEARCH_MONTHLY_LIMIT = "900"
+SEARCH_DAILY_LIMIT = "30"
+SEARCH_VISITOR_DAILY_LIMIT = "3"
 
 [ai]
 binding = "AI"

@@ -1,11 +1,12 @@
 // Consent is separate from conversation history. Never persist bot-check tokens.
 export const chatConsentKey='yuki-chat-consent-v1';
+export const searchConsentKey='yuki-web-search-consent-v1';
 export class ChatPermission {
- constructor(storage){this.storage=storage;this.reload();}
- reload(){try{this.allowed=this.storage?.getItem(chatConsentKey)==='granted';}catch{this.allowed=false;}return this.allowed;}
+ constructor(storage,key=chatConsentKey){this.storage=storage;this.key=key;this.reload();}
+ reload(){try{this.allowed=this.storage?.getItem(this.key)==='granted';}catch{this.allowed=false;}return this.allowed;}
  set(value){this.allowed=value===true;try{
   if(!this.storage)return false;
-  if(this.allowed)this.storage.setItem(chatConsentKey,'granted');else this.storage.removeItem(chatConsentKey);
+  if(this.allowed)this.storage.setItem(this.key,'granted');else this.storage.removeItem(this.key);
   return true;
  }catch{return false;}}
 }
