@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {Companion} from '../assets/yuki/runtime/companion.mjs';
+import {Lifecycle} from '../assets/yuki/runtime/lifecycle.mjs';
 import {projectFrame} from '../assets/yuki/runtime/projection.mjs';
 import {emotionPlayback,emotionKinds,talkKinds} from '../assets/yuki/runtime/reply-cues.mjs';
 import {takeoffMs,landingMs,contactPhases} from '../assets/yuki/runtime/timing.mjs';
@@ -87,6 +88,25 @@ test('every unique animation sheet is reachable; legacy flight is the same hover
  assert.deepEqual(clips.flight.frames.map(f=>f.file),clips.flightHover.frames.map(f=>f.file));
  assert.deepEqual([...used].sort(),Object.keys(clips).filter(k=>k!=='flight').sort());
 });
+test('belly flop has a five-minute cooldown, uses the crash drawings, and returns to idle',()=>{
+ const c=make(),life=c.lifecycle;life.crashChance=.08;c.rover.random=()=>.07;
+ assert.equal(life.crashCooldownMs,300000);
+ c.rover.graph.state='landing';life.afterMotion('flight');assert.equal(life.state,'crash','first landing needs no initial wait');assert.equal(projectFrame(c,clips,155).info,clips.crash);
+ run(c,18000);assert.equal(life.state,'awake');assert.equal(c.rover.graph.state,'rest');
+ c.rover.graph.state='landing';life.afterMotion('flight');assert.equal(life.state,'awake');
+ life.clock=life.lastCrash+299999;life.afterMotion('flight');assert.equal(life.state,'awake');
+ life.clock=life.lastCrash+300000;c.rover.random=()=>.081;life.afterMotion('flight');assert.equal(life.state,'awake');
+ c.rover.random=()=>.079;life.afterMotion('flight');assert.equal(life.state,'crash');
+ const ui=fs.readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');assert.match(ui,/crashChance=\.08/);assert.match(ui,/crashCooldownRemainingMs:flopRemaining\(\),onCrash:rememberFlop/);
+});
+test('a recent belly flop keeps the remaining cooldown on the next page',()=>{
+ const c=make();let crashes=0;c.rover.random=()=>0;
+ const life=new Lifecycle(c,{clips,startAsleep:false,crashChance:.08,crashCooldownRemainingMs:120000,onCrash:()=>crashes++});
+ c.rover.graph.state='landing';life.afterMotion('flight');assert.equal(life.state,'awake');
+ life.clock=119999;life.afterMotion('flight');assert.equal(crashes,0);
+ life.clock=120000;life.afterMotion('flight');assert.equal(crashes,1);assert.equal(life.state,'crash');
+});
+
 test('expressive replies use existing whole-body reactions then a calm talking gesture',()=>{
  for(const emotion of emotionKinds){const seq=replySequence({text:'Hello',emotion,gesture:'none'});assert.equal(seq[0].emotion,emotion);assert.equal(seq[1].gesture,'talkOpen');for(const cue of seq)assert(clips[cueArtwork(cue)]);}
  assert(!replySequence({text:'Hi',emotion:'delighted',gesture:'wave'}).some(c=>c.gesture==='wave'));

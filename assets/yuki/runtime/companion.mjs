@@ -4,7 +4,7 @@ import {Greeting} from './greeting.mjs';
 import {Emotion} from './emotion.mjs';
 import {wingIndex,wingPeriod,wingSlotMs} from './flight-playback.mjs';
 import {HoverBlink} from './hover-blink.mjs';
-import {Lifecycle} from './lifecycle.mjs';
+import {Lifecycle} from './lifecycle.mjs?v=2';
 import {IdleMotion} from './idle-motion.mjs?idle=19';
 export class Companion {
  constructor(clips,perches,options={}){

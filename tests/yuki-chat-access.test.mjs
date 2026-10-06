@@ -101,7 +101,8 @@ test('unsupported browser and invalid tokens fail closed',async()=>{
 test('UI wiring gates every submit on permission and verification, with no automatic AI retry',()=>{
  const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
  const include=readFileSync(new URL('../_includes/yuki.html',import.meta.url),'utf8');
- assert.match(include,/data-site-origin/);assert.match(ui,/if\(!online\|\|busy\)return/);assert.match(ui,/if\(!permission.allowed\)/);
+ assert.match(include,/data-site-origin/);assert.match(ui,/if\(!online\|\|busy\)\{status\(offline\)/);assert.match(ui,/if\(!permission.allowed\)/);
+ assert(ui.indexOf('if(!online||busy)')<ui.indexOf('await verification.takeToken'));
  assert.match(ui,/await verification.takeToken\(requestController.signal\)/);assert.match(ui,/signal.aborted\|\|!permission.allowed/);
  assert.match(ui,/if\(online&&permission.allowed&&open&&!document.hidden\)/);assert.match(ui,/addEventListener\('storage'/);
  assert.match(ui,/requestController.abort\(\)/);assert.equal((ui.match(/fetch\(endpoint/g)||[]).length,1);
