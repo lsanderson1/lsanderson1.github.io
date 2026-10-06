@@ -40,7 +40,7 @@ async function start(){
  const online=access.available,permission=new ChatPermission(visitorStorage);
  const searchPermission=new ChatPermission(visitorStorage,searchConsentKey);
  root.innerHTML=`<div class="yuki-pet" aria-hidden="true" hidden><img alt="" draggable="false"><canvas hidden></canvas><span class="yuki-bubble" hidden></span></div>
- <button class="yuki-hit" hidden aria-label="${tr('Wake Yuki and chat','ゆきを起こして話す')}"></button>
+ <button class="yuki-hit" hidden aria-controls="yuki-panel" aria-expanded="false" aria-label="${tr('Wake Yuki and chat','ゆきを起こして話す')}"></button>
  <svg class="yuki-guide-line" aria-hidden="true" hidden><path></path><circle r="5"></circle></svg><div class="yuki-target-ring" hidden></div>
  <button class="yuki-launcher" hidden aria-controls="yuki-panel">${tr('Call Yuki','ゆきを呼ぶ')}</button>
  <section class="yuki-panel" id="yuki-panel" role="dialog" aria-modal="false" aria-labelledby="yuki-title" hidden>
@@ -94,7 +94,7 @@ async function start(){
  function save(){try{const r=companion?.rover;sessionStorage.setItem('yuki-session-v1',JSON.stringify({savedAt:Date.now(),mobilityVersion:2,awake:companion?companion.lifecycle.state!=='sleep':saved.awake,hidden,paused,roam,messages,variety,x:r?r.foot.x/innerWidth:saved.x,y:r?r.foot.y/innerHeight:saved.y}));}catch{}}
  function settingLabels(){for(const [k,text] of Object.entries({roam:roam?tr('Occasional flights: on','たまにお散歩：オン'):tr('Occasional flights: off','たまにお散歩：オフ'),pause:paused?tr('Resume','再開'):tr('Pause','一時停止'),hide:hidden?tr('Show Yuki','ゆきを表示'):tr('Hide Yuki','ゆきを隠す')}))$(`[data-action="${k}"]`).textContent=text;}
  drawMessages();status(online?tr('Ready when you are.','いつでもどうぞ。'):offline);settingLabels();
- function panel(value,{restoreFocus=true}={}){open=value;$('.yuki-panel').hidden=!value;motion?.defer();
+ function panel(value,{restoreFocus=true}={}){open=value;$('.yuki-panel').hidden=!value;$('.yuki-hit').setAttribute('aria-expanded',String(value));motion?.defer();
   if(value){if(hidden){hidden=false;sync();}wake();updateReading();$('.yuki-close').focus({preventScroll:true});if(online&&permission.allowed)prepareVerification();}
   else {if(busy){controller?.abort();status(tr('Sending cancelled.','送信をキャンセルしました。'));}verification.stop();}
   if(!value&&restoreFocus){const returnFocus=!hidden?$('.yuki-hit'):$('.yuki-launcher');if(!returnFocus.hidden)returnFocus.focus({preventScroll:true});}placeBubble();save();}
@@ -104,7 +104,8 @@ async function start(){
   addMessage('assistant',cue.text,true,[],[],cue.greetingId);
   await react(cue,{firstMeeting:cue.firstMeeting}).catch(()=>{});
  }
- $('.yuki-launcher').onclick=()=>callYuki();$('.yuki-close').onclick=()=>panel(false);$('.yuki-hit').onclick=()=>openConversation();
+ function toggleConversation(){if(open)panel(false);else void openConversation();}
+ $('.yuki-launcher').onclick=()=>callYuki();$('.yuki-close').onclick=()=>panel(false);$('.yuki-hit').onclick=toggleConversation;
  $('.yuki-menu').onclick=()=>{const more=$('.yuki-more');more.hidden=!more.hidden;$('.yuki-menu').setAttribute('aria-expanded',String(!more.hidden));placeBubble();};
  $('textarea').oninput=()=>{const field=$('textarea');field.style.height='42px';field.style.height=Math.min(90,field.scrollHeight)+'px';placeBubble();};
  $('textarea').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();$('.yuki-form').requestSubmit();}};
@@ -309,7 +310,7 @@ async function start(){
   Object.assign(pet.style,{width:p.info.width*p.scale+'px',height:p.info.height*p.scale+'px',transform:`translate3d(${p.x}px,${p.y}px,0)`});
   const box=p.frame.pixelBounds??[210,170,515,615],hit=$('.yuki-hit');hit.hidden=hidden;Object.assign(hit.style,{left:p.x+box[0]*p.scale+'px',top:p.y+box[1]*p.scale+'px',width:(box[2]-box[0])*p.scale+'px',height:(box[3]-box[1])*p.scale+'px'});
   hit.title=tr('Yuki · BETA','ゆき · BETA');
-  hit.setAttribute('aria-label',life.state==='sleep'?tr('Wake Yuki and chat','ゆきを起こして話す'):tr('Chat with Yuki','ゆきと話す'));
+  hit.setAttribute('aria-label',open?tr('Hide chat with Yuki','ゆきとのチャットを隠す'):life.state==='sleep'?tr('Wake Yuki and chat','ゆきを起こして話す'):tr('Chat with Yuki','ゆきと話す'));
   const bubble=$('.yuki-bubble');bubble.hidden=!b||hidden;if(b){const [nx,ny]=p.frame.nose,rad=(media.matches?12:b.radius)*p.scale;Object.assign(bubble.style,{left:nx*p.scale-1.8*rad+'px',top:ny*p.scale-.4*rad+'px',width:2*rad+'px',height:2*rad+'px'});}
   Object.assign(pet.dataset,{state:r.graph.state,lifecycle:life.state,greeting:String(Boolean(p.isGreeting)),breathing:String(Boolean(drawn)),art:p.frame.file,emotion:companion.emotion.kind??'neutral',clear:String(clear),bounds:JSON.stringify(occupied)});
   const launcher=$('.yuki-launcher');
