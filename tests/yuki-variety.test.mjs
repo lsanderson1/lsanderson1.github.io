@@ -91,13 +91,14 @@ test('metadata cannot add unrecognized topics, arbitrary prompt fields or unboun
  for(const value of [null,false,4,'bad',{recent:[null,{}, {digest:'invalid',grams:[]}]}])assert.deepEqual(cleanVariety(value),{turn:0,topics:{},recent:[]});
 });
 
-test('variety memory has the same tab-session expiration and clear behavior as chat',()=>{
+test('variety memory keeps its tab-session expiration but survives clearing the visible chat',()=>{
  let state=JSON.stringify({savedAt:1000,messages:[{role:'assistant',text:en}],variety:input.variety});
  const storage={getItem:()=>state};assert.equal(readSession(storage,2000).variety.topics.bigDream,1);
  assert.deepEqual(readSession(storage,1801001),{});
- state=JSON.stringify({savedAt:2000,messages:[],variety:cleanVariety()});assert.deepEqual(readSession(storage,2001).variety.recent,[]);
+ state=JSON.stringify({savedAt:2000,messages:[],variety:input.variety});assert.equal(readSession(storage,2001).variety.topics.bigDream,1);
  const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
- assert.match(ui,/messages=\[\];variety=cleanVariety\(\)/);assert.match(ui,/cue.sources,cue.storyTopics/);assert.match(ui,/body:packChatRequest\(/);
+ const clear=ui.slice(ui.indexOf('function clearConversation(){'),ui.indexOf("for(const b of root.querySelectorAll('[data-action]'))"));
+ assert.match(clear,/messages=\[\]/);assert(!clear.includes('variety='));assert.match(ui,/cue.sources,cue.storyTopics/);assert.match(ui,/body:packChatRequest\(/);
 });
 
 test('UTF-8 packing bounds Japanese messages and metadata without changing the current question',()=>{

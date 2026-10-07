@@ -1,4 +1,5 @@
 const languages=['en','ja'];
+export const translationVoiceVersion=1;
 let sequence=0;
 export function messageRecord(role,text,language){
  return {id:`m-${Date.now().toString(36)}-${(++sequence).toString(36)}`,role,text,language,translations:{[language]:text}};
@@ -11,10 +12,17 @@ export function cleanMessages(value,fallbackLanguage='en'){
   const translations={};for(const lang of languages)if(typeof m.translations?.[lang]==='string'&&m.translations[lang].trim()&&m.translations[lang].length<=4000)translations[lang]=m.translations[lang];
   translations[language]=m.text;
   const sources=Array.isArray(m.sources)?m.sources.filter(s=>s&&typeof s.title==='string'&&s.title.length<=250&&typeof s.url==='string'&&s.url.length<=2048).slice(0,3).map(({title,url})=>({title,url})):[];
-  return {id,role:m.role,text:m.text,language,translations,...(sources.length?{sources}:{}),...(Number.isInteger(m.greetingId)?{greetingId:m.greetingId}:{})};
+  const translationVoices={};for(const lang of languages)if(translations[lang]&&m.translationVoices?.[lang]===translationVoiceVersion)translationVoices[lang]=translationVoiceVersion;
+  return {id,role:m.role,text:m.text,language,translations,translationVoices,...(sources.length?{sources}:{}),...(Number.isInteger(m.greetingId)?{greetingId:m.greetingId}:{})};
  });
 }
-export const translatedText=(message,language)=>message.language===language?message.text:message.translations?.[language]||null;
+export function translatedText(message,language){
+ if(message.language===language)return message.text;
+ // Refresh old formal assistant translations once, never original/user wording
+ // or authored bilingual greetings. Keep stale variants stored until replaced.
+ if(message.role==='assistant'&&!Number.isInteger(message.greetingId)&&message.translationVoices?.[language]!==translationVoiceVersion)return null;
+ return message.translations?.[language]||null;
+}
 // Prioritize what is currently visible (latest reply), then older history.
 export function translationBatch(messages,language){
  let bytes=0,characters=0;const batch=[],encoder=new TextEncoder();
@@ -31,5 +39,5 @@ export function checkedTranslations(value,batch){
  return value.map(t=>{if(!t||!ids.delete(t.id)||typeof t.text!=='string'||!t.text.trim()||t.text.length>4000)throw Error('Invalid translation');return {id:t.id,text:t.text.trim()};});
 }
 export function applyTranslations(messages,items,language){
- for(const item of items){const m=messages.find(m=>m.id===item.id);if(m&&m.language!==language)m.translations={...m.translations,[language]:item.text};}
+ for(const item of items){const m=messages.find(m=>m.id===item.id);if(m&&m.language!==language){m.translations={...m.translations,[language]:item.text};if(m.role==='assistant')m.translationVoices={...m.translationVoices,[language]:translationVoiceVersion};}}
 }

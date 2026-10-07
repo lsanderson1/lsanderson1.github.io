@@ -3,14 +3,15 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {ChatSession} from '../assets/yuki/runtime/chat-access.mjs';
-import {ConversationMemory} from '../assets/yuki/runtime/conversation-memory.mjs';
-import {packChatRequest} from '../assets/yuki/runtime/reply-variety.mjs';
-import {validReply,chatUnavailable} from '../assets/yuki/protocol.mjs';
+import {ConversationMemory,memoryKey} from '../assets/yuki/runtime/conversation-memory.mjs';
+import {packChatRequest,rememberReply} from '../assets/yuki/runtime/reply-variety.mjs';
+import {validReply,chatUnavailable,readSession} from '../assets/yuki/protocol.mjs';
 import {messageRecord,translationBatch,checkedTranslations,applyTranslations} from '../assets/yuki/runtime/conversation-language.mjs';
 // Execute the actual front-end request function with injected DOM/network
 // dependencies. No browser, credentials or live model requests are involved.
 const source=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
 const run=source.slice(source.indexOf(' async function runChat('),source.indexOf(' function render(){'));
+const clear=source.slice(source.indexOf(' function clearConversation(){'),source.indexOf(" for(const b of root.querySelectorAll('[data-action]'))"));
 const store=()=>{const m=new Map();return {getItem:k=>m.get(k)??null,setItem:(k,v)=>m.set(k,v),removeItem:k=>m.delete(k)};};
 const cue={text:'Ooh, the little library dream! A cozy perch matters as much as its books.',emotion:'thoughtful',gesture:'none',destination:'none',sources:[],storyTopics:['bigDream']};
 function fixture({network}={}){
@@ -20,13 +21,15 @@ function fixture({network}={}){
   chatSession:new ChatSession(storage),conversationMemory:new ConversationMemory(storage,'en'),searchPermission:{allowed:true},
   verification:{takeToken:async()=>{calls.verify++;return 'single-use-test-token';},stop:()=>{calls.stop++;}},
   tr:(en)=>en,$:selector=>{if(!elements.has(selector))elements.set(selector,{value:'Draft to preserve',disabled:false,readOnly:false,hidden:true});return elements.get(selector);},
-  readingContext:()=>({}),updateReading:()=>{},translationUI:()=>{},drawMessages:()=>{},translationBatch,checkedTranslations,applyTranslations,wake:async()=>{},status:s=>calls.status.push(s),react:async()=>{},save:()=>{},
+  readingContext:()=>({}),updateReading:()=>{},translationUI:()=>{},drawMessages:()=>{},translationBatch,checkedTranslations,applyTranslations,wake:async()=>{},status:s=>calls.status.push(s),react:async()=>{},
+  stopJourney:()=>{context.journeySerial++;},
+  save:()=>storage.setItem('yuki-session-v1',JSON.stringify({savedAt:Date.now(),language:context.ja?'ja':'en',messages:context.messages,variety:context.variety})),
   readingMemory:{set:()=>{},clear:()=>{}},followUpReference:()=>null,packChatRequest,validReply,chatUnavailable,isGuideRequest:()=>false,
   addMessage:(role,text)=>context.messages.push({role,text}),beginJourney:async()=>{},
   fetch:async(url,options)=>{calls.fetch.push(JSON.parse(options.body));return network?network(url,options):new Response(JSON.stringify(cue));},
  };
- vm.createContext(context);vm.runInContext(run+'\nthis.send=runChat;this.translate=translateConversation;',context);
- return {context,calls,elements,send:context.send,translate:context.translate};
+ vm.createContext(context);vm.runInContext(run+clear+'\nthis.send=runChat;this.translate=translateConversation;this.clear=clearConversation;',context);
+ return {context,calls,elements,storage,send:context.send,translate:context.translate,clear:context.clear};
 }
 test('ordinary send uses verification once, stores pass, then continues without another challenge',async()=>{
  const expires=Date.now()+7200000,pass={expires,pass:`${expires}.${'a'.repeat(64)}`};
@@ -78,9 +81,39 @@ test('failed/partial translation retains all originals, re-enables chat and neve
  }
 });
 
-test('clearing or closing chat while translating discards late results and duplicate clicks cannot queue work',async()=>{
+test('clearing chat while translating discards late results and duplicate clicks cannot queue work',async()=>{
  let finish;const f=fixture({network:(_url,options)=>new Promise(resolve=>{finish=()=>resolve(new Response(JSON.stringify({translations:JSON.parse(options.body).translation.map(m=>({id:m.id,text:'翻訳済み'}))})));})});
- f.context.messages=[messageRecord('assistant',cue.text,'en')];f.context.ja=true;const pending=f.translate();await new Promise(resolve=>setImmediate(resolve));await f.translate();assert.equal(f.calls.fetch.length,1);f.context.controller.abort();f.context.messages=[];finish();await pending;assert.equal(f.context.messages.length,0);assert.equal(f.context.busy,false);
+ f.context.messages=[messageRecord('assistant',cue.text,'en')];f.context.conversationMemory.remember('Dream?',cue.text);const memory=f.storage.getItem(memoryKey);f.context.ja=true;const pending=f.translate();await new Promise(resolve=>setImmediate(resolve));await f.translate();assert.equal(f.calls.fetch.length,1);f.clear();finish();await pending;assert.equal(f.context.messages.length,0);assert.equal(f.context.busy,false);assert.equal(f.storage.getItem(memoryKey),memory);
+});
+
+test('Clear chat persists an empty transcript but preserves recall, repetition memory and verification on EN/JA reload',async()=>{
+ const f=fixture();await f.send('What is your dream?');
+ f.context.variety=rememberReply({},cue.text,['bigDream']);
+ const expires=Date.now()+7200000,pass={expires,pass:`${expires}.${'a'.repeat(64)}`};f.context.chatSession.set(pass);
+ const memory=f.storage.getItem(memoryKey),variety=JSON.stringify(f.context.variety);
+ f.context.readingMemory.clear=()=>assert.fail('Clear chat must not erase remembered guide context');
+ f.clear();assert.equal(f.context.messages.length,0);assert.equal(f.storage.getItem(memoryKey),memory);assert.equal(JSON.stringify(f.context.variety),variety);assert.equal(f.context.chatSession.get(),pass.pass);
+ for(const language of ['en','ja']){
+  const restored=readSession(f.storage,Date.now(),language);assert.equal(restored.messages.length,0);assert.equal(JSON.stringify(restored.variety),variety);
+  assert.equal(new ConversationMemory(f.storage,language).recall('dream').length,1);
+ }
+ await f.send('What was your dream again?');const last=f.calls.fetch.at(-1);
+ assert.equal(last.history.length,0);assert(last.memory.some(m=>m.question==='What is your dream?'));assert.equal(last.pass,pass.pass);assert.equal(f.calls.verify,1);
+});
+
+test('clear during a pending answer prevents transcript and memory resurrection',async()=>{
+ let finish;const f=fixture({network:()=>new Promise(resolve=>{finish=()=>resolve(new Response(JSON.stringify(cue)));})});
+ f.context.conversationMemory.remember('A previous question','A previous answer');const memory=f.storage.getItem(memoryKey);
+ const pending=f.send('A pending question');await new Promise(resolve=>setImmediate(resolve));assert.equal(f.context.messages.length,1);
+ f.clear();finish();await pending;
+ assert.equal(f.context.messages.length,0);assert.equal(readSession(f.storage).messages.length,0);assert.equal(f.storage.getItem(memoryKey),memory);assert.equal(f.context.busy,false);
+});
+
+test('the only clearing button removes chat, not memory, and explains retention in both languages',()=>{
+ assert.match(source,/data-action="clear">\$\{tr\('Clear chat','チャットを消去'\)\}/);
+ assert.match(source,/if\(a==='clear'\)clearConversation\(\)/);
+ assert(!source.includes('Clear chat & memory'));assert(!source.includes('conversationMemory.clear()'));assert(!source.includes('Forget chat'));assert(!source.includes('data-action="forget"'));
+ assert.match(source,/Clear chat only removes the visible conversation/);assert.match(source,/記憶は期限切れ/);
 });
 
 test('language conversion starts automatically and never exposes an original-language toggle',()=>{

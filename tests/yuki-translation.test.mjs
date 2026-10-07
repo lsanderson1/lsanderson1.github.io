@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {messageRecord,cleanMessages,translatedText,translationBatch,checkedTranslations,applyTranslations} from '../assets/yuki/runtime/conversation-language.mjs';
+import {messageRecord,cleanMessages,translatedText,translationBatch,checkedTranslations,applyTranslations,translationVoiceVersion} from '../assets/yuki/runtime/conversation-language.mjs';
 import {readSession} from '../assets/yuki/protocol.mjs';
 import {rememberReply} from '../assets/yuki/runtime/reply-variety.mjs';
 import {localizeGreetingMessages,greetings} from '../assets/yuki/runtime/visitor-personality.mjs';
@@ -29,6 +29,20 @@ test('mixed-language original messages translate from their own originals, never
  applyTranslations(messages,[{id:messages[0].id,text:translated}],'ja');
  const en=translationBatch(messages,'en');assert.equal(en.length,1);assert.equal(en[0].text,'どんな本が好き？');
  applyTranslations(messages,[{id:messages[0].id,text:'Do not overwrite the original'}],'en');assert.equal(translatedText(messages[0],'en'),original);
+});
+
+test('old assistant translation refreshes once while originals, user tone and authored greetings stay intact',()=>{
+ const assistant={...messageRecord('assistant',original,'en'),translations:{ja:'私の夢は図書館です。'}},user={...messageRecord('user','Could you tell me your dream?','en'),translations:{ja:'夢を教えていただけますか？'}};
+ const greeting={...messageRecord('assistant',greetings.en[0],'en'),greetingId:0,translations:{ja:greetings.ja[0]}};
+ const messages=cleanMessages([user,assistant,greeting]);
+ assert.equal(messages[1].translations.ja,assistant.translations.ja,'keep stale data until a replacement succeeds');
+ assert.equal(translatedText(messages[1],'ja'),null);assert.equal(translatedText(messages[1],'en'),original);
+ assert.equal(translatedText(messages[0],'ja'),user.translations.ja);assert.equal(translatedText(messages[2],'ja'),greetings.ja[0]);
+ assert.deepEqual(translationBatch(messages,'ja').map(m=>m.id),[assistant.id]);
+ applyTranslations(messages,[{id:assistant.id,text:translated}],'ja');
+ const restored=cleanMessages(JSON.parse(JSON.stringify(messages)));
+ assert.equal(restored[1].translationVoices.ja,translationVoiceVersion);assert.equal(translatedText(restored[1],'ja'),translated);assert.equal(translationBatch(restored,'ja').length,0);assert.equal(restored[1].text,original);
+ for(const bad of [null,'1',0,-1,{},999]){const copy=cleanMessages([{...assistant,translationVoices:{ja:bad}}])[0];assert.equal(translatedText(copy,'ja'),null);assert.equal(translatedText(copy,'en'),original);}
 });
 
 test('old sessions migrate without clearing messages; malformed metadata cannot replace the original',()=>{

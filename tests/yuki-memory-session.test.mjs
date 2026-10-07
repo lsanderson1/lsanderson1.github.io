@@ -105,9 +105,9 @@ test('story facts outrank recalled claims, detailed voice is consistent even for
  const repeated='We have arrived at the Resume page! Which of the published skills would you like my little paws to help you explore first?';
  assert(needsFreshReply({text:repeated},{...base,guideEvent:{kind:'arrive'},variety:rememberReply(null,repeated)}));
 });
-test('UI auto-followups are route-scoped, cancelable, do not fake a visitor turn and preserve clear/language reset',()=>{
+test('UI auto-followups are route-scoped, cancelable, do not fake a visitor turn and never clear recall',()=>{
  const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
- assert(!ui.includes('class="yuki-consent"'));assert.match(ui,/new ChatAvailability/);assert.match(ui,/conversationMemory.clear\(\)/);assert.match(ui,/conversationMemory.reload\(\)/);
+ assert(!ui.includes('class="yuki-consent"'));assert.match(ui,/new ChatAvailability/);assert(!ui.includes('conversationMemory.clear()'));assert.match(ui,/conversationMemory.reload\(\)/);
  assert.match(ui,/routeVersion===journeySerial/);assert.match(ui,/controller\?\.guideEvent/);assert.match(ui,/if\(!guideEvent\)\{addMessage\('user'/);
  assert.match(ui,/if\(!online\|\|!permission.allowed\|\|busy\)\{fallback\(\);return;/);
  const panel=ui.slice(ui.indexOf('function panel('),ui.indexOf('async function openConversation'));

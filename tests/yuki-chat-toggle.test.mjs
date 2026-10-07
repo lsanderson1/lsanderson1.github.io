@@ -3,12 +3,13 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 import {VisitorPersonality,conversationOpening} from '../assets/yuki/runtime/visitor-personality.mjs';
+import {ConversationMemory} from '../assets/yuki/runtime/conversation-memory.mjs';
 
 const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
 // Exercise the real click/open functions, with only the DOM and animation
 // services replaced. Keeping an animation pending must not block closing.
 function fixture({ready=true,lang='en'}={}){
- const state={ready,open:false,messages:[],personality:new VisitorPersonality(undefined,()=>0),ja:lang==='ja',conversationOpening,panels:[],reactions:[]};
+ const state={ready,open:false,messages:[],conversationMemory:new ConversationMemory(undefined,lang),personality:new VisitorPersonality(undefined,()=>0),ja:lang==='ja',conversationOpening,panels:[],reactions:[]};
  state.panel=value=>{state.open=value;state.panels.push(value);};
  state.addMessage=(role,text,_remember,_sources,_topics,greetingId)=>state.messages.push({role,text,greetingId});
  state.react=cue=>{state.reactions.push(cue);return new Promise(()=>{});};
@@ -49,4 +50,14 @@ test('the character button toggles the shared panel and exposes its state in bot
  assert.match(ui,/class="yuki-hit" hidden aria-controls="yuki-panel" aria-expanded="false"/);
  assert.match(ui,/\$\('\.yuki-hit'\)\.setAttribute\('aria-expanded',String\(value\)\)/);
  assert.match(ui,/open\?tr\('Hide chat with Yuki','ゆきとのチャットを隠す'\)/);
+});
+
+test('opening an empty transcript with retained memory never restarts a greeting or a wave',()=>{
+ for(const lang of ['en','ja']){
+  const state=fixture({lang});state.conversationMemory.remember('What is your dream?','A flying library.');
+  const before=JSON.stringify(state.conversationMemory.turns);
+  state.toggleConversation();state.toggleConversation();state.toggleConversation();
+  assert.equal(state.open,true);assert.equal(state.messages.length,0);assert.equal(state.reactions.length,0);
+  assert.equal(JSON.stringify(state.conversationMemory.turns),before);
+ }
 });
