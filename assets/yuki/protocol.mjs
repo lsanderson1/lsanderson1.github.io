@@ -1,5 +1,5 @@
 import {cleanVariety,cleanStoryTopics} from './runtime/reply-variety.mjs';
-import {cleanMessages} from './runtime/conversation-language.mjs?v=2';
+import {cleanMessages} from './runtime/conversation-language.mjs?v=3';
 export const emotions=['neutral','confused','delighted','thoughtful','surprised','shy','proud','reassuring','amused'];
 export const destinations=['none','projects','essays','unreal','resume'];
 export function chatUnavailable(reason,lang='en',reference=''){
