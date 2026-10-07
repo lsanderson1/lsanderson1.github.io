@@ -14,9 +14,9 @@ import {CallPerches} from './runtime/call-perches.mjs?v=7';
 import {VisitorPersonality,conversationOpening,localizeGreetingMessages,replySequence,cueArtwork} from './runtime/visitor-personality.mjs?v=9';
 import {ChatAvailability,ChatPermission,ChatSession,ChatVerification,chatEnvironment,chatEnabledKey,searchConsentKey} from './runtime/chat-access.mjs?v=3';
 import {ConversationMemory} from './runtime/conversation-memory.mjs?v=1';
-import {messageRecord,translatedText,translationBatch,checkedTranslations,applyTranslations} from './runtime/conversation-language.mjs';
+import {messageRecord,translatedText,translationBatch,checkedTranslations,applyTranslations} from './runtime/conversation-language.mjs?v=2';
 import {ReadingMemory,readPageTitle,readingDetail,readPageDisplaySection,readPageSection,guideReference,followUpReference} from './runtime/reading-context.mjs?v=3';
-import {validReply,readSession,chatUnavailable} from './protocol.mjs?v=9';
+import {validReply,readSession,chatUnavailable} from './protocol.mjs?v=10';
 import {safeWebURL} from './runtime/web-sources.mjs?v=1';
 import {cleanVariety,rememberReply,packChatRequest} from './runtime/reply-variety.mjs?v=2';
 
@@ -57,14 +57,14 @@ async function start(){
  <p class="yuki-reading"><span class="yuki-page"></span><span class="yuki-view"></span><button class="yuki-explain" type="button" hidden>${tr('Explain what you showed me','案内したところを説明して')}</button></p>
  <div class="yuki-route-actions" hidden></div>
  <form class="yuki-form"><textarea maxlength="1000" rows="1" aria-label="${tr('Message Yuki','ゆきへのメッセージ')}" placeholder="${tr('Talk to Yuki…','ゆきに話しかける…')}"></textarea><button type="submit">${tr('Send','送信')}</button>
- <details class="yuki-setup"><summary></summary><div class="yuki-privacy"><p>${tr('Talking to Yuki sends your message, recent and relevant older chat, and the current page/guide context to Cloudflare Workers AI. Opening an empty or already-translated conversation does not send anything. After a language switch, earlier messages may be sent for translation as explained below. Please don’t share sensitive information.','ゆきへの送信時に、メッセージ・直近と関連する過去の会話・現在のページや案内先をCloudflare Workers AIへ送ります。会話が空か翻訳済みの場合、開くだけでは送信しません。言語を切り替えた後は、下記の説明のとおり過去の会話を翻訳のために送る場合があります。個人情報・機密情報は入力しないでください。')}</p><p>${tr('Requested guided routes can also generate an AI follow-up at each stop. Free usage limits still apply. A verified chat pass lasts up to two hours in this tab; the security check appears only when needed.','依頼した道案内では、各地点でAIが続きの質問を作る場合があります。無料利用上限があります。認証済みチャットはこのタブで最大2時間有効で、必要なときだけセキュリティ認証が表示されます。')}</p><p>${tr('Yuki recalls up to 40 earlier exchanges in this tab for up to 24 hours after the last exchange. This is not permanent memory or a server-side profile. Clear chat & memory below removes it.','このタブでは最大40件の過去のやり取りを、最後の会話から最大24時間まで記憶します。永久的な記憶やサーバー上のプロフィールではありません。下の「会話と記憶を消去」で削除できます。')}</p></div></details>
+ <details class="yuki-setup"><summary></summary><div class="yuki-privacy"><p>${tr('Talking to Yuki sends your message, recent and relevant older chat, and the current page/guide context to Cloudflare Workers AI. Opening an empty or already-translated conversation does not send anything. After a language switch, earlier messages may be sent for translation as explained below. Please don’t share sensitive information.','ゆきへの送信時に、メッセージ・直近と関連する過去の会話・現在のページや案内先をCloudflare Workers AIへ送ります。会話が空か翻訳済みの場合、開くだけでは送信しません。言語を切り替えた後は、下記の説明のとおり過去の会話を翻訳のために送る場合があります。個人情報・機密情報は入力しないでください。')}</p><p>${tr('Requested guided routes can also generate an AI follow-up at each stop. Free usage limits still apply. A verified chat pass lasts up to two hours in this tab; the security check appears only when needed.','依頼した道案内では、各地点でAIが続きの質問を作る場合があります。無料利用上限があります。認証済みチャットはこのタブで最大2時間有効で、必要なときだけセキュリティ認証が表示されます。')}</p><p>${tr('Yuki recalls up to 40 earlier exchanges in this tab for up to 24 hours after the last exchange. This is not permanent memory or a server-side profile. Clear chat only removes the visible conversation; these memories stay until they expire or this tab’s session data is removed.','このタブでは最大40件の過去のやり取りを、最後の会話から最大24時間まで記憶します。永久的な記憶やサーバー上のプロフィールではありません。「チャットを消去」では表示中の会話だけを消し、記憶は期限切れやこのタブのセッションデータの削除まで保持します。')}</p></div></details>
  <div class="yuki-check"><p class="yuki-verification-status" role="status"></p><div class="yuki-verification"></div><button class="yuki-retry" type="button" hidden>${tr('Retry verification','認証をやり直す')}</button><button class="yuki-cancel" type="button" hidden>${tr('Cancel sending','送信をキャンセル')}</button></div></form>
  <p class="yuki-preview" hidden><a class="yuki-live-link" target="_blank" rel="noopener noreferrer">${tr('Open this page on the live website ↗','公開サイトの同じページを開く ↗')}</a></p>
  <div class="yuki-more" id="yuki-more" hidden>
  <input class="yuki-search" type="search" aria-label="${tr('Find a page or section','ページや項目を探す')}" placeholder="${tr('Search projects and highlights…','作品や見どころを探す…')}"><div class="yuki-destinations"></div>
  <details class="yuki-history"><summary>${tr('Conversation history','会話の履歴')}</summary><div class="yuki-log" aria-label="${tr('Conversation','会話')}"></div></details>
- <div class="yuki-settings"><button class="yuki-ai-toggle" type="button"></button><button data-action="roam"></button><button data-action="pause"></button><button data-action="hide"></button><button data-action="clear">${tr('Clear chat & memory','会話と記憶を消去')}</button></div></div></div></section>`;
- const varietyNote=document.createElement('p');varietyNote.textContent=tr('To reduce repetition, this tab also keeps Yuki’s discussed story topics, recent reply openings and similarity fingerprints with the chat. They are sent with your next message, cleared with Clear chat, and use the same session expiry. A near-duplicate answer may use one extra AI rewrite within the same free usage limits.','繰り返しを減らすため、ゆきが話した物語の項目、直近の返事の書き出し、類似度を確認するためのデータも会話と同じタブに保存し、次のメッセージと一緒に送信します。「会話を消去」で削除され、保持期限も会話と同じです。よく似た回答は、同じ無料利用上限の範囲内で一度だけAIが書き直す場合があります。');$('.yuki-privacy').append(varietyNote);
+ <div class="yuki-settings"><button class="yuki-ai-toggle" type="button"></button><button data-action="roam"></button><button data-action="pause"></button><button data-action="hide"></button><button data-action="clear">${tr('Clear chat','チャットを消去')}</button></div></div></div></section>`;
+ const varietyNote=document.createElement('p');varietyNote.textContent=tr('To reduce repetition, this tab also keeps Yuki’s discussed story topics, recent reply openings and similarity fingerprints. They are sent with your next message and kept when you clear the chat, with the existing 30-minute session expiry. A near-duplicate answer may use one extra AI rewrite within the same free usage limits.','繰り返しを減らすため、ゆきが話した物語の項目、直近の返事の書き出し、類似度を確認するためのデータも同じタブに保存し、次のメッセージと一緒に送信します。チャットを消去しても保持し、従来どおりセッションは30分で期限切れになります。よく似た回答は、同じ無料利用上限の範囲内で一度だけAIが書き直す場合があります。');$('.yuki-privacy').append(varietyNote);
  const languageNote=document.createElement('p');languageNote.textContent=tr('Switching languages keeps our conversation and memory. Earlier messages are automatically translated through Cloudflare into the new page language, within the same free limits. The original wording and translations stay in this tab and are reused between pages and when switching back. An active guided route also continues in the new language.','言語を切り替えても会話と記憶は引き継ぎます。同じ無料上限の範囲で、過去のメッセージをCloudflareで新しいページの言語に自動翻訳します。原文と翻訳はこのタブに保存し、ページの移動や言語を戻したときに再利用します。案内中の行き先も引き継ぎます。');$('.yuki-privacy').append(languageNote);
  const searchLabel=document.createElement('label'),searchBox=document.createElement('input');searchBox.type='checkbox';searchBox.className='yuki-search-consent';searchBox.disabled=!online;
  searchLabel.append(searchBox,document.createTextNode(tr('Optional: let Yuki send a short public-topic query to Tavily when an answer needs web information. This adds another provider; your full chat is not sent to Tavily. Do not include private or sensitive information. Remember this choice; you can turn it off here anytime. Search has shared free limits, and normal chat works without it.','任意：ウェブ情報が必要な回答では、ゆきが短い公開トピックの検索語をTavilyに送信することを許可します。送信先が追加されますが、会話全体はTavilyに送りません。個人情報・機密情報は入力しないでください。この設定を記憶し、ここでいつでも解除できます。検索には共有の無料上限があります。通常の会話は検索なしでも利用できます。')));$('.yuki-privacy').append(searchLabel);
@@ -118,7 +118,8 @@ async function start(){
   if(!value&&restoreFocus){const returnFocus=!hidden?$('.yuki-hit'):$('.yuki-launcher');if(!returnFocus.hidden)returnFocus.focus({preventScroll:true});}placeBubble();save();}
  async function openConversation(){
   if(!ready||open)return;panel(true);
-  const cue=conversationOpening(messages,personality,ja?'ja':'en');if(!cue){void translateConversation();return;}
+  conversationMemory.expire();
+  const cue=conversationMemory.turns.length?null:conversationOpening(messages,personality,ja?'ja':'en');if(!cue){void translateConversation();return;}
   addMessage('assistant',cue.text,true,[],[],cue.greetingId);
   await react(cue,{firstMeeting:cue.firstMeeting}).catch(()=>{});
  }
@@ -246,7 +247,14 @@ async function start(){
   svg.querySelector('circle').setAttribute('cx',end.x);svg.querySelector('circle').setAttribute('cy',end.y);
   Object.assign(ring.style,{left:rect.left-4+'px',top:rect.top-4+'px',width:rect.width+8+'px',height:rect.height+8+'px'});
  }
- for(const b of root.querySelectorAll('[data-action]'))b.onclick=async()=>{const a=b.dataset.action;if(a==='clear'){stopJourney();controller?.abort();reactionVersion++;messages=[];variety=cleanVariety();conversationMemory.clear();chatSession.clear();readingMemory.clear();updateReading();drawMessages();status(online?tr('Conversation cleared.','会話を消去しました。'):offline);pendingCue=null;}
+ function clearConversation(){
+  stopJourney();controller?.abort();verification.stop();reactionVersion++;pendingCue=null;
+  // Clear the transcript, not recall, reading context, repetition memory or pass.
+  // Aborted requests cannot put a late answer/translation back into the bubble.
+  messages=[];translationFailed=false;updateReading();drawMessages();
+  status(tr('Chat cleared—my memories are still here!','チャットは消したよ。覚えているお話はそのままだよ！'));save();
+ }
+ for(const b of root.querySelectorAll('[data-action]'))b.onclick=async()=>{const a=b.dataset.action;if(a==='clear')clearConversation();
   if(a==='hide'){hidden=!hidden;if(hidden){stopJourney();calling=false;controller?.abort();reactionVersion++;pendingCue=null;panel(false);}}if(a==='pause')paused=!paused;
   if(a==='roam'&&ready){b.disabled=true;try{await prepareTravel();roam=!roam;motion.defer();}catch{status(tr('Flight artwork is unavailable. Please retry.','飛行アニメーションを読み込めませんでした。'));}finally{b.disabled=false;}}
   sync();};
