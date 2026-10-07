@@ -27,6 +27,7 @@
 .yuki-beta{display:inline-block;font:700 9px/1.5 system-ui;letter-spacing:.08em;color:#803d51;background:#f6e1e9;border-radius:5px;padding:1px 5px;margin-left:5px;vertical-align:middle}
 .yuki-heading button{padding:2px 8px!important;min-height:32px;border:0!important;font-size:17px!important;background:transparent!important}
 .yuki-speech{max-height:min(220px,29dvh);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;font-size:14px}
+.yuki-aside{font-size:14px;line-height:1.55;margin:2px 2px 8px;overflow-wrap:anywhere}
 .yuki-message{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;padding:2px 2px 8px}.yuki-message strong{display:none}
 .yuki-message[data-role=user]{background:#f7e9ee;border-radius:10px;padding:8px;margin-bottom:6px}
 .yuki-status{font-size:11px;line-height:1.4;color:#82636c;margin:5px 1px 8px}.yuki-status:empty{display:none}
