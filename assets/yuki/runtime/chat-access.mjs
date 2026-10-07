@@ -1,6 +1,25 @@
 // Consent is separate from conversation history. Never persist bot-check tokens.
 export const chatConsentKey='yuki-chat-consent-v1';
 export const searchConsentKey='yuki-web-search-consent-v1';
+export const chatSessionKey='yuki-chat-pass-v1';
+export const chatEnabledKey='yuki-ai-enabled-v1';
+// Chat is ready by default; an optional off switch is not a consent gate.
+export class ChatAvailability{
+ constructor(storage){this.storage=storage;this.reload();}
+ reload(){try{this.allowed=this.storage?.getItem(chatEnabledKey)!=='off';}catch{this.allowed=true;}return this.allowed;}
+ set(value){this.allowed=value===true;try{this.storage?.setItem(chatEnabledKey,this.allowed?'on':'off');}catch{}return this.allowed;}
+}
+export class ChatSession{
+ constructor(storage,now=Date.now){Object.assign(this,{storage,now});this.value=null;}
+ valid(value){return value?.expires>this.now()&&value.expires<=this.now()+7200000&&typeof value.pass==='string'&&/^\d{13}\.[a-f0-9]{64}$/.test(value.pass)&&Number(value.pass.split('.')[0])===value.expires;}
+ get(){
+  try{if(this.storage)this.value=JSON.parse(this.storage.getItem(chatSessionKey)||'null');}catch{}
+  if(this.valid(this.value))return this.value.pass;
+  this.clear();return '';
+ }
+ set(value){this.clear();if(!this.valid(value))return;this.value={pass:value.pass,expires:value.expires};try{this.storage?.setItem(chatSessionKey,JSON.stringify(this.value));}catch{}}
+ clear(){this.value=null;try{this.storage?.removeItem(chatSessionKey);}catch{}}
+}
 export class ChatPermission {
  constructor(storage,key=chatConsentKey){this.storage=storage;this.key=key;this.reload();}
  reload(){try{this.allowed=this.storage?.getItem(this.key)==='granted';}catch{this.allowed=false;}return this.allowed;}
