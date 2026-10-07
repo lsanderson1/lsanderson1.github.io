@@ -9,7 +9,7 @@ const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8')
 // Exercise the real click/open functions, with only the DOM and animation
 // services replaced. Keeping an animation pending must not block closing.
 function fixture({ready=true,lang='en'}={}){
- const state={ready,open:false,messages:[],conversationMemory:new ConversationMemory(undefined,lang),personality:new VisitorPersonality(undefined,()=>0),ja:lang==='ja',conversationOpening,panels:[],reactions:[]};
+ const state={ready,open:false,momentKind:'',messages:[],conversationMemory:new ConversationMemory(undefined,lang),personality:new VisitorPersonality(undefined,()=>0),ja:lang==='ja',conversationOpening,panels:[],reactions:[]};
  state.panel=value=>{state.open=value;state.panels.push(value);};
  state.addMessage=(role,text,_remember,_sources,_topics,greetingId)=>state.messages.push({role,text,greetingId});
  state.react=cue=>{state.reactions.push(cue);return new Promise(()=>{});};
@@ -59,5 +59,12 @@ test('opening an empty transcript with retained memory never restarts a greeting
   state.toggleConversation();state.toggleConversation();state.toggleConversation();
   assert.equal(state.open,true);assert.equal(state.messages.length,0);assert.equal(state.reactions.length,0);
   assert.equal(JSON.stringify(state.conversationMemory.turns),before);
+ }
+});
+
+test('a local clear or refresh aside does not restart the introduction when no AI memory exists',()=>{
+ for(const momentKind of ['clear','refresh','leave']){
+  const state=fixture();state.momentKind=momentKind;state.toggleConversation();
+  assert.equal(state.open,true);assert.equal(state.messages.length,0);assert.equal(state.reactions.length,0);
  }
 });

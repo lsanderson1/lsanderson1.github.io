@@ -14,9 +14,10 @@ import {CallPerches} from './runtime/call-perches.mjs?v=7';
 import {VisitorPersonality,conversationOpening,localizeGreetingMessages,replySequence,cueArtwork} from './runtime/visitor-personality.mjs?v=9';
 import {ChatAvailability,ChatPermission,ChatSession,ChatVerification,chatEnvironment,chatEnabledKey,searchConsentKey} from './runtime/chat-access.mjs?v=3';
 import {ConversationMemory} from './runtime/conversation-memory.mjs?v=1';
+import {ConversationMoments,shouldWelcomeOnRefresh,isLeavingLink} from './runtime/conversation-moments.mjs?v=1';
 import {messageRecord,translatedText,translationBatch,checkedTranslations,applyTranslations} from './runtime/conversation-language.mjs?v=3';
 import {ReadingMemory,readPageTitle,readingDetail,readPageDisplaySection,readPageSection,guideReference,followUpReference} from './runtime/reading-context.mjs?v=3';
-import {validReply,readSession,chatUnavailable} from './protocol.mjs?v=11';
+import {validReply,readSession,chatUnavailable} from './protocol.mjs?v=12';
 import {safeWebURL} from './runtime/web-sources.mjs?v=1';
 import {cleanVariety,rememberReply,packChatRequest} from './runtime/reply-variety.mjs?v=2';
 
@@ -28,6 +29,7 @@ async function start(){
  let saved={};try{saved=readSession(sessionStorage,Date.now(),ja?'ja':'en');}catch{}
  let readingStorage;try{readingStorage=sessionStorage;}catch{}const readingMemory=new ReadingMemory(readingStorage);
  const conversationMemory=new ConversationMemory(readingStorage,ja?'ja':'en'),chatSession=new ChatSession(readingStorage);
+ const moments=new ConversationMoments(readingStorage);let momentKind='';
  let lastFlop=0;try{const stamp=Number(readingStorage?.getItem('yuki-last-flop-v1'));if(Number.isFinite(stamp)&&stamp>0&&stamp<=Date.now())lastFlop=stamp;}catch{}
  const flopRemaining=()=>{try{const stamp=Number(readingStorage?.getItem('yuki-last-flop-v1'));if(Number.isFinite(stamp)&&stamp>0&&stamp<=Date.now())lastFlop=Math.max(lastFlop,stamp);}catch{}return Math.max(0,300000-(Date.now()-lastFlop));};
  const rememberFlop=()=>{lastFlop=Date.now();try{readingStorage?.setItem('yuki-last-flop-v1',String(lastFlop));}catch{}};
@@ -53,7 +55,7 @@ async function start(){
  <button class="yuki-launcher" hidden aria-controls="yuki-panel">${tr('Call Yuki','ゆきを呼ぶ')}</button>
  <section class="yuki-panel" id="yuki-panel" role="dialog" aria-modal="false" aria-labelledby="yuki-title" hidden>
  <div class="yuki-panel-inner"><header class="yuki-heading"><h2 id="yuki-title">ゆき <span class="yuki-beta">BETA</span><small>${tr('Your little guide','小さな案内役')}</small></h2><button class="yuki-menu" aria-expanded="false" aria-controls="yuki-more" aria-label="${tr('Guide, history and settings','案内・履歴・設定')}">⋯</button><button class="yuki-close" aria-label="${tr('Close chat','チャットを閉じる')}">×</button></header>
- <div class="yuki-speech" role="log" aria-live="polite" aria-atomic="true" aria-label="${tr('Yuki says','ゆきの返事')}"></div><p class="yuki-status" role="status"></p><button class="yuki-translate" type="button" hidden>${tr('Retry translation','翻訳を再試行')}</button>
+ <p class="yuki-aside" role="status" hidden></p><div class="yuki-speech" role="log" aria-live="polite" aria-atomic="true" aria-label="${tr('Yuki says','ゆきの返事')}"></div><p class="yuki-status" role="status"></p><button class="yuki-translate" type="button" hidden>${tr('Retry translation','翻訳を再試行')}</button>
  <p class="yuki-reading"><span class="yuki-page"></span><span class="yuki-view"></span><button class="yuki-explain" type="button" hidden>${tr('Explain what you showed me','案内したところを説明して')}</button></p>
  <div class="yuki-route-actions" hidden></div>
  <form class="yuki-form"><textarea maxlength="1000" rows="1" aria-label="${tr('Message Yuki','ゆきへのメッセージ')}" placeholder="${tr('Talk to Yuki…','ゆきに話しかける…')}"></textarea><button type="submit">${tr('Send','送信')}</button>
@@ -69,6 +71,11 @@ async function start(){
  const searchLabel=document.createElement('label'),searchBox=document.createElement('input');searchBox.type='checkbox';searchBox.className='yuki-search-consent';searchBox.disabled=!online;
  searchLabel.append(searchBox,document.createTextNode(tr('Optional: let Yuki send a short public-topic query to Tavily when an answer needs web information. This adds another provider; your full chat is not sent to Tavily. Do not include private or sensitive information. Remember this choice; you can turn it off here anytime. Search has shared free limits, and normal chat works without it.','任意：ウェブ情報が必要な回答では、ゆきが短い公開トピックの検索語をTavilyに送信することを許可します。送信先が追加されますが、会話全体はTavilyに送りません。個人情報・機密情報は入力しないでください。この設定を記憶し、ここでいつでも解除できます。検索には共有の無料上限があります。通常の会話は検索なしでも利用できます。')));$('.yuki-privacy').append(searchLabel);
  const status=text=>{$('.yuki-status').textContent=text;};
+ function hideMoment(){momentKind='';$('.yuki-aside').hidden=true;$('.yuki-aside').textContent='';}
+ function showMoment(kind,{reveal=false}={}){momentKind=kind;$('.yuki-aside').textContent=moments.next(kind,ja?'ja':'en');$('.yuki-aside').hidden=false;
+  // A local aside never creates a chat turn, spends AI quota or steals focus.
+  if(reveal&&!hidden&&!busy&&!journey.active)panel(true,{focus:false,translate:false});
+ }
  function readingContext(){measureHeader();return {section:readPageSection(document,innerHeight,headerBottom)?.id??'',lastGuide:readingMemory.get()};}
  function updateReading(){
   measureHeader();
@@ -98,6 +105,7 @@ async function start(){
   translationUI();
  }
  function addMessage(role,text,remember=true,sources=[],storyTopics=[],greetingId){
+  if(remember)hideMoment();
   if(remember){messages.push({...messageRecord(role,text,ja?'ja':'en'),...(sources.length?{sources}:{}),...(Number.isInteger(greetingId)?{greetingId}:{})});messages=messages.slice(-12);if(role==='assistant')variety=rememberReply(variety,text,storyTopics);}
   const p=document.createElement('p');p.className='yuki-message';p.dataset.role=role;const label=document.createElement('strong');label.textContent=role==='user'?tr('YOU','あなた'):'ゆき';p.append(label,document.createTextNode(text??(online?tr('Switching this message to English…','このメッセージを日本語に切り替えています…'):tr('Your conversation is saved. Automatic translation is available on the live site.','会話は保存されています。自動翻訳は公開サイトで利用できます。'))));
   const history=p.cloneNode(true);$('.yuki-log').append(history);$('.yuki-log').scrollTop=$('.yuki-log').scrollHeight;
@@ -109,17 +117,17 @@ async function start(){
    $('.yuki-speech').replaceChildren(p);$('.yuki-speech').scrollTop=0;
   }if(remember){translationUI();save();}
  }
- function save(){try{const r=companion?.rover;sessionStorage.setItem('yuki-session-v1',JSON.stringify({savedAt:Date.now(),language:ja?'ja':'en',mobilityVersion:2,awake:companion?companion.lifecycle.state!=='sleep':saved.awake,hidden,paused,roam,messages,variety,x:r?r.foot.x/innerWidth:saved.x,y:r?r.foot.y/innerHeight:saved.y}));}catch{}}
+ function save(){try{const r=companion?.rover;sessionStorage.setItem('yuki-session-v1',JSON.stringify({savedAt:Date.now(),language:ja?'ja':'en',mobilityVersion:2,awake:companion?companion.lifecycle.state!=='sleep':saved.awake,chatOpen:open,hidden,paused,roam,messages,variety,x:r?r.foot.x/innerWidth:saved.x,y:r?r.foot.y/innerHeight:saved.y}));}catch{}}
  function settingLabels(){for(const [k,text] of Object.entries({roam:roam?tr('Occasional flights: on','たまにお散歩：オン'):tr('Occasional flights: off','たまにお散歩：オフ'),pause:paused?tr('Resume','再開'):tr('Pause','一時停止'),hide:hidden?tr('Show Yuki','ゆきを表示'):tr('Hide Yuki','ゆきを隠す')}))$(`[data-action="${k}"]`).textContent=text;}
  drawMessages();status(online?tr('Ready when you are.','いつでもどうぞ。'):offline);settingLabels();
- function panel(value,{restoreFocus=true}={}){open=value;$('.yuki-panel').hidden=!value;$('.yuki-hit').setAttribute('aria-expanded',String(value));motion?.defer();
-  if(value){if(hidden){hidden=false;sync();}wake();updateReading();$('.yuki-close').focus({preventScroll:true});queueMicrotask(()=>{if(open)void translateConversation();});}
+ function panel(value,{restoreFocus=true,focus=true,translate=true}={}){open=value;$('.yuki-panel').hidden=!value;$('.yuki-hit').setAttribute('aria-expanded',String(value));motion?.defer();
+  if(value){if(hidden){hidden=false;sync();}wake();updateReading();if(focus)$('.yuki-close').focus({preventScroll:true});if(translate)queueMicrotask(()=>{if(open)void translateConversation();});}
   else {if(busy){controller?.abort();status(tr('Sending cancelled.','送信をキャンセルしました。'));}verification.stop();}
   if(!value&&restoreFocus){const returnFocus=!hidden?$('.yuki-hit'):$('.yuki-launcher');if(!returnFocus.hidden)returnFocus.focus({preventScroll:true});}placeBubble();save();}
  async function openConversation(){
   if(!ready||open)return;panel(true);
   conversationMemory.expire();
-  const cue=conversationMemory.turns.length?null:conversationOpening(messages,personality,ja?'ja':'en');if(!cue){void translateConversation();return;}
+  const cue=momentKind||conversationMemory.turns.length?null:conversationOpening(messages,personality,ja?'ja':'en');if(!cue){void translateConversation();return;}
   addMessage('assistant',cue.text,true,[],[],cue.greetingId);
   await react(cue,{firstMeeting:cue.firstMeeting}).catch(()=>{});
  }
@@ -252,7 +260,9 @@ async function start(){
   // Clear the transcript, not recall, reading context, repetition memory or pass.
   // Aborted requests cannot put a late answer/translation back into the bubble.
   messages=[];translationFailed=false;updateReading();drawMessages();
-  status(tr('Chat cleared—my memories are still here!','チャットは消したよ。覚えているお話はそのままだよ！'));save();
+  showMoment('clear');$('.yuki-more').hidden=true;$('.yuki-menu').setAttribute('aria-expanded','false');
+  $('.yuki-panel-inner').scrollTop=0;$('textarea').focus({preventScroll:true});
+  status(tr('Chat cleared. Conversation memory kept.','チャットを消去しました。会話の記憶は保持しています。'));save();
  }
  for(const b of root.querySelectorAll('[data-action]'))b.onclick=async()=>{const a=b.dataset.action;if(a==='clear')clearConversation();
   if(a==='hide'){hidden=!hidden;if(hidden){stopJourney();calling=false;controller?.abort();reactionVersion++;pendingCue=null;panel(false);}}if(a==='pause')paused=!paused;
@@ -480,6 +490,7 @@ async function start(){
   const initial=carriedPosition?clampFoot(carriedPosition,restingExtent(),layout):visibleSpot(restingExtent(),obstacles,layout,layout.home);
   companion.rover.position={...initial,y:initial.y+scrollY};upsert({id:'home',...initial,y:initial.y+scrollY});
   ready=true;sync();last=performance.now();requestAnimationFrame(tick);
+  if(shouldWelcomeOnRefresh(performance.getEntriesByType('navigation')[0]?.type,saved,journey.active))showMoment('refresh',{reveal:saved.chatOpen===true});
   if(saved.awake||open||journey.active)await wake();prepareTravel().then(()=>companion.attention.setTracking(!media.matches)).catch(()=>status(tr('Some flight drawings could not load. Please reload to retry.','飛行画像を読み込めませんでした。再読み込みしてください。')));
   if(journey.active)await resumeJourney();
   let requested;try{requested=pendingGuide(sessionStorage.getItem('yuki-guide-v1'),location.pathname);sessionStorage.removeItem('yuki-guide-v1');}catch{}
@@ -501,6 +512,11 @@ async function start(){
   motion.scroll();},{passive:true});
  window.visualViewport?.addEventListener('resize',placeBubble);window.visualViewport?.addEventListener('scroll',placeBubble);
  addEventListener('pagehide',()=>{save();if(journey.active&&companion)journey.depart({x:companion.rover.foot.x,y:companion.rover.foot.y-scrollY},layout);controller?.abort();verification.stop();});
- addEventListener('pageshow',e=>{if(e.persisted){const restored=readSession(readingStorage,Date.now(),ja?'ja':'en');messages=restored.messages??[];variety=cleanVariety(restored.variety);conversationMemory.reload();drawMessages();save();permission.reload();permissionUI();if(!permission.allowed)withdrawPermission();if(companion)companion.lifecycle.lastCrash=companion.lifecycle.clock+flopRemaining()-companion.lifecycle.crashCooldownMs;journey=new GuideJourney(readingStorage);clearRouteMarker();if(journey.active)void resumeJourney();else stopJourney();}});
- document.addEventListener('visibilitychange',()=>{last=performance.now();if(document.hidden){save();verification.stop();}});
+ addEventListener('pageshow',e=>{if(momentKind==='leave')hideMoment();if(e.persisted){const restored=readSession(readingStorage,Date.now(),ja?'ja':'en');messages=restored.messages??[];variety=cleanVariety(restored.variety);conversationMemory.reload();drawMessages();save();permission.reload();permissionUI();if(!permission.allowed)withdrawPermission();if(companion)companion.lifecycle.lastCrash=companion.lifecycle.clock+flopRemaining()-companion.lifecycle.crashCooldownMs;journey=new GuideJourney(readingStorage);clearRouteMarker();if(journey.active)void resumeJourney();else stopJourney();}});
+ document.addEventListener('click',event=>{
+  const link=event.target?.closest?.('a[href]');
+  if(!link||!ready||hidden||busy||journey.active||!onScreen||!isLeavingLink(link.href,location.href,{button:event.button,defaultPrevented:event.defaultPrevented,download:link.hasAttribute('download'),altKey:event.altKey,ctrlKey:event.ctrlKey,metaKey:event.metaKey,shiftKey:event.shiftKey}))return;
+  showMoment('leave',{reveal:true}); // Never prevent, delay or replace navigation.
+ },{passive:true});
+ document.addEventListener('visibilitychange',()=>{last=performance.now();if(document.hidden){save();verification.stop();}else if(momentKind==='leave')hideMoment();});
 }

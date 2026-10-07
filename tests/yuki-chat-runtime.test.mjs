@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {ChatSession} from '../assets/yuki/runtime/chat-access.mjs';
 import {ConversationMemory,memoryKey} from '../assets/yuki/runtime/conversation-memory.mjs';
+import {ConversationMoments} from '../assets/yuki/runtime/conversation-moments.mjs';
 import {packChatRequest,rememberReply} from '../assets/yuki/runtime/reply-variety.mjs';
 import {validReply,chatUnavailable,readSession} from '../assets/yuki/protocol.mjs';
 import {messageRecord,translationBatch,checkedTranslations,applyTranslations} from '../assets/yuki/runtime/conversation-language.mjs';
@@ -12,15 +13,16 @@ import {messageRecord,translationBatch,checkedTranslations,applyTranslations} fr
 const source=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
 const run=source.slice(source.indexOf(' async function runChat('),source.indexOf(' function render(){'));
 const clear=source.slice(source.indexOf(' function clearConversation(){'),source.indexOf(" for(const b of root.querySelectorAll('[data-action]'))"));
+const momentFunctions=source.slice(source.indexOf(' function hideMoment(){'),source.indexOf(' function readingContext(){'));
 const store=()=>{const m=new Map();return {getItem:k=>m.get(k)??null,setItem:(k,v)=>m.set(k,v),removeItem:k=>m.delete(k)};};
 const cue={text:'Ooh, the little library dream! A cozy perch matters as much as its books.',emotion:'thoughtful',gesture:'none',destination:'none',sources:[],storyTopics:['bigDream']};
 function fixture({network}={}){
  const storage=store(),elements=new Map(),calls={verify:0,fetch:[],stop:0,fallback:0,status:[]};
- const context={busy:false,open:false,translationFailed:false,online:true,permission:{allowed:true},journeySerial:4,ja:false,base:'',messages:[],variety:{},knowledge:[],paths:{},names:{},pendingCue:null,reactionVersion:0,
-  AbortController,setTimeout,clearTimeout,Date,Error,JSON,Map,location:{pathname:'/resume.html'},endpoint:'https://api.invalid/chat',
+ const context={busy:false,open:false,momentKind:'',moments:new ConversationMoments(storage,()=>0),hidden:false,journey:{active:false},translationFailed:false,online:true,permission:{allowed:true},journeySerial:4,ja:false,base:'',messages:[],variety:{},knowledge:[],paths:{},names:{},pendingCue:null,reactionVersion:0,
+  AbortController,setTimeout,clearTimeout,Date,Error,JSON,Map,controller:undefined,location:{pathname:'/resume.html'},endpoint:'https://api.invalid/chat',
   chatSession:new ChatSession(storage),conversationMemory:new ConversationMemory(storage,'en'),searchPermission:{allowed:true},
   verification:{takeToken:async()=>{calls.verify++;return 'single-use-test-token';},stop:()=>{calls.stop++;}},
-  tr:(en)=>en,$:selector=>{if(!elements.has(selector))elements.set(selector,{value:'Draft to preserve',disabled:false,readOnly:false,hidden:true});return elements.get(selector);},
+  tr:(en,jp)=>context.ja?jp:en,$:selector=>{if(!elements.has(selector))elements.set(selector,{value:'Draft to preserve',disabled:false,readOnly:false,hidden:true,setAttribute:()=>{},focus:()=>{}});return elements.get(selector);},
   readingContext:()=>({}),updateReading:()=>{},translationUI:()=>{},drawMessages:()=>{},translationBatch,checkedTranslations,applyTranslations,wake:async()=>{},status:s=>calls.status.push(s),react:async()=>{},
   stopJourney:()=>{context.journeySerial++;},
   save:()=>storage.setItem('yuki-session-v1',JSON.stringify({savedAt:Date.now(),language:context.ja?'ja':'en',messages:context.messages,variety:context.variety})),
@@ -28,7 +30,7 @@ function fixture({network}={}){
   addMessage:(role,text)=>context.messages.push({role,text}),beginJourney:async()=>{},
   fetch:async(url,options)=>{calls.fetch.push(JSON.parse(options.body));return network?network(url,options):new Response(JSON.stringify(cue));},
  };
- vm.createContext(context);vm.runInContext(run+clear+'\nthis.send=runChat;this.translate=translateConversation;this.clear=clearConversation;',context);
+ vm.createContext(context);vm.runInContext(momentFunctions+run+clear+'\nthis.send=runChat;this.translate=translateConversation;this.clear=clearConversation;',context);
  return {context,calls,elements,storage,send:context.send,translate:context.translate,clear:context.clear};
 }
 test('ordinary send uses verification once, stores pass, then continues without another challenge',async()=>{
@@ -114,6 +116,20 @@ test('the only clearing button removes chat, not memory, and explains retention 
  assert.match(source,/if\(a==='clear'\)clearConversation\(\)/);
  assert(!source.includes('Clear chat & memory'));assert(!source.includes('conversationMemory.clear()'));assert(!source.includes('Forget chat'));assert(!source.includes('data-action="forget"'));
  assert.match(source,/Clear chat only removes the visible conversation/);assert.match(source,/記憶は期限切れ/);
+});
+
+test('clear displays a friendly local offer in either language without a new message, greeting or AI call',()=>{
+ for(const ja of [false,true]){
+  const f=fixture();f.context.ja=ja;f.context.messages=[messageRecord('assistant','Previous answer','en')];
+  f.context.conversationMemory.remember('Dream?','A flying library.');const memory=f.storage.getItem(memoryKey);
+  f.clear();const aside=f.context.$('.yuki-aside'),first=aside.textContent;
+  assert.equal(aside.hidden,false);assert.match(first,ja?/呼んでね/:/little paw/);
+  assert.equal(f.context.momentKind,'clear');assert.equal(f.context.messages.length,0);assert.equal(readSession(f.storage).messages.length,0);
+  assert.equal(f.storage.getItem(memoryKey),memory);assert.equal(f.calls.fetch.length,0);assert.equal(f.calls.verify,0);
+  assert.equal(f.context.$('.yuki-more').hidden,true);
+  assert.equal(f.context.$('.yuki-panel-inner').scrollTop,0);
+  f.clear();assert.notEqual(aside.textContent,first,'consecutive clears vary naturally');
+ }
 });
 
 test('language conversion starts automatically and never exposes an original-language toggle',()=>{

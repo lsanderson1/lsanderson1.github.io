@@ -1,5 +1,15 @@
 # Connecting Yuki's free AI
 
+## Friendly clear, refresh and departure asides — October 8, 2026
+
+Frontend v21 adds small paired English/Japanese messages after Clear chat, on a returning visitor's actual page refresh, and on ordinary outgoing web-link clicks. Each kind has four variants and avoids repeating the last variant, including across reloads; only anonymous variant indices are kept in tab storage. The asides are visibly separate from the retained answer, disappear on the next real conversation message, and never become AI history, memory or translation requests.
+
+Clear chat still empties the transcript, preserves memory/repetition data/verification, and cancels late results. It now closes the settings menu, returns the bubble to its top and focuses the composer while showing a friendly offer to help. A refresh gives a brief welcome-back rather than a repeated self-introduction; it restores an already-open chat without stealing focus. A previously closed bubble stays closed until opened. First-load sleeping, hidden Yuki and active guided routes are preserved. Ordinary internal navigation and language switches do not add a greeting.
+
+The farewell is best-effort on an ordinary external HTTP(S) link activation while Yuki is visible and not busy or guiding. It never delays/cancels navigation, changes the link, prompts before leaving, steals focus or initiates translation. Downloads, internal/hash/email links and modified clicks are excluded. Browser tab closure, address-bar navigation and operating-system termination cannot reliably display a custom goodbye; no unload confirmation is installed. The note is removed when returning from another tab or a cached page.
+
+Validation: 268 automated tests pass, including real clear/open/panel/departure handlers with fixture dependencies, preserved memory and pass, refresh eligibility, bilingual copies, no consecutive repeats, external-link filtering and no automatic AI request for an aside. Browser checks in the local preview confirmed Japanese and English clear messages, a refresh welcome without a repeated introduction, and an outgoing GitHub-link farewell with focus left on the link. No production conversation was cleared. Jekyll build and the unchanged 42-page / 312-target knowledge audit pass.
+
 ## Natural Japanese without repetitive cute endings — October 8, 2026
 
 The Japanese-language refinement was deployed to the existing Worker as version `0a0be518-0568-4f16-9c73-bce8eba0d927` before frontend v20. The same voice guidance covers normal replies, researched explanations, guide follow-ups, duplicate rewrites and assistant translations. English character voice, canonical story, artwork, memory lifetime, provider and all free-use limits are unchanged.
