@@ -98,13 +98,13 @@ test('unsupported browser and invalid tokens fail closed',async()=>{
  const f=fixture();await f.v.start();f.options['unsupported-callback']();await assert.rejects(f.v.takeToken(),/verification/);
  for(const token of ['',null,'x'.repeat(2049)]){f.options.callback(token);assert.equal(f.v.state,'error');assert.equal(f.v.token,'');}f.v.stop();
 });
-test('UI wiring gates every submit on permission and verification, with no automatic AI retry',()=>{
+test('UI chat is on by default, uses a verified pass or a challenge, with no automatic AI retry',()=>{
  const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
  const include=readFileSync(new URL('../_includes/yuki.html',import.meta.url),'utf8');
  assert.match(include,/data-site-origin/);assert.match(ui,/if\(!online\|\|busy\)\{status\(offline\)/);assert.match(ui,/if\(!permission.allowed\)/);
  assert(ui.indexOf('if(!online||busy)')<ui.indexOf('await verification.takeToken'));
  assert.match(ui,/await verification.takeToken\(requestController.signal\)/);assert.match(ui,/signal.aborted\|\|!permission.allowed/);
- assert.match(ui,/if\(online&&permission.allowed&&open&&!document.hidden\)/);assert.match(ui,/addEventListener\('storage'/);
- assert.match(ui,/requestController.abort\(\)/);assert.equal((ui.match(/fetch\(endpoint/g)||[]).length,1);
+ assert.match(ui,/if\(online&&permission.allowed&&open&&!document.hidden&&!chatSession.get\(\)\)/);assert.match(ui,/addEventListener\('storage'/);
+ assert.match(ui,/requestController.abort\(\)/);assert.equal((ui.match(/fetch\(endpoint/g)||[]).length,2,'chat and explicit language translation share the protected endpoint');
  assert.match(ui,/Cancel sending/);assert.match(ui,/access.reason==='preview'/);assert.match(ui,/offline=chatUnavailable\(access.reason/);
 });

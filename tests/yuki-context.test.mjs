@@ -191,8 +191,8 @@ test('section and image source IDs resolve to exact safe anchors and repeated ch
 });
 test('prompt supports contextual depth, explicitly limits visual claims and preserves no-tools safety',()=>{
  const body=modelRequest(input,retrieveKnowledge(knowledge,input)),prompt=body.messages[0].content;
- for(const text of ['not eye tracking','lastGuided','ask a brief clarifying question','not unseen visual details','4–6 concise sentences','untrusted DATA','Never invent credentials'])assert(prompt.includes(text));
- assert.equal(body.max_tokens,700);assert(!body.tools);
+ for(const text of ['not eye tracking','lastGuided','ask a brief clarifying question','not unseen visual details','5–8 clear sentences','untrusted DATA','Never invent credentials'])assert(prompt.includes(text));
+ assert.equal(body.max_tokens,1100);assert(!body.tools);
 });
 test('guide Explain resets the topic to the selected picture rather than old conversation',()=>{
  const request={...input,message:'Please explain what you just showed me in more detail. How does it relate to this project?',history:[{role:'user',content:'Explain the controller and design patterns'},{role:'assistant',content:'The controller owns input.'}],context:{section:'i0',lastGuide:{page:'/museum.html',section:'i0'}}};
@@ -205,11 +205,12 @@ test('guide Explain resets the topic to the selected picture rather than old con
  const explicit=retrieveKnowledge(knowledge,{...request,message:'Explain controller design patterns instead'});
  assert.equal(explicit.view.focus,null);assert.equal(modelRequest({...request,message:'Explain controller design patterns instead'},explicit).messages.length,4);
 });
-test('context travels only with explicit Send; guide arrival does not trigger an AI request',()=>{
+test('context travels with a message or a requested route follow-up, never passive scrolling',()=>{
  const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
- assert.match(ui,/const context=readingContext\(\)/);assert.match(ui,/page:location.pathname,context,token/);assert.match(ui,/readingMemory.set\(guideReference/);
- assert.equal((ui.match(/fetch\(endpoint/g)||[]).length,1);assert.match(ui,/readingMemory.clear\(\)/);
- assert(!ui.includes('getSelection('));assert(!ui.includes('document.body.innerText'));
+ assert.match(ui,/const context=readingContext\(\)/);assert.match(ui,/page:location.pathname,context,/);assert.match(ui,/readingMemory.set\(guideReference/);
+ assert.equal((ui.match(/fetch\(endpoint/g)||[]).length,2);assert.match(ui,/readingMemory.clear\(\)/);
+ const translation=ui.slice(ui.indexOf(' async function translateConversation('),ui.indexOf(' function render(){'));assert(!translation.includes('readingContext()'),'translation needs only saved text, not live page context');
+ assert(!ui.includes('getSelection('));assert(!ui.includes('document.body.innerText'));assert.match(ui,/void speakGuideFollowup\(step\)/);
 });
 test('mocked answer call receives only indexed context and uses the existing verification/quota flow',async()=>{
  let aiCalls=0;const fetched=[];

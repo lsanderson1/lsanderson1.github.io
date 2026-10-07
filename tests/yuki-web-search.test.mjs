@@ -96,7 +96,7 @@ test('handler never silently substitutes secondary sources for a known official-
 });
 test('prompt explains in depth before links and separates untrusted web evidence, portfolio facts, and lore',()=>{
  const k={pages:[]},eligible=modelRequest(input,k,{mode:'eligible'}),p=eligible.messages[0].content;
- assert.match(p,/EXPLANATION FIRST/);assert.match(p,/4–6 concise sentences/);assert.match(p,/Never search for Yuki's fictional story/);assert.match(p,/explicit request not to search overrides/);assert.match(p,/NOT searched yet/);
+ assert.match(p,/EXPLANATION FIRST/);assert.match(p,/5–8 clear sentences/);assert.match(p,/Never search for Yuki's fictional story/);assert.match(p,/explicit request not to search overrides/);assert.match(p,/NOT searched yet/);
  assert.match(p,/prefer primary sources/);assert.match(p,/site:docs.blender.org/);assert.match(p,/official English material can be explained in Japanese/);assert.match(p,/A secondary article must never be described as official/);
  assert(eligible.response_format.json_schema.required.includes('webQuery'));
  assert(!modelRequest(input,k).response_format.json_schema.required.includes('webQuery'));
@@ -170,7 +170,7 @@ test('existing Durable Object dispatches search separately from AI budgets and f
 });
 test('UI keeps optional consent, explanation-first source links and artwork untouched',()=>{
  const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
- assert.match(ui,/webSearch:searchPermission.allowed/);assert.match(ui,/yuki-search-consent/);assert.match(ui,/your full chat is not sent to Tavily/);assert.match(ui,/会話全体はTavilyに送りません/);
+ assert.match(ui,/webSearch:!guideEvent&&searchPermission.allowed/);assert.match(ui,/yuki-search-consent/);assert.match(ui,/your full chat is not sent to Tavily/);assert.match(ui,/会話全体はTavilyに送りません/);
  const external=ui.slice(ui.indexOf('if(external){'),ui.indexOf('const url=localizePath',ui.indexOf('if(external){')));
  assert.match(external,/noopener noreferrer/);assert(!external.includes('visit('));assert(!external.includes('Show me'));
 });

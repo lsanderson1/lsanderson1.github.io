@@ -15,7 +15,7 @@ export function cleanVariety(value){
  const topics={};for(const id of storyTopicIds){const n=value?.topics?.[id];if(Number.isInteger(n)&&n>0)topics[id]=Math.min(n,999);}
  const recent=[];
  for(const item of (Array.isArray(value?.recent)?value.recent:[]).slice(-recentLimit)){
-  if(!item||typeof item.digest!=='string'||!/^[a-f0-9]{16}$/.test(item.digest)||!Number.isInteger(item.length)||item.length<0||item.length>1000||!Array.isArray(item.grams))continue;
+  if(!item||typeof item.digest!=='string'||!/^[a-f0-9]{16}$/.test(item.digest)||!Number.isInteger(item.length)||item.length<0||item.length>2000||!Array.isArray(item.grams))continue;
   recent.push({digest:item.digest,length:item.length,grams:[...new Set(item.grams.filter(g=>typeof g==='string'&&hex.test(g)))].sort().slice(0,sampleSize),opening:typeof item.opening==='string'?[...item.opening.replace(/\s+/g,' ').trim()].slice(0,64).join(''):''});
  }
  return {turn:Number.isInteger(value?.turn)&&value.turn>0?Math.min(value.turn,9999):0,topics,recent};
@@ -46,9 +46,10 @@ export function wantsExactRepeat(text){
 // Keep the existing 14 KB UTF-8 request ceiling, including Japanese and the
 // verification token. Prefer recent real turns; trim metadata before history.
 export function packChatRequest(input,limit=14000){
- const body={...input,history:input.history.slice(-6),variety:cleanVariety(input.variety)};
+ const body={...input,history:input.history.slice(-6),...(input.memory?{memory:input.memory.map(m=>({...m}))}:{}),variety:cleanVariety(input.variety)};
  const size=()=>new TextEncoder().encode(JSON.stringify(body)).length;
  while(size()>limit&&body.variety.recent.length>2)body.variety.recent.shift();
+ while(size()>limit&&body.memory?.length)body.memory.shift();
  while(size()>limit&&body.history.length)body.history.shift();
  while(size()>limit&&body.variety.recent.length)body.variety.recent.shift();
  if(size()>limit)throw Error('Message too large');

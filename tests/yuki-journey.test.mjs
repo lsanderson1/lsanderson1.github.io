@@ -116,14 +116,14 @@ test('UI starts local route requests before AI, persists only leading position a
  const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
  assert(ui.indexOf('resolveGuideRequest(text,knowledge')<ui.indexOf('await verification.takeToken'));
  assert.match(ui,/if\(journey.active&&companion\)journey.depart/);assert.match(ui,/carriedPosition\?clampFoot/);
- assert(!ui.includes('location.assign('));assert.equal((ui.match(/fetch\(endpoint/g)||[]).length,1);
+ assert(!ui.includes('location.assign('));assert.equal((ui.match(/fetch\(endpoint/g)||[]).length,2);
  assert.match(ui,/if\(d.journeySerial!==undefined&&d.journeySerial!==journeySerial\)return/);
 });
-test('changing language clears messages and reply memory, preserving preferences and a separate active journey',()=>{
+test('changing language retains original messages, preferences and a separate active journey',()=>{
  const storage=store(),route=new GuideJourney(storage,()=>1000);route.start('/projects/ProjectReap.html','/');
  for(const [from,to] of [['en','ja'],['ja','en'],[undefined,'ja']]){
   storage.setItem('yuki-session-v1',JSON.stringify({savedAt:1000,language:from,awake:true,roam:true,messages:[{role:'assistant',text:'Hello there!'}],variety:{recent:['Hello there!']}}));
-  const switched=readSession(storage,2000,to);assert.deepEqual(switched.messages,[]);assert.deepEqual(switched.variety.recent,[]);assert.equal(switched.language,to);assert(switched.awake&&switched.roam);assert(new GuideJourney(storage,()=>2000).active);
+  const switched=readSession(storage,2000,to);assert.equal(switched.messages.length,1);assert.equal(switched.messages[0].text,'Hello there!');assert.equal(switched.messages[0].language,from??'en');assert.equal(switched.language,to);assert(switched.awake&&switched.roam);assert(new GuideJourney(storage,()=>2000).active);
  }
  storage.setItem('yuki-session-v1',JSON.stringify({savedAt:1000,language:'en',messages:[{role:'user',text:'Lead me to Resume'}]}));
  assert.equal(readSession(storage,2000,'en').messages.length,1);

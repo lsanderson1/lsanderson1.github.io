@@ -12,6 +12,7 @@ function fixture({ready=true,lang='en'}={}){
  state.panel=value=>{state.open=value;state.panels.push(value);};
  state.addMessage=(role,text,_remember,_sources,_topics,greetingId)=>state.messages.push({role,text,greetingId});
  state.react=cue=>{state.reactions.push(cue);return new Promise(()=>{});};
+ state.translateConversation=()=>{};
  const functions=ui.match(/async function openConversation\(\)\{[\s\S]*?\n \}\n function toggleConversation\(\)\{[^\n]*\}/)?.[0];
  assert(functions,'The actual conversation handlers should be available');
  runInNewContext(functions,state);

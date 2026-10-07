@@ -1,4 +1,5 @@
 import {cleanVariety,cleanStoryTopics} from './runtime/reply-variety.mjs';
+import {cleanMessages} from './runtime/conversation-language.mjs';
 export const emotions=['neutral','confused','delighted','thoughtful','surprised','shy','proud','reassuring','amused'];
 export const destinations=['none','projects','essays','unreal','resume'];
 export function chatUnavailable(reason,lang='en',reference=''){
@@ -11,7 +12,7 @@ export function chatUnavailable(reason,lang='en',reference=''){
  return (ja?'現在AIチャットを利用できません。AIからの回答はありませんが、下のボタンから作品をご案内できます。':'AI chat is unavailable right now. No AI answer was received, but I can still show you around using the buttons below.')+detail;
 }
 export function validReply(value){
- if(!value||typeof value.text!=='string'||!value.text.trim()||value.text.length>1000)throw Error('Invalid reply');
+ if(!value||typeof value.text!=='string'||!value.text.trim()||value.text.length>2000)throw Error('Invalid reply');
  return {text:value.text.trim(),emotion:emotions.includes(value.emotion)?value.emotion:'neutral',gesture:['none','wave','talkOpen','talkExplain'].includes(value.gesture)?value.gesture:'none',destination:destinations.includes(value.destination)?value.destination:'none',sources:Array.isArray(value.sources)?value.sources.filter(s=>s&&typeof s.title==='string'&&typeof s.url==='string').slice(0,3):[],storyTopics:cleanStoryTopics(value.storyTopics),...(['used','limit','unavailable'].includes(value.searchStatus)?{searchStatus:value.searchStatus}:{})};
 }
 export function safeSitePath(value,base=''){
@@ -22,10 +23,10 @@ export function safeSitePath(value,base=''){
 }
 export function readSession(storage,now=Date.now(),language){
  try{const s=JSON.parse(storage.getItem('yuki-session-v1'));if(!s||!Number.isFinite(s.savedAt)||now-s.savedAt>1800000||s.savedAt>now)return {};
-  // Conversation language is tab-scoped. Switching languages clears chat and
-  // reply fingerprints, not visitor preferences or the separate guide route.
-  if(language&&s.language!==language){s.messages=[];s.variety=undefined;}
+  // Preserve immutable original wording and cache translations per message.
+  // A language change is presentation, not a request to forget the visitor.
+  s.messages=cleanMessages(s.messages,s.language);
   s.language=language||(['en','ja'].includes(s.language)?s.language:undefined);
-  return {language:s.language,awake:s.awake===true,hidden:s.hidden===true,paused:s.paused===true,roam:s.roam===true,mobilityVersion:s.mobilityVersion===2?2:1,x:Number.isFinite(s.x)?Math.max(.1,Math.min(.9,s.x)):.2,y:Number.isFinite(s.y)?Math.max(.25,Math.min(.9,s.y)):.8,variety:cleanVariety(s.variety),messages:Array.isArray(s.messages)?s.messages.filter(m=>['user','assistant'].includes(m.role)&&typeof m.text==='string'&&m.text.length<=1000).slice(-12):[]};
+  return {language:s.language,awake:s.awake===true,hidden:s.hidden===true,paused:s.paused===true,roam:s.roam===true,mobilityVersion:s.mobilityVersion===2?2:1,x:Number.isFinite(s.x)?Math.max(.1,Math.min(.9,s.x)):.2,y:Number.isFinite(s.y)?Math.max(.25,Math.min(.9,s.y)):.8,variety:cleanVariety(s.variety),messages:Array.isArray(s.messages)?s.messages.filter(m=>['user','assistant'].includes(m.role)&&typeof m.text==='string'&&m.text.length<=(m.role==='assistant'?2000:1000)).slice(-12):[]};
  }catch{return {};}
 }
