@@ -33,6 +33,24 @@ test('translations adapt assistant register without changing the visitor, facts,
  }
 });
 
+test('Japanese stays warm without using a repeated cute ending or stripping grammatical の',()=>{
+ const voice=voiceInstructions('ja');
+ for(const phrase of ['かわいさは好奇心','普通形で自然に言い切ってよい','その癖をまねしない','語尾を無理に一文ずつ変える必要はない','「の」を禁止するわけではない','私の本','雨の音を聞くのが好き','何を探しているの？','意味もなく全ての「の」を削除したり、置換したりしない'])assert(voice.includes(phrase),phrase);
+ assert.match(voice,/「〜なの」を続けたあと、今度は「〜だよ」ばかりに置き換えるのも避ける/);
+ assert.match(voice,/not English word order/);assert.match(voice,/physical book's bookmark is usually しおり/);assert.match(voice,/browser bookmark remains ブックマーク/);
+ assert.match(voice,/誰でも気軽に質問できる場所/);assert.match(voice,/Do not distort facts, negation, uncertainty, names/);
+ assert(!voiceInstructions('en').includes('日本語の話し方'),'the Japanese revision must not replace the English voice');
+});
+
+test('translation review preserves meaning, context and emotional intensity rather than inventing cute details',()=>{
+ for(const lang of ['en','ja']){
+  const request=translationRequest([{id:'a',role:'assistant',text:'I do not own a flying library yet. Which two books would you bring?'}],lang);
+  const system=request.messages[0].content;
+  for(const phrase of ["meaning and emotional intensity, not its word order",'Keep negation, who is speaking, hypothetical dreams versus real events, quantities and questions unchanged','never to invent missing facts','Do not imitate repetitive endings','omissions, additions and unnatural phrasing','Do not output a review'])assert(system.includes(phrase),phrase);
+  assert.equal(request.temperature,.2);assert.equal(request.max_tokens,3600,'no extra inference budget for style review');
+ }
+});
+
 test('local fallback replies remain casual but explain real errors without inventing an AI answer',()=>{
  for(const reason of ['preview','not-connected','limit','verification','request']){
   const ja=chatUnavailable(reason,'ja');assert(!/です|ます|ございます|いたします/.test(ja));assert.match(ja,/よ|ね|んだ|みたい/);

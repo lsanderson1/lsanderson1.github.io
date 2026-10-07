@@ -1,5 +1,15 @@
 # Connecting Yuki's free AI
 
+## Natural Japanese without repetitive cute endings — October 8, 2026
+
+The Japanese-language refinement was deployed to the existing Worker as version `0a0be518-0568-4f16-9c73-bce8eba0d927` before frontend v20. The same voice guidance covers normal replies, researched explanations, guide follow-ups, duplicate rewrites and assistant translations. English character voice, canonical story, artwork, memory lifetime, provider and all free-use limits are unchanged.
+
+- Japanese cuteness comes from curiosity, sincere reactions and occasional relevant humor, not attaching `〜の` / `〜なの` to every sentence or simply replacing that habit with repeated `〜だよ`. Plain verb/adjective endings are welcome. Appropriate explanatory, sharing and questioning endings remain available without mechanically rotating them. Possessive/nominalizing `の` and natural questions are explicitly preserved; there is no suffix-removal filter.
+- Translation guidance now emphasizes idiomatic meaning, context-appropriate vocabulary, source emotional intensity, grammatical particles and silent source comparison. Speaker identity, negation, uncertainty, quantities, technical terms, questions and hypothetical dreams must stay intact. It cannot add new jokes or story facts just to sound cute. The review is part of the existing inference, not an extra automatic model call.
+- Cached Japanese assistant translations from voice v1 become eligible for one refresh from the immutable original. English v1 translations stay valid; user translations and authored bilingual greetings are not invalidated. Old messages originally written in Japanese remain unchanged history. Successful Japanese refreshes are stamped v2 and reused on subsequent page changes. Failure retains stored originals and prior variants with the existing localized retry UI; memory is never cleared by this migration.
+
+Validation: 260 automated tests pass, including shared-voice coverage across response paths, translation speaker/source constraints, Japanese-only cache migration and preserved English caches. The Jekyll build and knowledge audit pass (42 pages, 312 targets, 50 images). Prompt tests verify supplied instructions, not the linguistic quality of an actual generated answer. The live browser's attempted refresh of an older translation currently reports the free-use limit; no limits were raised, verification bypassed or paid fallback added. Fresh live language-quality review remains pending allowance availability.
+
 ## Casual bilingual voice and transcript-only clearing — October 8, 2026
 
 The updated Worker was deployed as version `17692f26-7def-4a22-a58c-0f7ce3e1e556` before the frontend v19 rollout so refreshed translations use the new voice instructions. This section supersedes the older clear-chat behavior below with frontend v19; prior production versions remain recorded in the release section. Bindings, secrets, providers and free usage limits were preserved.

@@ -42,7 +42,26 @@ test('old assistant translation refreshes once while originals, user tone and au
  applyTranslations(messages,[{id:assistant.id,text:translated}],'ja');
  const restored=cleanMessages(JSON.parse(JSON.stringify(messages)));
  assert.equal(restored[1].translationVoices.ja,translationVoiceVersion);assert.equal(translatedText(restored[1],'ja'),translated);assert.equal(translationBatch(restored,'ja').length,0);assert.equal(restored[1].text,original);
- for(const bad of [null,'1',0,-1,{},999]){const copy=cleanMessages([{...assistant,translationVoices:{ja:bad}}])[0];assert.equal(translatedText(copy,'ja'),null);assert.equal(translatedText(copy,'en'),original);}
+ for(const bad of [null,'1',1,0,-1,{},999]){const copy=cleanMessages([{...assistant,translationVoices:{ja:bad}}])[0];assert.equal(translatedText(copy,'ja'),null);assert.equal(translatedText(copy,'en'),original);}
+});
+
+test('Japanese v2 refreshes from the original while valid English v1 and authored/user text survive unchanged',()=>{
+ assert.equal(translationVoiceVersion,2);
+ const en=messageRecord('assistant',original,'en'),ja=messageRecord('assistant','私の夢は空飛ぶ図書館なの。まだ持っていないの。','ja');
+ const visitor=messageRecord('user','Could I ask about your dream?','en');
+ en.translations.ja='小さな空飛ぶ図書館が夢なの。どんな本を持ってきてくれるの？';en.translationVoices={ja:1};
+ ja.translations.en='My dream is a flying library. I do not own one yet.';ja.translationVoices={en:1};
+ visitor.translations.ja='夢について聞いてもいいですか？';
+ const messages=cleanMessages([en,ja,visitor]);
+ assert.deepEqual(translationBatch(messages,'ja'),[{id:en.id,role:'assistant',text:original}]);
+ assert.equal(translatedText(messages[1],'ja'),ja.text,'original Japanese is history, not silently rewritten');
+ assert.equal(translatedText(messages[1],'en'),ja.translations.en,'no English quota spent on a Japanese-only revision');
+ assert.equal(translatedText(messages[2],'ja'),visitor.translations.ja,'visitor tone is not Yuki narration');
+ applyTranslations(messages,[{id:en.id,text:translated}],'ja');
+ applyTranslations(messages,[{id:ja.id,text:ja.translations.en}],'en');
+ const restored=cleanMessages(JSON.parse(JSON.stringify(messages)));
+ assert.equal(restored[0].translationVoices.ja,2);assert.equal(restored[1].translationVoices.en,1);
+ assert.equal(translationBatch(restored,'ja').length,0);assert.equal(translatedText(restored[0],'en'),original);
 });
 
 test('old sessions migrate without clearing messages; malformed metadata cannot replace the original',()=>{
