@@ -80,13 +80,13 @@ test('water mask is shared by drawing and hit target; controls and reduced motio
 });
 test('sparse glistening stays inside every pond and lily clip, with varied gentle timing',()=>{
  const {pond}=fixture();
- const surface=pond.ripples.parent,glints=surface.children.find(n=>n.attrs.class==='yg-water-glisten'),stars=glints.children.filter(n=>n.attrs.class==='yg-water-star');assert.equal(stars.length,6);
+ const surface=pond.ripples.parent,glints=surface.children.find(n=>n.attrs.class==='yg-water-glisten');assert.equal(glints.children.length,6);
  let layer=surface.parent;for(let i=pondLilies.length;i>=0;i--){assert.equal(layer.attrs['clip-path'],`url(#yg-pond-surface-${i})`);layer=layer.parent;}
  const timings=[];
- for(const anchor of stars){
+ for(const anchor of glints.children){
   const [,x,y]=anchor.attrs.transform.match(/translate\(([\d.]+) ([\d.]+)\)/);assert(isPondWater({x:+x,y:+y}));
   const sparkle=anchor.children[0];assert.equal(sparkle.attrs.class,'yg-water-sparkle');timings.push(sparkle.attrs.style);
  }
  assert.equal(new Set(timings).size,6);
- const css=readFileSync(new URL('../assets/yuki/home/garden.css',import.meta.url),'utf8');assert.match(css,/\.yg-water-glisten\{display:none\}/);assert.match(css,/@keyframes yg-water-glisten\{0%,20%,80%,100%\{opacity:0/);assert.match(css,/49%,53%\{opacity:1/);
+ const css=readFileSync(new URL('../assets/yuki/home/garden.css',import.meta.url),'utf8');assert.match(css,/\.yg-water-glisten\{display:none\}/);assert.match(css,/@keyframes yg-water-glisten\{0%,12%,88%,100%\{opacity:0/);assert.match(css,/48%,55%\{opacity:1/);
 });

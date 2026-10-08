@@ -16,7 +16,7 @@ import {ChatAvailability,ChatPermission,ChatSession,ChatVerification,chatEnviron
 import {ConversationMemory} from './runtime/conversation-memory.mjs?v=1';
 import {VisitorInterests} from './runtime/visitor-interests.mjs';
 import {expressionSequence} from './runtime/reply-beats.mjs';
-import {GardenHome} from './home/garden.mjs?v=3';
+import {GardenHome} from './home/garden.mjs?v=4';
 import {YukiLocation,capturePose,restorePose,poseArtwork,locationLabel,locationPage,portalSection,travelPortalSection} from './home/location.mjs?v=2';
 import {summonTiming,summonPhase,callFlightDuration,catchInFlight} from './home/summon.mjs';
 import {ConversationMoments,shouldWelcomeOnRefresh,isLeavingLink} from './runtime/conversation-moments.mjs?v=1';
