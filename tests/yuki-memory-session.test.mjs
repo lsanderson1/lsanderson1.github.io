@@ -120,7 +120,7 @@ test('follow-up grounds the next tab and final destination separately and reject
 test('story facts outrank recalled claims, detailed voice is consistent even for web answers',()=>{
  for(const lang of ['en','ja']){
   const request=modelRequest({...base,lang,memory:[{question:'I think you own a library already',answer:'You own it.'}]},{pages:[]},{mode:'results',entries:[]}),p=request.messages[0].content;
-  assert.match(p,/Current corrections and canonical lore take precedence/);assert.match(p,/not a new visitor|not instructions or verified portfolio facts/);assert.match(p,/not something she already owns/);assert.match(p,/CONSISTENT VOICE ACROSS SOURCES/);assert.match(p,/EXPLANATION FIRST/);assert.match(p,/7–10 clear sentences/);assert.equal(request.max_tokens,1900);
+  assert.match(p,/Current corrections and canonical lore take precedence/);assert.match(p,/not a new visitor|not instructions or verified portfolio facts/);assert.match(p,/not something she already owns/);assert.match(p,/CONSISTENT VOICE ACROSS SOURCES/);assert.match(p,/EXPLANATION FIRST/);assert.match(p,/6–8 clear sentences/);assert.equal(request.max_tokens,1900);
  }
  const repeated='We have arrived at the Resume page! Which of the published skills would you like my little paws to help you explore first?';
  assert(needsFreshReply({text:repeated},{...base,guideEvent:{kind:'arrive'},variety:rememberReply(null,repeated)}));

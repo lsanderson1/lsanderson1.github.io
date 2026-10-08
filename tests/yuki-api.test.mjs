@@ -84,4 +84,14 @@ class Storage {
  transaction(fn){const p=this.queue.then(()=>fn(this));this.queue=p.catch(()=>{});return p;}
  async getAlarm(){return this.alarmAt;}async setAlarm(t){this.alarmAt=t;}async deleteAll(){this.m.clear();}
 }
+
+test('quota messages identify the actual cap without exposing visitor counters or lifting limits',async()=>{
+ const storage=new Storage(),q=new YukiQuota({storage},{DAILY_REQUEST_LIMIT:'3',VISITOR_DAILY_LIMIT:'2',VISITOR_MINUTE_LIMIT:'1'});
+ const call=(hash,minute)=>q.fetch(new Request('https://quota.invalid',{method:'POST',body:JSON.stringify({hash:hash.repeat(64),minute})}));
+ assert.equal((await call('a',10)).status,204);assert.equal((await call('a',10)).headers.get('X-Yuki-Limit'),'visitor-minute');
+ assert.equal((await call('a',11)).status,204);assert.equal((await call('a',12)).headers.get('X-Yuki-Limit'),'visitor-day');
+ assert.equal((await call('b',12)).status,204);assert.equal((await call('c',12)).headers.get('X-Yuki-Limit'),'site-day');assert.equal(await storage.get('total'),3);
+ for(const limit of ['site-day','visitor-day','visitor-minute']){const f=fixture();f.env.QUOTA.get=()=>({fetch:async()=>new Response(null,{status:429,headers:{'X-Yuki-Limit':limit}})});const response=await f.handler(f.request(),f.env);assert.equal(response.status,429);assert.equal((await response.json()).limit,limit);assert.equal(f.aiCalls.length,0);assert(Number(response.headers.get('Retry-After'))>0);assert.notEqual(chatUnavailable('limit','en','',limit),chatUnavailable('limit','en'));assert.notEqual(chatUnavailable('limit','ja','',limit),chatUnavailable('limit','ja'));}
+ assert.equal(chatUnavailable('limit','en','','untrusted'),chatUnavailable('limit','en'));
+});
 test('atomic quota enforces global/visitor/minute limits under concurrent calls',async()=>{const storage=new Storage(),q=new YukiQuota({storage},{DAILY_REQUEST_LIMIT:'5',VISITOR_DAILY_LIMIT:'3',VISITOR_MINUTE_LIMIT:'2'});const call=(hash,minute)=>q.fetch(new Request('https://quota.invalid',{method:'POST',body:JSON.stringify({hash:hash.repeat(64),minute})}));const results=await Promise.all(Array.from({length:8},()=>call('a',10)));assert.equal(results.filter(r=>r.status===204).length,2);assert.equal((await call('a',11)).status,204);assert.equal((await call('a',12)).status,429);assert.equal((await call('b',10)).status,204);assert.equal((await call('c',10)).status,204);assert.equal((await call('d',10)).status,429);assert.equal(await storage.get('total'),5);await q.alarm();assert.equal(storage.m.size,0);});

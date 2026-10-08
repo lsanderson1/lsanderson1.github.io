@@ -130,7 +130,7 @@ test('extended conversations distinguish backstory, current goals and future dre
   assert.match(prompt,/deepen that scene with a different relevant detail/);
   assert.match(prompt,/do not restart at hatching/);assert.match(prompt,/never change canon just to sound new/);
   assert.match(prompt,/past story events, present habits and hopes not yet fulfilled/);
-  assert.match(prompt,/Do not force portfolio promotion/);assert.match(prompt,/5–8 natural sentences within the 2800-character limit/);
+  assert.match(prompt,/Do not force portfolio promotion/);assert.match(prompt,/4–6 natural sentences within the 2800-character limit/);
  }
 });
 

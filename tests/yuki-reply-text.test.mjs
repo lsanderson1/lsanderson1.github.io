@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {cleanAssistantText,validReply,readSession} from '../assets/yuki/protocol.mjs';
 import {parseModel,modelRequest,validateInput} from '../services/yuki-api/worker.mjs';
+import {unfinishedReply,unfinishedNotice} from '../assets/yuki/runtime/reply-completion.mjs';
 import {parseTranslations,validateTranslations} from '../services/yuki-api/conversation-translation.mjs';
 import {messageRecord,translationBatch,checkedTranslations,applyTranslations,translatedText} from '../assets/yuki/runtime/conversation-language.mjs';
 import {normalizeReplyCue} from '../assets/yuki/runtime/reply-cues.mjs';
@@ -72,7 +73,7 @@ test('longer explanations retain personality, examples, evidence limits and shor
  for(const lang of ['en','ja']){
   const request=modelRequest({...input,lang},{pages:[]}),prompt=request.messages[0].content;
   assert.equal(request.max_tokens,1900);assert.equal(request.response_format.json_schema.properties.text.maxLength,2800);
-  for(const part of ['7–10 clear sentences','concrete example','casual, curious voice','REPLY TEXT BOUNDARY','Never invent credentials'])assert(prompt.includes(part));
+  for(const part of ['6–8 clear sentences','concrete example','casual, curious voice','REPLY TEXT BOUNDARY','Never invent credentials'])assert(prompt.includes(part));
   assert.equal(modelRequest({...input,lang,guideEvent:{kind:'arrive'}},{pages:[]}).max_tokens,500);
  }
 });
@@ -82,8 +83,11 @@ test('the actual message renderer protects both speech and saved history without
  const make=()=>({children:[],dataset:{},append(...items){this.children.push(...items);},replaceChildren(...items){this.children=items;},cloneNode(){return this;}});
  const elements=new Map(),$=key=>{if(!elements.has(key))elements.set(key,make());return elements.get(key);};
  const document={createElement:()=>make(),createTextNode:t=>t};
- const add=new Function('cleanAssistantText','document','$','tr','online','ja',`return (${fn.trim()});`)(cleanAssistantText,document,$,(en)=>en,false,false);
+ const add=new Function('cleanAssistantText','unfinishedReply','unfinishedNotice','document','$','tr','online','ja',`return (${fn.trim()});`)(cleanAssistantText,unfinishedReply,unfinishedNotice,document,$,(en)=>en,false,false);
  add('assistant',broken,false);assert.equal($('.yuki-speech').children[0].children[1],octopus);assert.equal($('.yuki-log').children[0].children[1],octopus);
  add('user',broken,false);assert.equal($('.yuki-log').children[1].children[1],broken);
  add('assistant',`${octopus}','text':'broken'}`,false);assert.match($('.yuki-speech').children[0].children[1],/got tangled/);
+ const cutoff='Lloyd connected different technologies to create a';
+ add('assistant',cutoff,false,[{url:'/projects/',title:'Projects'}]);assert.equal($('.yuki-speech').children[0].children[1],unfinishedNotice());assert.equal($('.yuki-speech').children[0].children.length,2);
+ add('user',cutoff,false);assert.equal($('.yuki-log').children.at(-1).children[1],cutoff);
 });

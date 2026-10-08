@@ -195,6 +195,32 @@
     "explanation": "parseModel extracts and parses the structured model answer, validates emotion, gesture, destination and text length, and resolves source IDs only against supplied page or web entries. validReply also checks the prose: cleanAssistantText removes an unmistakably duplicated serialized text tail or a recognized nested reply envelope, and rejects ambiguous dangling response fields. Repaired wording discards stale expression indices. The display repeats this check for saved replies; user messages are not rewritten. Unsupported references are not converted into invented links. These structural safeguards do not prove every natural-language claim true. Requests still need verification, usage budget and evidence."
   },
   {
+    "id": "complete",
+    "topic": "conversation",
+    "file": "services/yuki-api/reply-completion.mjs",
+    "start": "export function completionRequest",
+    "until": "",
+    "symbol": "completionRequest / parseCompletion",
+    "title": {
+      "en": "Completing an unfinished answer",
+      "ja": "途中で切れた返答を整える"
+    },
+    "explanation": "completionRequest prepares a short text-only rewrite using the draft, its cited evidence and relevant character lore. parseCompletion rejects malformed, unfinished or overlong results, retains the original sources and routing metadata, and removes old sentence-animation indices. The worker may use this instead of the variety rewrite, at most once within the existing quota and deadline; it is not an unlimited retry or a new web search. If repair cannot finish safely, incompleteAnswer gives a localized retry notice rather than a fragment. These checks do not prove that every claim is accurate."
+  },
+  {
+    "id": "ending",
+    "topic": "conversation",
+    "file": "assets/yuki/runtime/reply-completion.mjs",
+    "start": "export function unfinishedReply",
+    "until": "export function unfinishedNotice",
+    "symbol": "unfinishedReply",
+    "title": {
+      "en": "Recognizing obvious reply cutoffs",
+      "ja": "明らかな返答の途切れを検出する"
+    },
+    "explanation": "unfinishedReply checks for unfinished code fences, dangling English connectors and selected Japanese clause endings, as well as long prose without a sentence ending. It allows short labels, balanced code blocks, complete JSON examples and ordinary list items. Both the worker and the display use this conservative format check, including for saved assistant replies; visitor messages are not rewritten. It cannot establish grammatical or factual completeness, and never fabricates an ending by appending punctuation or truncating text."
+  },
+  {
     "id": "perch",
     "topic": "garden-testing",
     "file": "assets/yuki/home/garden.mjs",

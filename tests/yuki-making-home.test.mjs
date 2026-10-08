@@ -30,7 +30,7 @@ test('all eight making-of topics retrieve from other pages in either language',(
 test('each named code block retrieves itself; fingerprints catch source drift',()=>{
  const blocks=JSON.parse(readFileSync(new URL('../services/yuki-api/making-verified.json',import.meta.url),'utf8'));
  for(const b of blocks){const r=makingKnowledge({message:'How does '+b.symbol+' work?',lang:'en',history:[]});assert(r.blocks.some(n=>n.id===b.id),b.id);}
- assert.match(execFileSync(process.execPath,['scripts/build-yuki-making-notes.mjs'],{encoding:'utf8'}),/Verified 19/);
+ assert.match(execFileSync(process.execPath,['scripts/build-yuki-making-notes.mjs'],{encoding:'utf8'}),new RegExp('Verified '+blocks.length+' source-mapped'));
 });
 test('personality explains verified behavior, acknowledges gaps, and never claims live inspection',()=>{
  const prompt=modelRequest({lang:'ja',message:'How were you made?',history:[]},{pages:[],view:{}}).messages[0].content;

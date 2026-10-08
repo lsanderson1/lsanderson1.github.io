@@ -249,9 +249,43 @@
     "source": {
       "file": "services/yuki-api/worker.mjs",
       "symbol": "parseModel",
-      "firstLine": 81,
-      "lastLine": 137,
-      "sha256": "fe6c52afc7d581b22e3c827a426a310f0f6f2bd46500d14d0935a2133751e2e4"
+      "firstLine": 83,
+      "lastLine": 141,
+      "sha256": "ba26b406f1030ff6c09e6514ead5a387eed27e2245901c95662d35047f2c940f"
+    }
+  },
+  {
+    "id": "complete",
+    "topic": "conversation",
+    "symbol": "completionRequest / parseCompletion",
+    "title": {
+      "en": "Completing an unfinished answer",
+      "ja": "途中で切れた返答を整える"
+    },
+    "explanation": "completionRequest prepares a short text-only rewrite using the draft, its cited evidence and relevant character lore. parseCompletion rejects malformed, unfinished or overlong results, retains the original sources and routing metadata, and removes old sentence-animation indices. The worker may use this instead of the variety rewrite, at most once within the existing quota and deadline; it is not an unlimited retry or a new web search. If repair cannot finish safely, incompleteAnswer gives a localized retry notice rather than a fragment. These checks do not prove that every claim is accurate.",
+    "source": {
+      "file": "services/yuki-api/reply-completion.mjs",
+      "symbol": "completionRequest / parseCompletion",
+      "firstLine": 6,
+      "lastLine": 42,
+      "sha256": "5d7821e8995abb5c781447aff261802d54f7ac2f9c45977747adbd4625535a70"
+    }
+  },
+  {
+    "id": "ending",
+    "topic": "conversation",
+    "symbol": "unfinishedReply",
+    "title": {
+      "en": "Recognizing obvious reply cutoffs",
+      "ja": "明らかな返答の途切れを検出する"
+    },
+    "explanation": "unfinishedReply checks for unfinished code fences, dangling English connectors and selected Japanese clause endings, as well as long prose without a sentence ending. It allows short labels, balanced code blocks, complete JSON examples and ordinary list items. Both the worker and the display use this conservative format check, including for saved assistant replies; visitor messages are not rewritten. It cannot establish grammatical or factual completeness, and never fabricates an ending by appending punctuation or truncating text.",
+    "source": {
+      "file": "assets/yuki/runtime/reply-completion.mjs",
+      "symbol": "unfinishedReply",
+      "firstLine": 3,
+      "lastLine": 21,
+      "sha256": "e9bcc128f825f7628800425e2c90b833b3cc733940df0c73bd06678cb6ea6410"
     }
   },
   {
