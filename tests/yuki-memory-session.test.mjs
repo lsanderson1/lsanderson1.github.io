@@ -97,6 +97,26 @@ test('AI-written guide follow-up never searches or controls navigation and unind
  assert.match(f.calls.requests[0].messages[0].content,/GUIDED FOLLOW-UP/);assert.equal(f.calls.requests[0].max_tokens,500);assert(!f.calls.requests[0].response_format.json_schema.required.includes('webQuery'));
  const unknown=fixture();assert.equal((await unknown.handler(unknown.request({guideEvent:{kind:'arrive',url:'/not-real'}}),unknown.env)).status,400);assert.equal(unknown.calls.model,0);
 });
+
+test('follow-up grounds the next tab and final destination separately and rejects mismatched routes',()=>{
+ const catalog={pages:[
+  {lang:'en',url:'/',title:'Home'},
+  {lang:'en',url:'/projects/',title:'Projects',summary:'A collection of projects.'},
+  {lang:'en',url:'/projects/museum.html',title:'Museum',summary:'Interactive exhibit switches.',sections:[{anchor:'switches',title:'Exhibit Switches',text:'Switches activate the exhibit.'}]},
+  {lang:'en',url:'/resume.html',title:'Resume'}
+ ]};
+ const targetUrl='/projects/museum.html#switches';
+ const nav=cleanGuideEvent({kind:'nav',url:'/projects/',targetUrl});
+ const prompt=guideFollowupInstructions(nav,catalog,'en','/');
+ assert.match(prompt,/Exhibit Switches/);assert.match(prompt,/"title":"Projects"/);
+ assert.match(prompt,/Guidance has already started/);assert.match(prompt,/never ask whether to start/);
+ assert.doesNotThrow(()=>guideFollowupInstructions({kind:'link',url:'/projects/museum.html',targetUrl},catalog,'en','/projects/'));
+ assert.doesNotThrow(()=>guideFollowupInstructions({kind:'arrive',url:targetUrl,targetUrl},catalog,'en','/projects/museum.html'));
+ assert.throws(()=>guideFollowupInstructions({...nav,url:'/resume.html'},catalog,'en','/'));
+ assert.throws(()=>guideFollowupInstructions({...nav,targetUrl:'/private'},catalog,'en','/'));
+ assert.throws(()=>guideFollowupInstructions({...nav,targetUrl:'/projects/museum.html#invented'},catalog,'en','/'));
+ assert.throws(()=>cleanGuideEvent({...nav,targetUrl:'https://evil.test'}));
+});
 test('story facts outrank recalled claims, detailed voice is consistent even for web answers',()=>{
  for(const lang of ['en','ja']){
   const request=modelRequest({...base,lang,memory:[{question:'I think you own a library already',answer:'You own it.'}]},{pages:[]},{mode:'results',entries:[]}),p=request.messages[0].content;

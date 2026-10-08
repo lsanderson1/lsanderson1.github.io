@@ -181,7 +181,7 @@ export function createHandler(network=fetch){
     cached={origin:allowed,at:now,data:await boundedJSON(result,2000000)};
    }
    const knowledge=selectKnowledge(cached.data,input);
-   try{input.guideInstructions=guideFollowupInstructions(input.guideEvent,cached.data,input.lang);}catch{throw failure(400,'Invalid guide target');}
+   try{input.guideInstructions=guideFollowupInstructions(input.guideEvent,cached.data,input.lang,input.page);}catch{throw failure(400,'Invalid guide target');}
    stage='MODEL';
    const web=searchEnabled(env,input)?{mode:'eligible'}:{};
    const model=modelRequest(input,knowledge,web),result=await runModel(env.AI,model,web.mode?14000:22000);

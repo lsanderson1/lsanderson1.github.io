@@ -134,13 +134,13 @@
     "topic": "navigation",
     "file": "assets/yuki/runtime/guide-journey.mjs",
     "start": "export class GuideJourney",
-    "until": "export function guideCopy",
+    "until": "export class GuideDialogue",
     "symbol": "GuideJourney",
     "title": {
       "en": "Carrying guidance between pages",
       "ja": "ページをまたぐ案内"
     },
-    "explanation": "GuideJourney stores target, expected next page, origin and timestamp in tab storage with a 30-minute lifetime. enter distinguishes arrival, continuation, resuming and a detour. depart stores viewport coordinates; position scales them for the new viewport. This continuity applies to an active guiding journey, not permanent location memory."
+    "explanation": "GuideJourney stores target, expected next page, origin and timestamp in tab storage with a 30-minute lifetime. enter distinguishes arrival, continuation, resuming and a detour. depart stores viewport coordinates; position scales them for a resized viewport when Yuki is already on that page. A guided page change instead uses her physical location and the normal timed magical summon from the previous page's header category, flying directly to the next guided perch. Guidance starts from a clear visitor request, with conversational clarification only for ambiguous destinations. AI follow-ups distinguish the next link from the final destination; offline arrival wording avoids its six most recent variants in this tab. Route memory is separate from physical location memory."
   },
   {
     "id": "memory",
@@ -238,6 +238,6 @@
       "en": "Filling the viewport without stretching",
       "ja": "引き伸ばさずに画面を満たす"
     },
-    "explanation": "gardenCamera uses width=max(viewport width, viewport height times 1.5), height=width/1.5 to preserve the 1536:1024 picture ratio. Translation is clamped to avoid empty edges. By default the camera follows the current normalized location; the renderer remaps the character and route by the same scene change. Visitors can pan cropped areas with the wheel, touch, keyboard or left/right edge buttons; manual exploration stays in place until a new garden destination is selected. No extra follow toolbar is shown. The image is cropped when necessary, not distorted."
+    "explanation": "gardenCamera uses width=max(viewport width, viewport height times 1.5 times 1.12), height=width/1.5 to preserve the 1536:1024 picture ratio while leaving vertical exploration room on tall screens. Translation is clamped to avoid empty edges. The same moving scene extends behind the shared translucent header, rather than using a separate background copy. By default the camera follows the current normalized location; the renderer remaps the character and route by the same scene change. Visitors can pan with the wheel, touch, keyboard or left/right edge buttons, including during a summon. Manual exploration stays in place until a new garden destination is selected. No extra follow toolbar is shown. The image is cropped when necessary, not distorted."
   }
 ]

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {GuideJourney,journeyKey,guidePath,guideTarget,isGuideRequest,resolveGuideRequest,planGuideStep,findGuideElement,guideCopy} from '../assets/yuki/runtime/guide-journey.mjs';
+import {GuideJourney,GuideDialogue,journeyKey,guidePath,guideTarget,isGuideRequest,resolveGuideRequest,guideChoice,planGuideStep,findGuideElement,guideCopy} from '../assets/yuki/runtime/guide-journey.mjs';
 import {readSession} from '../assets/yuki/protocol.mjs';
 
 const fixtures=[['/','Home','ホーム'],['/projects/','Projects','制作実績'],['/essays/','Essays','技術記事'],['/unreal-journey/','Unreal Journey','開発記録'],['/resume.html','Resume','履歴書'],['/projects/ProjectReap.html','Project Reap','Project Reap'],['/projects/BlenderCLI.html','Blender CLI Integration','Blender CLI Integration'],['/unreal-journey/museum.html','Interactable Museum','インタラクティブ博物館']];
@@ -41,6 +41,19 @@ test('ambiguous project requests ask a choice and unknown requests never invent 
  const multiple=resolveGuideRequest('Show me Project Reap or Blender CLI Integration',pages,'/');
  assert.equal(multiple.choices.length,2);
  assert.deepEqual(resolveGuideRequest('Take me to a secret admin area',pages,'/'),{choices:[]});
+});
+
+test('clarification answers start the named route without confirmation buttons in either language',()=>{
+ const choices=[guideTarget('/resume.html',pages),guideTarget('/projects/ProjectReap.html',pages)];
+ for(const text of ['1','first','Resume please'])assert.equal(guideChoice(text,choices).url,'/resume.html');
+ for(const text of ['2','second','Project Reap','2番'])assert.equal(guideChoice(text,choices).url,'/projects/ProjectReap.html');
+ for(const text of ['3','Tell me a story','yes','https://evil.test'])assert.equal(guideChoice(text,choices),null);
+ const jp=[guideTarget('/ja/resume.html',pages,'ja'),guideTarget('/ja/unreal-journey/museum.html',pages,'ja')];
+ assert.equal(guideChoice('インタラクティブ博物館でお願い',jp).url,jp[1].url);
+ const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
+ assert.doesNotMatch(ui,/routeButtons|yuki-route-actions|Show me: /);
+ assert.match(ui,/if\(requested\?\.target\)\{[^}]*await beginJourney\(requested.target\)/);
+ assert.match(ui,/if\(chosen\)\{[^}]*await beginJourney\(chosen\)/);
 });
 test('sections and images use catalogued anchors; unknown/external/protocol URLs are rejected',()=>{
  const target=resolveGuideRequest('Show me the development process',pages,'/projects/ProjectReap.html').target;
@@ -111,6 +124,27 @@ test('cute route copy remains factual, requires visitor clicks, and asks arrival
   assert.match(nav,lang==='en'?/Click the tab/:/クリック/);assert.match(link,lang==='en'?/click the title/:/クリック/);
   assert.match(arrival,lang==='en'?/Would you like/:/聞く？/);assert.match(guideCopy({title:'Project Reap'},{lang,detour:true}),lang==='en'?/detour/:/寄り道/);
  }
+});
+
+test('tour endings vary across page reloads and language changes without inventing destination details',()=>{
+ const storage=store(),recent=[];
+ for(let i=0;i<24;i++){
+  const lang=i%2?'ja':'en',copy=new GuideDialogue(storage,()=>0).copy({kind:'arrive',title:'Project Reap'},{lang});
+  const variant=JSON.parse(storage.getItem('yuki-guide-lines-v1')).at(-1);
+  assert(!recent.slice(-6).includes(variant));recent.push(variant);
+  assert(copy.includes('Project Reap'));assert.match(copy,lang==='ja'?/？$/:/\?$/);
+  if(lang==='ja')assert(copy.includes('「Project Reap」'));
+ }
+});
+
+test('guided page transitions use physical presence and the same origin-based summon entrance',()=>{
+ const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
+ assert.doesNotMatch(ui,/resident=presence.here\(location.pathname\)\|\|journey.active/);
+ assert.match(ui,/const carriedPosition=resident\?journey.position\(layout\):null/);
+ assert.match(ui,/callYuki\(\{keepJourney:d.journeySerial!==undefined,destinationPoint:/);
+ assert.match(ui,/const origin=\{\.\.\.presence.state\},target=destinationPoint\?\?/);
+ assert.match(ui,/if\(presence.transfer\)\{[^}]*continueTransfer\(\)/);
+ assert.match(ui,/if\(keepJourney&&calling&&portalTrip\?\.kind==='incoming'\)/);
 });
 test('UI starts local route requests before AI, persists only leading position and keeps navigation user-driven',()=>{
  const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');

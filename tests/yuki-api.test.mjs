@@ -17,8 +17,8 @@ test('baby-dragon personality maps every emotion without weakening factual or co
 test('chat omits permanent category shortcuts but keeps contextual destination guiding',()=>{
  const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
  assert(!ui.includes('data-guide'));assert(!ui.includes('class="yuki-guide"'));
- assert.match(ui,/await guideDestination\(cue.destination\)/);assert.match(ui,/async function guideDestination\(id\)/);
- assert.match(ui,/class="yuki-search"/);assert.match(ui,/if\(!paths\[id\]\)return/);
+ assert.match(ui,/if\(deferredGuide&&!requestController.signal.aborted\)await beginJourney\(deferredGuide\)/);assert.doesNotMatch(ui,/Show me: |routeButtons/);
+ assert.match(ui,/class="yuki-search"/);assert.match(ui,/if\(paths\[cue.destination\]\)deferredGuide=checkedGuideTarget/);
  assert.match(ui,/filter\(p=>!categoryUrls.has/);assert(!ui.includes('const sections=[...elements.map'));
 });
 const json=(v,status=200)=>new Response(JSON.stringify(v),{status,headers:{'Content-Type':'application/json'}});

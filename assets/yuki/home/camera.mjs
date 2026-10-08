@@ -2,7 +2,9 @@
 // the current foot position rather than jumping ahead to a travel destination.
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 export function gardenCamera(width,height,focus={x:.20,y:.775}){
- const w=Math.max(width,height*1.5),h=w/1.5;
+ // Leave a little vertical exploration room even on tall phones; plain cover
+ // has zero vertical range there, making the wheel appear broken.
+ const w=Math.max(width,height*1.5*1.12),h=w/1.5;
  return {width:w,height:h,left:clamp(width*.5-focus.x*w,width-w,0),top:clamp(height*.72-focus.y*h,height-h,0)};
 }
 export class GardenCamera{
@@ -15,6 +17,8 @@ export class GardenCamera{
  follow(){this.manual=null;}
  revealPoint(point){this.focus={...point};this.follow();this.update(null,{reduced:true});}
  update(position,{reduced=false,now=performance.now()}={}){
+  const header=this.scene.ownerDocument.querySelector?.('.fp-nav')?.getBoundingClientRect().height??0;
+  if(this.headerHeight!==header){this.scene.parentElement.style?.setProperty('--yg-header-height',header+'px');this.headerHeight=header;}
   const viewport=this.scene.parentElement.getBoundingClientRect(),old=this.scene.getBoundingClientRect();
   if(position&&this.box&&old.width>0&&old.height>0)this.focus={x:(position.x-old.left)/old.width,y:(position.y-old.top-(this.scene.ownerDocument.defaultView?.scrollY??0))/old.height};
   const target=gardenCamera(viewport.width,viewport.height,this.focus),resized=!this.box||target.width!==this.box.width||target.height!==this.box.height;

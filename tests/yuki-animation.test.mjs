@@ -19,6 +19,13 @@ test('sleep → wake → idle and bedtime → sleep draw valid frames',()=>{cons
 for(const kind of [...emotionKinds,...talkKinds,'pointLeft','pointRight'])test('ground '+kind+' preserves valid drawing transitions',()=>{const c=make();assert(c.express(kind));const frames=run(c,22000);assert(frames.size>4);assert(!c.emotion.active);});
 for(const kind of [...emotionKinds,...talkKinds])test('hover '+kind+' keeps flight and reaction frames valid',()=>{const c=make();c.rover.setArrivalStyle('hover');assert(c.hoverHere());run(c,5000);assert(c.rover.isHovering);assert(c.express(kind));assert(run(c,18000).size>12);assert(c.rover.isHovering);assert.equal(c.airReaction,null);});
 test('site guide completes point, flight, landing and presentation',()=>{const c=make();let arrived=false;const guide=new SiteGuide(c,{destinations:[{id:'projects'}],arrive:()=>arrived=true});assert(guide.request('projects'));run(c,30000,guide);assert(arrived);assert.equal(c.rover.at,'projects');});
+
+test('guidance presents an already-reached entrance perch without a second takeoff',()=>{
+ const c=make(),r=c.rover;Object.assign(r.point('projects'),{x:r.position.x,y:r.position.y});let arrived=false;
+ const guide=new SiteGuide(c,{destinations:[{id:'projects'}],arrive:()=>arrived=true});guide.request('projects');guide.update();
+ assert.equal(r.at,'projects');assert.equal(r.graph.state,'rest');
+ run(c,15000,guide);assert(arrived);assert.equal(r.graph.state,'rest');assert.equal(r.arrivals,0);
+});
 test('pause, hide and reduced motion freeze animation; reduced-motion guide works',()=>{const c=make();c.rover.playing=false;const first=projectFrame(c,clips,155).frame.file;run(c,3000);assert.equal(projectFrame(c,clips,155).frame.file,first);c.rover.playing=true;c.setLessMotion(true);c.rover.request('projects');run(c,3000);assert.equal(c.rover.at,'projects');assert.equal(c.rover.graph.state,'rest');});
 
 for(const open of [false,true])test(`scroll never starts flight or changes her page perch (chat ${open?'open':'closed'})`,()=>{

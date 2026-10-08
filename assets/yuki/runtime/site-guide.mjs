@@ -25,6 +25,10 @@ export class SiteGuide {
    }
    if(r.graph.state!=='rest'||r.wanted!==r.at||c.greeting.active||c.greeting.requested||c.emotion.active||c.emotion.requested)return;
    this.reveal(this.target);
+   // A magical entrance may already have landed at this exact perch. Present
+   // it from here instead of taking off again for a zero-distance route.
+   const perch=r.point(this.target);
+   if(Math.hypot(r.position.x-perch.x,r.position.y-perch.y)<2){r.at=r.wanted=this.target;this.stage='travel';return;}
    r.request(this.target);this.stage='travel';return;
   }
   if(this.stage==='travel'){

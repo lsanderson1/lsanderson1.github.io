@@ -23,7 +23,7 @@ test('camera eases to the current foot and snaps only on resize/reduced motion',
  for(let t=16;t<=800;t+=16){const r=scene.getBoundingClientRect(),c=camera.update({x:r.left+p.x*r.width,y:r.top+p.y*r.height},{now:t});assert(c.left<=previous&&c.left>=gardenCamera(390,745,p).left);previous=c.left;}
  assert(Math.abs(camera.box.left-gardenCamera(390,745,p).left)<3);
  const r=scene.getBoundingClientRect(),snap=camera.update({x:r.left+.2*r.width,y:r.top+.775*r.height},{now:900,reduced:true});assert.deepEqual(snap,gardenCamera(390,745));
- viewport={...viewport,width:900,height:600};const r2=scene.getBoundingClientRect();camera.update({x:r2.left+.2*r2.width,y:r2.top+.775*r2.height},{now:920});assert.equal(camera.box.width,900);assert.equal(camera.box.left,0);
+ viewport={...viewport,width:900,height:600};const r2=scene.getBoundingClientRect();camera.update({x:r2.left+.2*r2.width,y:r2.top+.775*r2.height},{now:920});assert.equal(camera.box.width,gardenCamera(900,600).width);assert.equal(camera.box.left,0);
 });
 test('manual exploration stays put until Follow Yuki and clamps both axes',()=>{
  let v={width:1200,height:650};
@@ -32,7 +32,7 @@ test('manual exploration stays put until Follow Yuki and clamps both axes',()=>{
  for(let t=16;t<1000;t+=16){const b=scene.getBoundingClientRect();c.update({x:b.left+.2*b.width,y:b.top+.775*b.height},{now:t});assert.equal(c.box.top,0);}
  c.pan(0,1000);c.update(null,{reduced:true});assert.equal(c.box.top,650-800);assert.equal(scene.dataset.camera,'explore');
  c.follow();c.update(null,{reduced:true});assert.equal(scene.dataset.camera,'follow');
- v={width:390,height:745};c.update(null,{reduced:true});c.pan(1000,1000);c.update(null,{reduced:true});assert.equal(c.box.left,v.width-c.box.width);assert.equal(c.box.top,0);
+ v={width:390,height:745};c.update(null,{reduced:true});c.pan(1000,1000);c.update(null,{reduced:true});assert.equal(c.box.left,v.width-c.box.width);assert.equal(c.box.top,v.height-c.box.height);assert(c.box.top<0);
 });
 test('wheel explores the picture, not menus or browser zoom; keyboard and touch work',()=>{
  const listeners={},moves=[];let followed=0;
@@ -78,11 +78,35 @@ test('garden gives the unchanged shared glass header scenery underneath, not an 
  const css=readFileSync(new URL('../assets/yuki/home/garden.css',import.meta.url),'utf8');
  const shared=readFileSync(new URL('../css/techfolio-theme/sakura-tech.css',import.meta.url),'utf8');
  assert.match(shared,/\.fp-nav\s*\{[^}]*background: color-mix\(in srgb, var\(--background\) 88%, transparent\);[^}]*backdrop-filter: blur\(14px\)/);
- assert.match(css,/body:has\(\.yg-page\)\{[^}]*background-image:url\('\.\/petal-nook.png'\)/);
+ assert.doesNotMatch(css,/background-image:url\('\.\/petal-nook.png'\)/);
+ assert.match(css,/\.yg-page\{overflow:visible\}/);
+ assert.match(css,/\.yg-world\{top:calc\(-1 \* var\(--yg-header-height,64px\)\)/);
  assert.doesNotMatch(css,/\.fp-nav\{[^}]*(?:background|backdrop-filter)/);
  const html=readFileSync(new URL('../_includes/yuki-home.html',import.meta.url),'utf8');
  assert.match(html,/data-garden-pan="left"/);assert.match(html,/data-garden-pan="right"/);
  assert.doesNotMatch(html,/Follow Yuki|data-garden-follow|yg-camera-controls/);
+});
+
+test('garden thoughts follow physical presence and start hidden before location restores',()=>{
+ const thought={hidden:true},home={doc:{querySelector:()=>thought}};
+ GardenHome.prototype.setPresence.call(home,false);assert.equal(thought.hidden,true);
+ GardenHome.prototype.setPresence.call(home,true);assert.equal(thought.hidden,false);
+ GardenHome.prototype.setPresence.call(home,false);assert.equal(thought.hidden,true);
+ const html=readFileSync(new URL('../_includes/yuki-home.html',import.meta.url),'utf8');assert.match(html,/class="yg-thought" hidden/);
+ const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
+ assert.match(ui,/garden\.setPresence\(resident&&!hidden&&!portalTrip\)/);
+ assert.match(ui,/if\(garden\)\{\s*garden\.setPresence/);
+ assert.doesNotMatch(ui,/if\(garden&&!journey.active&&!portalTrip\)\{/);
+ assert.match(ui,/portalTrip\?\.target\?\[portalTrip.target\]/);
+});
+
+test('the scene covers the real header, including a wrapped mobile header',()=>{
+ let header=64;const properties={};
+ const world={style:{setProperty:(k,v)=>properties[k]=v},getBoundingClientRect:()=>({width:390,height:745})};
+ const scene={style:{},parentElement:world,ownerDocument:{querySelector:()=>({getBoundingClientRect:()=>({height:header})})},getBoundingClientRect:()=>({left:0,top:0,width:390,height:745})};
+ const camera=new GardenCamera(scene);camera.update(null,{now:0});assert.equal(properties['--yg-header-height'],'64px');
+ header=99;camera.update(null,{now:16});assert.equal(properties['--yg-header-height'],'99px');
+ for(const [w,h] of [[390,844],[768,1024],[1280,720]])assert(gardenCamera(w,h).height>h,'vertical pan range remains available');
 });
 test('all rotating Japanese thoughts use corner brackets, including after arrival',()=>{
  for(const ja of [false,true]){
