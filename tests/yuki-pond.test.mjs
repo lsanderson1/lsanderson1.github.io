@@ -88,5 +88,5 @@ test('sparse glistening stays inside every pond and lily clip, with varied gentl
   const sparkle=anchor.children[0];assert.equal(sparkle.attrs.class,'yg-water-sparkle');timings.push(sparkle.attrs.style);
  }
  assert.equal(new Set(timings).size,6);
- const css=readFileSync(new URL('../assets/yuki/home/garden.css',import.meta.url),'utf8');assert.match(css,/\.yg-water-glisten\{display:none\}/);assert.match(css,/@keyframes yg-water-glisten\{0%,42%,68%,100%\{opacity:0/);
+ const css=readFileSync(new URL('../assets/yuki/home/garden.css',import.meta.url),'utf8');assert.match(css,/\.yg-water-glisten\{display:none\}/);assert.match(css,/@keyframes yg-water-glisten\{0%,12%,88%,100%\{opacity:0/);assert.match(css,/48%,55%\{opacity:1/);
 });

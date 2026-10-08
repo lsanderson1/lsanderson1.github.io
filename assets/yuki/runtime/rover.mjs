@@ -81,9 +81,14 @@ export class Rover {
   const before=this.graph.state;
   if(before==='rest'&&this.wanted!==this.at&&this.canDepart())this.graph.request('flight');
   if(!(this.graph.state==='rest'&&this.restHeld))this.graph.advance(dt);
-  if(before==='takeoff'&&this.graph.state==='flight'){this.flightCycleTime=5*wingSlotMs;this.beginRoute();}
+  const enteredFlight=before==='takeoff'&&this.graph.state==='flight';
+  if(enteredFlight){
+   // Projection and the landing gate must use the same wing phase. Starting
+   // at slot 5 while the graph entered slot 6 replayed the wrong downstroke.
+   this.flightCycleTime=this.graph.frame*wingSlotMs+this.graph.elapsed;this.beginRoute();
+  }
   if(this.graph.state==='flight'&&this.route){
-   this.flightCycleTime+=dt;
+   if(!enteredFlight)this.flightCycleTime+=dt;
    this.route.elapsed=Math.min(this.route.duration,this.route.elapsed+dt);
    const t=smooth(this.route.elapsed/this.route.duration);
    this.position={x:this.route.start.x+(this.route.end.x-this.route.start.x)*t,y:this.route.start.y+(this.route.end.y-this.route.start.y)*t};

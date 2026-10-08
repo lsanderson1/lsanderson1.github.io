@@ -1,6 +1,14 @@
 {
   "date": "2026-10-08",
-  "status": "Release snapshot verified for GitHub publication. Check GitHub Actions for website deployment status; the Cloudflare Worker requires a separate deployment.",
+  "status": "Post-review refinements verified locally and prepared for GitHub publication. Check GitHub Actions for website deployment status; the Cloudflare Worker requires a separate deployment. The earlier published baseline checks are retained below.",
+  "postReviewRefinements": {
+    "camera": "Mouse wheel, touch drag and keyboard explore cropped scenery without changing Yuki's world position. Optional left/right edge buttons remain; no toolbar or Follow button. Selecting a garden destination resumes following. Cover scale and artwork ratio unchanged, with no blank edges or extra page scroll.",
+    "water": "Thirty independently phased glints span the masked pond, foreground stream/fall, three lake depths, two fine island falls and the existing three main waterfalls. Coordinate-seeded 4.8-9.1-second cycles avoid lockstep timing between groups. Distant glints are smaller and lower-opacity. Lake strokes now share water-only clip windows instead of unmasked strokes over islands. All effects retain pause and reduced-motion behavior.",
+    "header": "The unchanged shared portfolio header retains 88% themed opacity and 14px backdrop blur. The garden body supplies scenery beneath it so its glass tint is visible; navigation layout, labels and light/dark theme are not overridden.",
+    "guiding": "Fixed the missing prepareCall import that threw a ReferenceError and halted animation during guiding. Excluded only the decorative garden backdrop from content obstacles. Added EN/JA garden, home, nest and Petal Nook route aliases; explicit homepage requests still go to the portfolio. Garden arrivals point to the visible lookout, with cropped landmarks brought into view. Added backend garden-destination instructions; not deployed or live-model-tested.",
+    "flight": "Forward-facing vertical flights keep one direction family, and the flight projection clock now begins at the motion graph's actual frame/elapsed phase. Landing gating no longer starts one wing slot out of phase. Character frame artwork unchanged.",
+    "checks": "347 tests passing; Jekyll build, source-mapped implementation notes and public knowledge checks pass. Browser checks: wide desktop wheel reaches both image bounds while preserving normalized Yuki position; EN Resume-to-garden request points to the actual Yuki tab and continues to the garden lookout with arrival follow-up; no console errors in that flow. EN/JA 390x844 views retain 390px document width and side-pan controls. Shared header opacity/blur and independent sparkle durations verified in rendered DOM. Representative checks only, not every interaction timing."
+  },
   "pages": ["/yuki/", "/ja/yuki/"],
   "visualDirection": "A bright fantasy interpretation of Petal Nook: outdoor castle garden, cherry blossoms, floating islands, leaf nest, pond, reading nook and keepsakes.",
   "artwork": {

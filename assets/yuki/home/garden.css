@@ -1,6 +1,8 @@
 /* Same shared portfolio header/theme. Only the garden below it is immersive. */
 html:has(.yg-page),body:has(.yg-page){height:100%;overflow:hidden;overscroll-behavior:none}
-body:has(.yg-page){display:flex;flex-direction:column;height:100dvh}
+/* The shared 88%-opaque, blurred header needs scenery behind its glass.
+   Keep its normal theme and layout; only supply the missing ambient backdrop. */
+body:has(.yg-page){display:flex;flex-direction:column;height:100dvh;background-image:url('./petal-nook.png');background-size:cover;background-position:center top;background-repeat:no-repeat}
 body:has(.yg-page)>.fp-nav{flex-shrink:0}
 .yg-main{position:relative;flex:1;min-height:0;isolation:isolate}
 .yg-page,.yg-world{position:absolute;inset:0;margin:0;padding:0;overflow:clip}
@@ -11,6 +13,11 @@ body:has(.yg-page)>.fp-nav{flex-shrink:0}
 .yg-hotspots button:hover,.yg-hotspots button[aria-pressed=true]{background:#5c4435;box-shadow:0 0 0 3px #ffe5a470,0 0 22px #fff2bd88}
 .yg-page button:focus-visible,.yg-menu summary:focus-visible{outline:3px solid var(--primary);outline-offset:3px}
 .yg-controls{position:absolute;left:max(16px,env(safe-area-inset-left));top:14px;z-index:4}
+.yg-world{touch-action:none}
+.yg-world:focus-visible{outline:2px solid #fff5ab;outline-offset:-3px}
+.yg-pan-edge{position:absolute;top:46%;z-index:3;display:grid;place-items:center;width:32px;height:58px;padding:0;border:1px solid #fff8;border-radius:18px;background:#234b3bb3;color:#fffef1;font:30px/1 Georgia,serif;cursor:pointer;box-shadow:0 2px 8px #10251933}
+.yg-pan-edge:hover{background:#234b3bed}.yg-pan-edge:disabled{display:none}.yg-pan-left{left:8px}.yg-pan-right{right:8px}
+.yg-menu{touch-action:pan-y}
 .yg-menu{position:relative;color:var(--foreground);font-size:14px}
 .yg-menu>summary.btn,.yg-menu>summary.btn:is(:hover,:focus,:active){list-style:none;cursor:pointer;background:var(--background);color:var(--foreground);display:flex;align-items:center;gap:12px}
 .yg-menu summary::-webkit-details-marker{display:none}
@@ -34,13 +41,13 @@ body:has(.yg-page)>.fp-nav{flex-shrink:0}
 .yg-pond{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;pointer-events:none;z-index:1}
 .yg-water-ring{fill:none;stroke:#e4fff8;stroke-width:1.35}
 .yg-water-glint{fill:none;stroke:#e4fff9;stroke-width:1.6;stroke-linecap:round;opacity:0;animation:yg-water-light var(--duration) ease-in-out var(--delay) infinite}
-.yg-water-sparkle{fill:#fffdeb;stroke:none;opacity:0;pointer-events:none;transform-box:fill-box;transform-origin:center;animation:yg-water-glisten var(--duration) ease-in-out var(--delay) infinite}
+.yg-water-sparkle{fill:#fffef0;stroke:#fffad5;stroke-width:.6;opacity:0;pointer-events:none;filter:drop-shadow(0 0 2px #ffffdf);transform-box:fill-box;transform-origin:center;animation:yg-water-glisten var(--duration) ease-in-out var(--delay) infinite}
 .yg-water-petal{fill:#ffccde;stroke:#fff0f1;stroke-width:.6;animation:yg-water-drift 10s ease-in-out var(--delay) infinite}
 .yg-waterfall path{fill:none;stroke:#e2fbff;stroke-width:1.5;stroke-linecap:round;stroke-dasharray:9 21 3 15;opacity:.48;animation:yg-water-flow var(--duration) linear var(--delay) infinite}
 .yg-pond-touch{fill:transparent;stroke:none;pointer-events:fill;cursor:crosshair;outline:none}
 .yg-pond-touch:focus-visible{stroke:#fff7bc;stroke-width:2;stroke-dasharray:5 5}
 @keyframes yg-water-light{0%,100%{opacity:0;transform:translateX(-4px)}45%{opacity:.58}80%{opacity:.12;transform:translateX(8px)}}
-@keyframes yg-water-glisten{0%,42%,68%,100%{opacity:0;transform:scale(.45)}53%{opacity:.65;transform:scale(1)}60%{opacity:.12;transform:scale(.75)}}
+@keyframes yg-water-glisten{0%,12%,88%,100%{opacity:0;transform:scale(.5)}30%{opacity:.45;transform:scale(.8)}48%,55%{opacity:1;transform:scale(1)}72%{opacity:.4;transform:scale(.8)}}
 @keyframes yg-water-drift{0%,100%{transform:translate(-3px,0) rotate(-4deg)}50%{transform:translate(9px,2px) rotate(9deg)}}
 @keyframes yg-water-flow{to{stroke-dashoffset:-48}}
 .yg-world-magic,.yg-discoveries{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:hidden;z-index:1}

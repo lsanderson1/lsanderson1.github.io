@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {GardenDiscoveries,gardenDiscoveries,GardenParticles,particlePose,GardenWorldLife,gardenWaterfalls} from '../assets/yuki/home/world-life.mjs';
 import {GardenHome} from '../assets/yuki/home/garden.mjs';
+import {gardenWaterSurfaces,waterGlisten} from '../assets/yuki/home/water-light.mjs';
 test('eleven discoveries cover the whole garden with bounded, artwork-space targets',()=>{
  assert.equal(Object.keys(gardenDiscoveries).length,11);
  for(const p of Object.values(gardenDiscoveries)){
@@ -75,6 +76,29 @@ test('all three painted waterfalls use traced clips and fade out before their vi
 test('whole-garden breeze affects both trees and flowers, with optional discoverability hints',()=>{
  const {life,scene}=fixture();life.breeze();assert(life.particles.items.some(p=>p.x<300));assert(life.particles.items.some(p=>p.x>1200));assert(life.particles.items.some(p=>p.kind==='butterfly'));
  life.reveal(true);assert.equal(scene.dataset.discoveries,'true');life.reveal(false);assert.equal(scene.dataset.discoveries,'false');
+});
+
+test('lake, stream and small waterfalls glisten only inside their own water windows',()=>{
+ const {life,scene}=fixture(),defs=life.svg.children[0];
+ assert.deepEqual(gardenWaterSurfaces.map(s=>s.id),['lake-far','lake-middle','lake-near','pond-stream','pond-fall','island-upper','island-fine']);
+ const timings=[];
+ for(const spec of gardenWaterSurfaces){
+  const layer=life.svg.children.find(n=>n.attrs['data-water-surface']===spec.id);
+  assert.equal(layer.attrs['clip-path'],`url(#yg-water-clip-${spec.id})`);
+  assert.equal(+layer.attrs.opacity,spec.opacity);
+  const clip=defs.children.find(n=>n.attrs.id===`yg-water-clip-${spec.id}`);
+  assert.equal(clip.attrs.clipPathUnits,'userSpaceOnUse');assert.equal(clip.children[0].attrs.d,spec.outline);
+  const glints=layer.children.at(-1);assert.equal(glints.attrs.class,'yg-water-glisten');assert.equal(glints.children.length,spec.points.length);
+  for(const anchor of glints.children)timings.push(anchor.children[0].attrs.style);
+ }
+ assert(gardenWaterSurfaces[0].opacity<gardenWaterSurfaces[1].opacity&&gardenWaterSurfaces[1].opacity<gardenWaterSurfaces[2].opacity);
+ assert(gardenWaterSurfaces[0].points.every(p=>p[2]<gardenWaterSurfaces[2].points[0][2]));
+ // Include separate existing waterfall/pond groups: their first glints must
+ // not share a zero delay or repeat an index-derived timing sequence.
+ for(const spec of gardenWaterfalls)for(const n of waterGlisten(scene.ownerDocument,spec.glints).children)timings.push(n.children[0].attrs.style);
+ for(const n of waterGlisten(scene.ownerDocument,[[160,578],[319,607],[403,608]]).children)timings.push(n.children[0].attrs.style);
+ assert.equal(new Set(timings).size,timings.length);
+ assert.equal(life.svg.children.filter(n=>n.attrs.class==='yg-lake-light').length,0,'no unmasked reflections over islands');
 });
 test('reduced motion and pause keep static interactions but do not emit or advance motion',()=>{
  const {life,scene,media,messages}=fixture(true);scene.dataset.paused='true';assert(!life.active());life.activate('books');assert.equal(life.particles.items.length,0);assert(messages[0].includes('今日'));

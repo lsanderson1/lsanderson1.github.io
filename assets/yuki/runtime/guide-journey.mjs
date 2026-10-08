@@ -8,16 +8,16 @@ export function guidePath(value,base=''){
  const safe=safeSitePath(value,base);if(!safe)return null;
  return (safe.split('#')[0].slice(base.length).replace(/^\/ja(?=\/)/,'').replace(/\/index\.html$/,'/').replace(/\/$/,'')||'/');
 }
-const categoryNames={'/resume.html':'Resume','/projects':'Projects','/essays':'Essays','/unreal-journey':'Unreal Journey','/':'Home'};
-const categoryAliases={'/resume.html':['resume','cv','履歴','経歴','履歴書'],'/projects':['projects','project section','制作実績','作品一覧','プロジェクト一覧'],'/essays':['essays','essay section','技術記事','記事一覧'],'/unreal-journey':['unreal journey','unreal section','開発記録'],'/':['home page','landing page','ホーム']};
+const categoryNames={'/resume.html':'Resume','/projects':'Projects','/essays':'Essays','/unreal-journey':'Unreal Journey','/yuki':'Yuki’s Garden','/':'Home'};
+const categoryAliases={'/resume.html':['resume','cv','履歴','経歴','履歴書'],'/projects':['projects','project section','制作実績','作品一覧','プロジェクト一覧'],'/essays':['essays','essay section','技術記事','記事一覧'],'/unreal-journey':['unreal journey','unreal section','開発記録'],'/yuki':['garden','your home','your house','your nest','petal nook','ゆきの庭','ユキの庭','おうち','君の家','あなたの家','庭','花びらのすみか'],'/':['home page','landing page','portfolio home','ホーム','トップページ']};
 export function isGuideRequest(text){
  const q=clean(text);
  if(/\b(?:do not|don['’]t|stop|no need to)\s+(?:guide|lead|show|take|navigate|point)\b/i.test(q)||/(?:案内|誘導)(?:しない|しなくて|をやめ)/.test(q))return false;
- return /\b(?:lead|guide|take|direct)\s+(?:me|us)\b|\b(?:point|navigate|go)\s+(?:me\s+)?(?:to|towards|at)\b|\bshow\s+me\b|\b(?:where|find|locate|open)\b/i.test(q)||/(?:案内|連れて|誘導|どこ|何処|見せて|開いて|探して|に行き|へ行き)/.test(q);
+ return /\b(?:lead|guide|take|direct)\s+(?:me|us)\b|\b(?:point|navigate|go)\s+(?:me\s+)?(?:to|towards|at)\b|\bgo\s+home\b|\bshow\s+me\b|\b(?:where|find|locate|open|visit)\b/i.test(q)||/(?:案内|連れて|誘導|どこ|何処|見せて|開いて|探して|に行き|へ行き)/.test(q);
 }
 const stop=new Set('a an the i me us you her she it to of on in and or for about please can could would will want like website section page project projects show find lead guide take point go open where is are my looking at'.split(' '));
 function nameScore(query,title){
- const name=words(title),japanese=/[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(name);if(name.length<(japanese?2:3))return 0;
+ const name=words(title),japanese=/[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(name);if(name.length<(japanese?2:3)&&name!=='庭')return 0;
  if(japanese?query.includes(name):(' '+query+' ').includes(' '+name+' '))return 100+name.length;
  const tokens=name.split(' ').filter(w=>w.length>2&&!stop.has(w));
  const hits=tokens.filter(w=>(' '+query+' ').includes(' '+w+' '));
@@ -33,14 +33,18 @@ export function guideTarget(url,pages,lang='en',base=''){
  // Localized section IDs are not interchangeable. An unmatched section falls
  // back to its known page, rather than pointing at a different translated item.
  if(anchor&&!section&&source?.lang===lang)return null;
- return {url:page.url+(section?'#'+section.anchor:''),title:clean(section?.title||categoryNames[path]||page.title),pageTitle:clean(categoryNames[path]||page.title),section:section?.id??''};
+ const pageTitle=clean(path==='/yuki'?page.title:categoryNames[path]||page.title);
+ return {url:page.url+(section?'#'+section.anchor:''),title:clean(section?.title||pageTitle),pageTitle,section:section?.id??''};
 }
 export function resolveGuideRequest(text,pages,currentPath,{lang='en',base=''}={}){
  if(!isGuideRequest(text))return null;
  const query=words(text),localized=pages.filter(p=>p.lang===lang&&safeSitePath(p.url,base));
+ // In conversation with Yuki, an unqualified "home" means her home. Explicit
+ // "home page"/"landing page" still means the portfolio, not the garden.
+ const homeOnly=/\bhome\b/.test(query)&&!/(?:home page|landing page|portfolio home)/.test(query);
  const scored=localized.map(p=>{
   const path=guidePath(p.url,base),aliases=pages.filter(other=>guidePath(other.url,base)===path).map(other=>other.title);
-  const score=Math.max(0,...aliases.map(title=>nameScore(query,title)),...(categoryAliases[path]??[]).map(title=>nameScore(query,title)));
+  const score=Math.max(homeOnly&&path==='/yuki'?120:0,...aliases.filter(title=>!(homeOnly&&path==='/'&&words(title)==='home')).map(title=>nameScore(query,title)),...(categoryAliases[path]??[]).map(title=>nameScore(query,title)));
   return {page:p,score,category:Boolean(categoryNames[path])};
  }).filter(x=>x.score>0);
  const specifics=scored.filter(x=>!x.category),candidates=(specifics.length?specifics:scored).sort((a,b)=>b.score-a.score);
@@ -62,11 +66,12 @@ export function planGuideStep(target,currentPath,pages,{lang='en',base=''}={}){
  if(current===destination)return {kind:'arrive',...checked};
  const group=destination.startsWith('/projects/')?'/projects':destination.startsWith('/essays/')?'/essays':destination.startsWith('/unreal-journey/')?'/unreal-journey':destination;
  const index=pages.find(p=>p.lang===lang&&guidePath(p.url,base)===group);
- if(index&&current!==group)return {kind:'nav',url:index.url,title:categoryNames[group]??clean(index.title),target:checked};
+ if(index&&current!==group)return {kind:'nav',url:index.url,title:group==='/yuki'?'Yuki':categoryNames[group]??clean(index.title),target:checked};
  return {kind:'link',url:checked.url.split('#')[0],title:checked.pageTitle,target:checked};
 }
 export function findGuideElement(doc,step){
  if(step.kind==='arrive'){
+  if(guidePath(step.url)==='/yuki'&&!step.url.includes('#'))return doc.getElementById('garden-lookout')??doc.querySelector('main h1');
   const anchor=step.url.split('#')[1];return anchor?doc.getElementById(anchor):doc.querySelector('main h1, .fp-resume-head h1, h1');
  }
  const links=[...doc.querySelectorAll(step.kind==='nav'?'.fp-nav a[href]':'main a[href]')];

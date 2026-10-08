@@ -49,7 +49,7 @@
       "en": "Moving along the route",
       "ja": "経路に沿った移動"
     },
-    "explanation": "step advances the motion graph and route with elapsed time. The smooth polynomial eases position between route endpoints. Arrival either holds flight as a hover or requests landing. update subdivides input time into at most 10-millisecond steps, limiting differences at state joins on different frame rates. This is timed 2D travel, not physics simulation or new generated drawings."
+    "explanation": "step advances the motion graph and route with elapsed time. On entry to flight it aligns the wing drawing clock with the graph's frame and elapsed time, avoiding a repeated out-of-phase downstroke at takeoff or landing. The smooth polynomial eases position between route endpoints. Arrival either holds flight as a hover or requests landing. update subdivides input time into at most 10-millisecond steps, limiting differences at state joins on different frame rates. This is timed 2D travel, not physics simulation or new generated drawings."
   },
   {
     "id": "breath",
@@ -238,6 +238,6 @@
       "en": "Filling the viewport without stretching",
       "ja": "引き伸ばさずに画面を満たす"
     },
-    "explanation": "gardenCamera uses width=max(viewport width, viewport height times 1.5), height=width/1.5 to preserve the 1536:1024 picture ratio. Translation is clamped to avoid empty edges. The camera follows the current normalized location; the renderer remaps the character and route by the same scene change. The image is cropped when necessary, not distorted."
+    "explanation": "gardenCamera uses width=max(viewport width, viewport height times 1.5), height=width/1.5 to preserve the 1536:1024 picture ratio. Translation is clamped to avoid empty edges. By default the camera follows the current normalized location; the renderer remaps the character and route by the same scene change. Visitors can pan cropped areas with the wheel, touch, keyboard or left/right edge buttons; manual exploration stays in place until a new garden destination is selected. No extra follow toolbar is shown. The image is cropped when necessary, not distorted."
   }
 ]

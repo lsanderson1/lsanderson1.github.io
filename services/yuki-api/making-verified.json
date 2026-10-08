@@ -58,13 +58,13 @@
       "en": "Moving along the route",
       "ja": "経路に沿った移動"
     },
-    "explanation": "step advances the motion graph and route with elapsed time. The smooth polynomial eases position between route endpoints. Arrival either holds flight as a hover or requests landing. update subdivides input time into at most 10-millisecond steps, limiting differences at state joins on different frame rates. This is timed 2D travel, not physics simulation or new generated drawings.",
+    "explanation": "step advances the motion graph and route with elapsed time. On entry to flight it aligns the wing drawing clock with the graph's frame and elapsed time, avoiding a repeated out-of-phase downstroke at takeoff or landing. The smooth polynomial eases position between route endpoints. Arrival either holds flight as a hover or requests landing. update subdivides input time into at most 10-millisecond steps, limiting differences at state joins on different frame rates. This is timed 2D travel, not physics simulation or new generated drawings.",
     "source": {
       "file": "assets/yuki/runtime/rover.mjs",
       "symbol": "Rover.step",
       "firstLine": 80,
-      "lastLine": 110,
-      "sha256": "f8afeb628a91982237ab4f885f8f1f05ecaa6bd85493bc64ee5b7cd76a591354"
+      "lastLine": 115,
+      "sha256": "0fc89ede325b5f323d0361540c4fc3c1a88aa9a8a3527dfc7ffdeaa29fa1a3e9"
     }
   },
   {
@@ -165,8 +165,8 @@
       "file": "assets/yuki/runtime/guide-journey.mjs",
       "symbol": "guideTarget",
       "firstLine": 27,
-      "lastLine": 37,
-      "sha256": "6775415889b89df0a14abcc607b2f3854c94abda73d860677ffeb109468a9fd3"
+      "lastLine": 38,
+      "sha256": "7661007dae3d768d51ccfbc9ff7d524c873aa16d34115d5916819cb9f86913f6"
     }
   },
   {
@@ -181,8 +181,8 @@
     "source": {
       "file": "assets/yuki/runtime/guide-journey.mjs",
       "symbol": "GuideJourney",
-      "firstLine": 77,
-      "lastLine": 103,
+      "firstLine": 82,
+      "lastLine": 108,
       "sha256": "73efc21c7bda4caf86ce1fe89eb33d0ffadfbd11c00fbe83cad353072b8df331"
     }
   },
@@ -249,8 +249,8 @@
     "source": {
       "file": "services/yuki-api/worker.mjs",
       "symbol": "parseModel",
-      "firstLine": 74,
-      "lastLine": 130,
+      "firstLine": 75,
+      "lastLine": 131,
       "sha256": "fe6c52afc7d581b22e3c827a426a310f0f6f2bd46500d14d0935a2133751e2e4"
     }
   },
@@ -313,7 +313,7 @@
       "en": "Filling the viewport without stretching",
       "ja": "引き伸ばさずに画面を満たす"
     },
-    "explanation": "gardenCamera uses width=max(viewport width, viewport height times 1.5), height=width/1.5 to preserve the 1536:1024 picture ratio. Translation is clamped to avoid empty edges. The camera follows the current normalized location; the renderer remaps the character and route by the same scene change. The image is cropped when necessary, not distorted.",
+    "explanation": "gardenCamera uses width=max(viewport width, viewport height times 1.5), height=width/1.5 to preserve the 1536:1024 picture ratio. Translation is clamped to avoid empty edges. By default the camera follows the current normalized location; the renderer remaps the character and route by the same scene change. Visitors can pan cropped areas with the wheel, touch, keyboard or left/right edge buttons; manual exploration stays in place until a new garden destination is selected. No extra follow toolbar is shown. The image is cropped when necessary, not distorted.",
     "source": {
       "file": "assets/yuki/home/camera.mjs",
       "symbol": "gardenCamera",

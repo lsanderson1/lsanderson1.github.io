@@ -1,4 +1,4 @@
-import {waterGlisten} from './water-light.mjs';
+import {waterGlisten,addGardenWaterSurfaces} from './water-light.mjs';
 // Every interactive object uses the illustration's coordinates. These are
 // authored effects and story snippets, not generated art or extra AI calls.
 export const gardenDiscoveries={
@@ -93,7 +93,7 @@ export class GardenWorldLife{
   const rays=el(this.doc,'g',{class:'yg-sun-rays',fill:'#fff7c6'});for(const [end,width] of [[430,48],[610,60],[750,23]])rays.append(el(this.doc,'path',{d:`M175 73 L${end} 485 L${end+width} 490Z`}));this.svg.append(rays);
   for(const [i,p] of [[420,200,135,16],[730,98,118,15],[673,312,100,9]].entries())this.svg.append(el(this.doc,'ellipse',{class:'yg-cloud-drift',cx:p[0],cy:p[1],rx:p[2],ry:p[3],style:`--delay:${-i*11}s`}));
   addWaterfalls(this.doc,this.svg,defs);
-  for(let i=0;i<8;i++)this.svg.append(el(this.doc,'path',{class:'yg-lake-light',d:`M${477+i*21} ${348+(i%4)*12} q12 -1 25 0`,style:`--delay:${-i*.85}s`}));
+  addGardenWaterSurfaces(this.doc,this.svg,defs);
   this.effects=el(this.doc,'g');this.svg.append(this.effects);scene.append(this.svg);
   this.targets=this.doc.createElement('div');this.targets.className='yg-discoveries';scene.append(this.targets);
   for(const [id,spec] of Object.entries(gardenDiscoveries)){

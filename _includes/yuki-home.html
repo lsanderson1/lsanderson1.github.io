@@ -1,9 +1,9 @@
 {% include locale.html %}
 {% assign jp = false %}{% if page.lang == 'ja' %}{% assign jp = true %}{% endif %}
-<link rel="stylesheet" href="{{ '/assets/yuki/home/garden.css?v=7' | relative_url }}">
+<link rel="stylesheet" href="{{ '/assets/yuki/home/garden.css?v=9' | relative_url }}">
 <div class="yg-page">
  <h1 class="yg-sr-only">{% if jp %}ゆきの庭{% else %}Yuki’s Garden{% endif %}</h1>
- <section class="yg-world" aria-label="{% if jp %}ゆきのインタラクティブな庭{% else %}Yuki’s interactive garden{% endif %}">
+ <section class="yg-world" tabindex="0" aria-describedby="garden-pan-hint" aria-label="{% if jp %}ゆきのインタラクティブな庭{% else %}Yuki’s interactive garden{% endif %}">
   <div class="yg-scene" data-yuki-garden>
    <img class="yg-backdrop" src="{{ '/assets/yuki/home/petal-nook.png' | relative_url }}" width="1536" height="1024" fetchpriority="high" alt="{% if jp %}桜に囲まれた明るいお城の庭。葉っぱの巣、スイレンの池、本のあるベンチ、紙の鶴と小石、空を見渡すテラス。{% else %}A sunny castle garden with cherry blossoms, a leaf-lined nest, a lily pond, a reading bench, paper crane and pebble keepsakes, and a terrace overlooking floating islands.{% endif %}">
    <div class="yg-weather" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
@@ -39,6 +39,9 @@
    </details>
   </div>
   <span class="yg-beta">BETA</span>
+  <button class="yg-pan-edge yg-pan-left" data-garden-pan="left" aria-label="{% if jp %}庭の左側を見る{% else %}Look Around to the Left{% endif %}">‹</button>
+  <button class="yg-pan-edge yg-pan-right" data-garden-pan="right" aria-label="{% if jp %}庭の右側を見る{% else %}Look Around to the Right{% endif %}">›</button>
+  <span id="garden-pan-hint" class="yg-sr-only">{% if jp %}ホイール、スワイプ、矢印キーで庭を見渡せるよ。場所を選ぶと、ゆきを追うよ。{% else %}Use the wheel, swipe or arrow keys to look around. Choose a garden destination to follow Yuki again.{% endif %}</span>
   <aside class="yg-thought" aria-label="{% if jp %}ゆきのひとこと{% else %}A little thought from Yuki{% endif %}">
    <p data-home-dialogue>{% if jp %}「小さな羽はたたんで、大きな夢は広げよう。」{% else %}“Little wings folded. Big dreams unfolding.”{% endif %}</p>
    <button data-garden-action="home-line" aria-label="{% if jp %}別のひとこと{% else %}Another little thought{% endif %}" title="{% if jp %}別のひとこと{% else %}Another Little Thought{% endif %}">↻</button>

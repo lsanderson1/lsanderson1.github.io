@@ -2,7 +2,7 @@
 // picture and pans with Yuki; her feet and travel path are remapped together.
 import {HomeDialogue} from './home-dialogue.mjs';
 import {attachAmbience} from './ambience.mjs';
-import {GardenCamera} from './camera.mjs';
+import {GardenCamera,attachGardenExplorer} from './camera.mjs';
 import {GardenPond} from './pond.mjs';
 import {GardenWorldLife} from './world-life.mjs';
 export const gardenSpots={nest:{x:.20,y:.775},pond:{x:.35,y:.655},lookout:{x:.53,y:.48},books:{x:.745,y:.635},treasures:{x:.67,y:.80}};
@@ -19,7 +19,7 @@ export class GardenHome{
   Object.assign(this,{scene,api,ja,reduced,selected:'nest',pending:null,serial:0,inactive:0,paused:false,expression:0});
   this.doc=scene.ownerDocument;this.state=this.doc.querySelector('.yg-garden-state');
   this.dialogue=new HomeDialogue(Math.random,storage);this.chatClock=0;this.floating=false;
-  if(scene.parentElement?.getBoundingClientRect){this.camera=new GardenCamera(scene);this.fitView();}
+  if(scene.parentElement?.getBoundingClientRect){this.camera=new GardenCamera(scene);this.fitView();this.detachExplorer=attachGardenExplorer(scene,this.camera);}
   if(this.doc.body){
    attachAmbience(scene);this.pond=new GardenPond(scene,{ja,feedback:text=>this.discovery(text)});
    this.worldLife=new GardenWorldLife(scene,{ja,feedback:text=>this.discovery(text),onNest:()=>{void this.go('nest');}});
@@ -44,7 +44,7 @@ export class GardenHome{
   if(this.paused){this.say(this.ja?'「庭の動きを再開」で、また一緒に遊ぼう！':'Resume the garden when you’re ready to play again!');return;}
   if(!gardenSpots[id])return;const serial=++this.serial;this.pending=null;this.inactive=0;
   this.doc.querySelector('[data-garden-action="chase"]').disabled=false;this.doc.querySelector('.yg-chase-petal').hidden=true;
-  this.story(id);this.say(this.ja?'羽の準備中…':'Getting my little wings ready…');
+  this.camera?.follow();this.story(id);this.say(this.ja?'羽の準備中…':'Getting my little wings ready…');
   try{await this.api.prepare();if(serial!==this.serial)return false;this.floating=hover&&!this.reduced;this.api.travel(this.point(id),{arrival:this.floating?'hover':'land'});this.pending={id,sleep,emotion,hover:this.floating};this.say(this.ja?'そっちへ、ぱたぱたっ！':'A little flap… coming over!');return true;}
   catch{if(serial===this.serial)this.say(this.ja?'飛行画像を読み込めなかったよ。もう一度試してね。':'My flight artwork couldn’t load. Please try that spot again.');}
  }

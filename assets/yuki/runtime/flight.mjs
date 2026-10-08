@@ -4,7 +4,10 @@ export function flightPose(rover, clips) {
  const graph=rover.graph, route=rover.route;
  const progress=route?Math.min(1,route.elapsed/route.duration):0;
  const dx=route?route.end.x-route.start.x:0;
- const direction=Math.abs(dx)<38?'up':dx>0?'right':'left';
+ const dy=route?route.end.y-route.start.y:0;
+ // Mostly vertical travel keeps the approved forward-facing pose throughout,
+ // instead of flicking sideways merely because a perch is slightly offset.
+ const direction=Math.abs(dx)<Math.max(38,Math.abs(dy)*.65)?'up':dx>0?'right':'left';
  const cruising=route&&progress>=.14&&progress<.82&&direction!=='up';
  const key=cruising?(direction==='right'?'flightRight':'flightLeft'):'flightHover';
  const info=clips[key]??clips.flight;
