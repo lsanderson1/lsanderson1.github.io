@@ -106,7 +106,7 @@ test('English and Japanese prompts share canonical lore, contextual warmth and f
   assert.match(prompt,/not to force novelty in every answer/);assert.match(prompt,/recurring motifs are fine/);
   assert.match(prompt,/sourceIds \[\] and destination none/);
   assert.match(prompt,lang==='ja'?/Reply in natural Japanese/:/Reply in English/);
-  assert.equal(body.max_tokens,1100);assert.equal(body.temperature,.7);assert.equal(body.stream,false);assert(!('tools' in body));
+  assert.equal(body.max_tokens,1900);assert.equal(body.temperature,.7);assert.equal(body.stream,false);assert(!('tools' in body));
  }
 });
 
@@ -130,7 +130,7 @@ test('extended conversations distinguish backstory, current goals and future dre
   assert.match(prompt,/deepen that scene with a different relevant detail/);
   assert.match(prompt,/do not restart at hatching/);assert.match(prompt,/never change canon just to sound new/);
   assert.match(prompt,/past story events, present habits and hopes not yet fulfilled/);
-  assert.match(prompt,/Do not force portfolio promotion/);assert.match(prompt,/5–8 natural sentences within the 1800-character limit/);
+  assert.match(prompt,/Do not force portfolio promotion/);assert.match(prompt,/5–8 natural sentences within the 2800-character limit/);
  }
 });
 

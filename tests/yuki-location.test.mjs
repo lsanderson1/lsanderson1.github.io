@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {YukiLocation,locationKey,locationPage,portalSection,capturePose,restorePose,poseArtwork,returnAfterSleepMs} from '../assets/yuki/home/location.mjs';
+import {YukiLocation,locationKey,locationPage,portalSection,travelPortalSection,capturePose,restorePose,poseArtwork,returnAfterSleepMs} from '../assets/yuki/home/location.mjs';
 import {HomeDialogue,homeLines} from '../assets/yuki/home/home-dialogue.mjs';
 import {Companion} from '../assets/yuki/runtime/companion.mjs';
 import {emotionPlayback} from '../assets/yuki/runtime/reply-cues.mjs';
@@ -25,8 +25,30 @@ test('real Unix timestamps survive navigation rather than falling back to the ne
  const s=storage(),now=Date.now(),a=new YukiLocation(s,{now:()=>now});a.record({page:'/resume.html',title:'Resume',position:{x:.68,y:728},status:'rest',pose:null});
  const b=new YukiLocation(s,{now:()=>now+50});assert(b.here('/resume.html'));assert(!b.here('/yuki/'));assert.deepEqual(b.state.position,{x:.68,y:728});
 });
-test('portal is chosen from her origin, including Japanese and specific project pages',()=>{
+test('portal categories include Japanese and specific project pages',()=>{
  for(const [from,expected] of [['/yuki/','/yuki/'],['/ja/essays/smartquestions.html','/essays/'],['/projects/ProjectReap.html','/projects/'],['/unreal-journey/project-1.html','/unreal-journey/'],['/ja/resume.html','/resume.html'],['/','/']])assert.equal(portalSection(from),expected);
+});
+test('every cross-page journey enters the destination tab and exits the origin tab',()=>{
+ const pages=['/yuki/','/ja/yuki/','/resume.html','/ja/resume.html','/projects/ProjectReap.html','/ja/essays/smartquestions.html','/unreal-journey/project-1.html','/'];
+ for(const from of pages)for(const to of pages){
+  const transfer={origin:{page:from},target:{page:to}};
+  assert.equal(travelPortalSection({kind:'departing',origin:transfer.origin,transfer},from),portalSection(to),`${from} enters ${to}`);
+  assert.equal(travelPortalSection({kind:'incoming',origin:transfer.origin,transfer},to),portalSection(from),`${to} emerges from ${from}`);
+  assert.equal(travelPortalSection({kind:'incoming',transfer},to),portalSection(from));
+ }
+ assert.equal(travelPortalSection({kind:'returning'},'/resume.html'),'/yuki/');
+ assert.equal(travelPortalSection(null,'/ja/essays/example.html'),'/essays/');
+});
+test('actual portal placement uses the travel leg while the exit afterglow stays at its doorway',()=>{
+ const source=fs.readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
+ const start=source.indexOf(' function portalPoint('),end=source.indexOf('\n function placeAt(',start);
+ const anchors=new Map([['/yuki/',{left:580,bottom:54,width:80}],['/resume.html',{left:280,bottom:54,width:80}]]);
+ const portal={dataset:{},style:{}},presence={state:{page:'/yuki/'}},trip={kind:'departing',origin:{page:'/yuki/'},transfer:{target:{page:'/resume.html'}}};
+ const point=new Function('travelPortalSection','portalTrip','presence','headerAnchor','portal','layout','bodyHeight','scrollY','headerBottom',`${source.slice(start,end)};return portalPoint;`)(travelPortalSection,trip,presence,section=>({closest:()=>null,getBoundingClientRect:()=>anchors.get(section)}),portal,{width:1280},155,200,54);
+ assert.equal(point().x,320);assert.equal(portal.dataset.source,'/resume.html');
+ const exitSection=portal.dataset.source;trip.kind='incoming';assert.equal(point().x,620);assert.equal(portal.dataset.source,'/yuki/');
+ assert.equal(point(exitSection).x,320);assert.equal(portal.dataset.source,'/resume.html');
+ assert.equal(point().y,54+155*.30+200);
 });
 test('return-home waits 45 seconds after sleep, never resets that timestamp on periodic saves',()=>{
  const s=storage();let now=1000;const a=new YukiLocation(s,{now:()=>now});const record={page:'/resume.html',position:{x:.5,y:800},status:'sleep'};

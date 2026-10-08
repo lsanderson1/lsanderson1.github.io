@@ -1,16 +1,18 @@
 import {safeSitePath} from '../../assets/yuki/protocol.mjs';
 import {readingReference,sectionKey} from '../../assets/yuki/runtime/reading-context.mjs';
 import {makingKnowledge} from './making-knowledge.mjs';
+import {questionPage,questionImages} from './page-awareness.mjs';
 
 const clean=value=>typeof value==='string'?value.replace(/\s+/g,' ').trim():'';
 export function validateContext(value){
  if(value===undefined)return {};
  if(!value||typeof value!=='object'||Array.isArray(value))throw Error('Invalid context');
  if(value.section!==undefined&&value.section!==''&&!sectionKey(value.section))throw Error('Invalid section');
+ if(value.images!==undefined&&(!Array.isArray(value.images)||value.images.length>4||value.images.some(id=>!/^i\d{1,4}$/.test(id))))throw Error('Invalid images');
  const guide=value.lastGuide===undefined||value.lastGuide===null?null:readingReference(value.lastGuide);
  if(value.lastGuide!=null&&(!guide||(value.lastGuide.section&&guide.section!==value.lastGuide.section)))throw Error('Invalid guide');
  // Intentionally discard any client-supplied page text, titles or instructions.
- return {section:sectionKey(value.section),...(guide?{lastGuide:guide}:{}),...(['nest','pond','lookout','books','treasures'].includes(value.gardenSpot)?{gardenSpot:value.gardenSpot}:{})};
+ return {section:sectionKey(value.section),...(value.images?{images:[...new Set(value.images)]}:{}),...(guide?{lastGuide:guide}:{}),...(['nest','pond','lookout','books','treasures'].includes(value.gardenSpot)?{gardenSpot:value.gardenSpot}:{})};
 }
 export function queryWords(text){
  const query=text.toLowerCase(),words=query.match(/[a-z0-9_+#]{2,}/g)||[];
@@ -44,7 +46,8 @@ export function retrieveKnowledge(k,input){
  // The guide's explicit Explain button starts a new subject. Stale conversation
  // must not pull retrieval or the model back to an earlier, unrelated target.
  const focus=guideExplanation(input.message)?lastGuided:null;
- const query=queryWords(focus?focus.heading:input.message),history=focus?[]:queryWords((input.history??[]).filter(m=>m.role==='user').slice(-2).map(m=>m.content).join(' '));
+ const mentioned=questionPage(pages,input.message),visual=focus?null:questionImages(pages,input,current,lastGuided,mentioned);
+ const query=queryWords(focus?focus.heading:input.message),history=focus||visual||mentioned?[]:queryWords((input.history??[]).filter(m=>m.role==='user').slice(-2).map(m=>m.content).join(' '));
  const score=(text,words)=>words.reduce((n,w)=>n+(text.includes(w)?1:0),0);
  const chunks=[];
  for(const p of pages){
@@ -57,12 +60,16 @@ export function retrieveKnowledge(k,input){
  }
  const ranked=chunks.filter(c=>!focus||c.page===focus.page).map((c,i)=>{
   const title=c.title.toLowerCase(),body=c.text.toLowerCase();
-  return {...c,order:i,score:score(title,query)*8+score(body,query)*3+score(title+' '+body,history)*.35+(c.page===current?.page?2:0)+(c.page===lastGuided?.page?1:0)};
+  return {...c,order:i,score:score(title,query)*8+score(body,query)*3+score(title+' '+body,history)*.35+(c.page===current?.page?2:0)+(c.page===mentioned?.url?12:0)+(c.page===lastGuided?.page?1:0)};
  }).sort((a,b)=>b.score-a.score||a.order-b.order);
  const chosen=[];const add=c=>{if(c&&!chosen.some(x=>x.id===c.id)&&chosen.length<6)chosen.push(c);};
+ // Reserve evidence for the actual pictures in question before unrelated
+ // keyword matches consume the six-passage budget. Description, not vision.
+ for(const image of visual?.images??[])add(ranked.find(c=>c.id===image.sourceId));
+ if(mentioned)add(ranked.find(c=>c.page===mentioned.url&&c.section===''));
  // Always supply the currently displayed section and recent guided target;
  // explicit questions can still retrieve a different passage anywhere in a page.
  for(const ref of focus?[focus]:[current,lastGuided])if(ref){const c=ranked.find(c=>c.page===ref.page&&c.section===ref.section);add(c);if(c)ref.sourceId=c.id;}
  for(const c of ranked)add(c);
- return {owner:k.owner,bio:clean(k.bio[input.lang]).slice(0,2000),skills:JSON.stringify(k.skills||[]).slice(0,2000),view:{current,lastGuided,focus,...(/^\/(?:ja\/)?yuki\/$/.test(input.page)&&input.context?.gardenSpot?{gardenSpot:input.context.gardenSpot}:{})},pages:chosen.map(({id,url,title,text})=>({id,url,title,text})),makingOf:focus?null:makingKnowledge(input)};
+ return {owner:k.owner,bio:clean(k.bio[input.lang]).slice(0,2000),skills:JSON.stringify(k.skills||[]).slice(0,2000),view:{current,lastGuided,focus,...(mentioned?{questionPage:{page:mentioned.url,title:mentioned.title}}:{}),...(visual?{visual}:{}),...(/^\/(?:ja\/)?yuki\/$/.test(input.page)&&input.context?.gardenSpot?{gardenSpot:input.context.gardenSpot}:{})},pages:chosen.map(({id,url,title,text})=>({id,url,title,text})),makingOf:focus?null:makingKnowledge(input)};
 }

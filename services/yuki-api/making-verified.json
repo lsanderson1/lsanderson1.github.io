@@ -217,7 +217,7 @@
       "symbol": "translatedText / translationBatch / applyTranslations",
       "firstLine": 21,
       "lastLine": 45,
-      "sha256": "98c3b3c446cc3648d2f7a90f4e92bcbae1e9060b42144b595c7fb522a0bc9918"
+      "sha256": "afdf902fec80bd68b119ab9cee76c61292235415f86c1c4a75480ef540c9a399"
     }
   },
   {
@@ -232,9 +232,9 @@
     "source": {
       "file": "services/yuki-api/knowledge.mjs",
       "symbol": "retrieveKnowledge",
-      "firstLine": 39,
-      "lastLine": 68,
-      "sha256": "3c028a8a63f1488ef2ab716606d6afdff5efb2f5488a87d14a423599733c7b34"
+      "firstLine": 41,
+      "lastLine": 75,
+      "sha256": "33d7bb76735d9129253084346b9eb495954a74a3363c7cea3f4e5e3a9dccf09f"
     }
   },
   {
@@ -245,12 +245,12 @@
       "en": "Validating a generated answer",
       "ja": "生成された返答の検証"
     },
-    "explanation": "parseModel extracts and parses the structured model answer, validates emotion, gesture, destination and text length, and resolves source IDs only against supplied page or web entries. Unsupported references are not converted into invented links. These structural safeguards do not prove every natural-language claim true. Requests still need verification, usage budget and evidence.",
+    "explanation": "parseModel extracts and parses the structured model answer, validates emotion, gesture, destination and text length, and resolves source IDs only against supplied page or web entries. validReply also checks the prose: cleanAssistantText removes an unmistakably duplicated serialized text tail or a recognized nested reply envelope, and rejects ambiguous dangling response fields. Repaired wording discards stale expression indices. The display repeats this check for saved replies; user messages are not rewritten. Unsupported references are not converted into invented links. These structural safeguards do not prove every natural-language claim true. Requests still need verification, usage budget and evidence.",
     "source": {
       "file": "services/yuki-api/worker.mjs",
       "symbol": "parseModel",
-      "firstLine": 75,
-      "lastLine": 131,
+      "firstLine": 79,
+      "lastLine": 135,
       "sha256": "fe6c52afc7d581b22e3c827a426a310f0f6f2bd46500d14d0935a2133751e2e4"
     }
   },
@@ -283,8 +283,8 @@
     "source": {
       "file": "assets/yuki/home/location.mjs",
       "symbol": "YukiLocation",
-      "firstLine": 16,
-      "lastLine": 47,
+      "firstLine": 22,
+      "lastLine": 53,
       "sha256": "10e03b9f4dc497aef0e2eddd27a9860ac57a310ff75d00ff0ebe7c2da65556c7"
     }
   },

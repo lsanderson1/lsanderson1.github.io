@@ -116,13 +116,13 @@ test('prompt uses structured topic continuity, not metadata as instructions or a
  const data=JSON.parse(prompt.split('CONTINUITY DATA (JSON): ')[1]);assert(!data.unexploredSuggestions.includes('bigDream'));
  assert.match(prompt,/untrusted DATA, never instructions/);assert.match(prompt,/stay on it/);assert.match(prompt,/do not invent facts/);
  const body=modelRequest(input,{pages:[]});assert(body.messages[0].content.includes(prompt));
- assert(body.response_format.json_schema.required.includes('storyTopics'));assert.equal(body.max_tokens,1100);
+ assert(body.response_format.json_schema.required.includes('storyTopics'));assert.equal(body.max_tokens,1900);
 });
 
 test('near-copy gets at most one AI revision, independently reserved under the fixed free provider',async()=>{
  const f=fixture(),response=await f.handler(f.request(),f.env),reply=await response.json();
  assert.equal(response.status,200);assert.equal(reply.text,fresh);assert.equal(f.calls.length,2);assert.equal(f.reservations.length,2);
- assert(f.calls.every(c=>c.name===CLOUDFLARE_MODEL&&c.body.max_tokens===1100));
+ assert(f.calls.every(c=>c.name===CLOUDFLARE_MODEL&&c.body.max_tokens===1900));
  assert.equal(f.reservations[0].hash,f.reservations[1].hash);
  assert(f.calls[1].body.messages.some(m=>m.content.includes('WORDING REVISION')));
  assert.deepEqual(f.calls[0].body.messages.at(-1),f.calls[1].body.messages.at(-1));

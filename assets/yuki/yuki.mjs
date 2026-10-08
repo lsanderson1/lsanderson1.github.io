@@ -3,7 +3,7 @@ import {projectFrame} from './runtime/projection.mjs';
 import {IdleRenderer} from './runtime/idle-renderer.mjs';
 import {takeoffMs,landingMs,contactPhases} from './runtime/timing.mjs';
 import {airClips} from './runtime/air-reactions.mjs';
-import {emotionPlayback,applyReplyCue} from './runtime/reply-cues.mjs?v=2';
+import {emotionPlayback,applyReplyCue} from './runtime/reply-cues.mjs?v=3';
 import {SiteGuide} from './runtime/site-guide.mjs?v=6';
 import {pageLayout,bubblePlacement,bubbleHeightLimit,pointerTarget} from './runtime/page-layout.mjs?v=9';
 import {localizedPages,localizePath,findPageTarget,pendingGuide,targetRect,curateDestinations} from './runtime/page-targets.mjs?v=9';
@@ -16,15 +16,15 @@ import {ChatAvailability,ChatPermission,ChatSession,ChatVerification,chatEnviron
 import {ConversationMemory} from './runtime/conversation-memory.mjs?v=1';
 import {VisitorInterests} from './runtime/visitor-interests.mjs';
 import {expressionSequence} from './runtime/reply-beats.mjs';
-import {GardenHome} from './home/garden.mjs?v=2';
-import {YukiLocation,capturePose,restorePose,poseArtwork,locationLabel,locationPage,portalSection} from './home/location.mjs';
+import {GardenHome} from './home/garden.mjs?v=3';
+import {YukiLocation,capturePose,restorePose,poseArtwork,locationLabel,locationPage,portalSection,travelPortalSection} from './home/location.mjs?v=2';
 import {summonTiming,summonPhase,callFlightDuration,catchInFlight} from './home/summon.mjs';
 import {ConversationMoments,shouldWelcomeOnRefresh,isLeavingLink} from './runtime/conversation-moments.mjs?v=1';
-import {messageRecord,translatedText,translationBatch,checkedTranslations,applyTranslations} from './runtime/conversation-language.mjs?v=3';
-import {ReadingMemory,readPageTitle,readingDetail,readPageDisplaySection,readPageSection,guideReference,followUpReference} from './runtime/reading-context.mjs?v=3';
-import {validReply,readSession,chatUnavailable} from './protocol.mjs?v=13';
+import {messageRecord,translatedText,translationBatch,checkedTranslations,applyTranslations} from './runtime/conversation-language.mjs?v=4';
+import {ReadingMemory,readPageTitle,readingDetail,readPageDisplaySection,readPageSection,readPageImages,guideReference,followUpReference} from './runtime/reading-context.mjs?v=4';
+import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=14';
 import {safeWebURL} from './runtime/web-sources.mjs?v=1';
-import {cleanVariety,rememberReply,packChatRequest} from './runtime/reply-variety.mjs?v=2';
+import {cleanVariety,rememberReply,packChatRequest} from './runtime/reply-variety.mjs?v=3';
 
 const root=document.querySelector('#yuki-companion');
 if(root)start().catch(()=>{root.textContent='';}); // Portfolio remains usable on failure.
@@ -85,7 +85,7 @@ async function start(){
   // A local aside never creates a chat turn, spends AI quota or steals focus.
   if(reveal&&!hidden&&!busy&&!journey.active)panel(true,{focus:false,translate:false});
  }
- function readingContext(){measureHeader();const viewed=readPageSection(document,innerHeight,headerBottom),r=companion?.rover;const spot=garden&&!journey.active&&!garden.pending&&(r?.graph.state==='rest'||r?.isHovering)?garden.spotAt(r.position):null;const selected=spot&&viewed?.kind==='image'?document.getElementById('garden-'+spot)?.dataset.yukiSection:null;return {section:selected??viewed?.id??'',lastGuide:readingMemory.get(),...(spot?{gardenSpot:spot}:{})};}
+ function readingContext(){measureHeader();const viewed=readPageSection(document,innerHeight,headerBottom),r=companion?.rover;const spot=garden&&!journey.active&&!garden.pending&&(r?.graph.state==='rest'||r?.isHovering)?garden.spotAt(r.position):null;const selected=spot&&viewed?.kind==='image'?document.getElementById('garden-'+spot)?.dataset.yukiSection:null;return {section:selected??viewed?.id??'',images:readPageImages(document,innerHeight,headerBottom),lastGuide:readingMemory.get(),...(spot?{gardenSpot:spot}:{})};}
  function updateReading(){
   measureHeader();
   const title=readPageTitle(document,{path:location.pathname,base,title:root.dataset.pageTitle,lang:ja?'ja':'en'});
@@ -114,6 +114,9 @@ async function start(){
   translationUI();
  }
  function addMessage(role,text,remember=true,sources=[],storyTopics=[],greetingId){
+  // Also protects previously saved replies and cached language variants without
+  // erasing the conversation or changing the visitor's own quoted examples.
+  if(role==='assistant'&&text!=null){try{text=cleanAssistantText(text);}catch{text=tr('Oops, that reply got tangled up. Could you ask me again?','あれっ、返事がこんがらがっちゃった。もう一度聞いてくれる？');}}
   if(remember)hideMoment();
   if(remember){messages.push({...messageRecord(role,text,ja?'ja':'en'),...(sources.length?{sources}:{}),...(Number.isInteger(greetingId)?{greetingId}:{})});messages=messages.slice(-12);if(role==='assistant')variety=rememberReply(variety,text,storyTopics);}
   const p=document.createElement('p');p.className='yuki-message';p.dataset.role=role;const label=document.createElement('strong');label.textContent=role==='user'?tr('YOU','あなた'):'ゆき';p.append(label,document.createTextNode(text??(online?tr('Switching this message to English…','このメッセージを日本語に切り替えています…'):tr('Your conversation is saved. Automatic translation is available on the live site.','会話は保存されています。自動翻訳は公開サイトで利用できます。'))));
@@ -245,7 +248,7 @@ async function start(){
  for(let n=0;n<12;n++){const spark=document.createElement('i');spark.style.setProperty('--n',n);spark.style.setProperty('--drift',(n%2?-1:1)*(18+(n*17)%42)+'px');portal.append(spark);}document.body.append(portal);
  function headerAnchor(section){return [...document.querySelectorAll('.fp-nav a[href]')].find(a=>locationPage(new URL(a.href,location.href).pathname,base)===section)??document.querySelector('.fp-brand');}
  function portalPoint(fixedSection){
-  const section=fixedSection??portalSection(portalTrip?.kind==='returning'?'/yuki/':portalTrip?.origin?.page??presence.state.page);
+  const section=fixedSection??travelPortalSection(portalTrip,presence.state.page);
   const anchor=headerAnchor(section);
   const nav=anchor?.closest('nav');if(nav){const n=nav.getBoundingClientRect(),a=anchor.getBoundingClientRect();if(a.left<n.left||a.right>n.right)nav.scrollLeft+=a.left-(n.left+(n.width-a.width)/2);}
   const b=anchor?.getBoundingClientRect();portal.dataset.source=section;

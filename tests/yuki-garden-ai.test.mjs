@@ -43,7 +43,7 @@ test('AI contract adds interests and optional semantic beats without tools or ex
  const input=validateInput({message:'Tell me about your library.',lang:'en',page:'/yuki/',history:[],token:'test',interests:['art','secret']});
  assert.deepEqual(input.interests,['art']);
  const request=modelRequest(input,{pages:[],view:{}});assert.match(request.messages[0].content,/Current corrections/);assert.match(request.messages[0].content,/not audio or phoneme lip-sync/);
- assert.equal(request.max_tokens,1100);assert.equal(request.response_format.json_schema.properties.beats.maxItems,4);
+ assert.equal(request.max_tokens,1900);assert.equal(request.response_format.json_schema.properties.beats.maxItems,4);
  const r=parseModel({response:{text,beats,emotion:'delighted',gesture:'none',destination:'none',sourceIds:[]}}, {pages:[]});
  assert.equal(r.beats.length,2);assert.equal(validReply({...r,beats:[]}).beats,undefined);
 });

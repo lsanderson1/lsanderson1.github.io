@@ -191,8 +191,8 @@ test('section and image source IDs resolve to exact safe anchors and repeated ch
 });
 test('prompt supports contextual depth, explicitly limits visual claims and preserves no-tools safety',()=>{
  const body=modelRequest(input,retrieveKnowledge(knowledge,input)),prompt=body.messages[0].content;
- for(const text of ['not eye tracking','lastGuided','ask a brief clarifying question','not unseen visual details','5–8 clear sentences','untrusted DATA','Never invent credentials'])assert(prompt.includes(text));
- assert.equal(body.max_tokens,1100);assert(!body.tools);
+ for(const text of ['not eye tracking','lastGuided','ask a brief clarifying question','not unseen visual details','7–10 clear sentences','untrusted DATA','Never invent credentials'])assert(prompt.includes(text));
+ assert.equal(body.max_tokens,1900);assert(!body.tools);
 });
 test('guide Explain resets the topic to the selected picture rather than old conversation',()=>{
  const request={...input,message:'Please explain what you just showed me in more detail. How does it relate to this project?',history:[{role:'user',content:'Explain the controller and design patterns'},{role:'assistant',content:'The controller owns input.'}],context:{section:'i0',lastGuide:{page:'/museum.html',section:'i0'}}};

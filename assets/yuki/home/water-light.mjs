@@ -1,14 +1,26 @@
-// Readable sun glints, not a glow over the whole scene. The caller appends these
-// inside its traced water clip so banks, flowers and railings stay untouched.
+// Fine diffraction-style stars, inspired by the reference glints: long tapered
+// rays, weaker diagonal spikes and a small luminous centre. All of it (including
+// the halo) stays inside the caller's traced water/lily/railing clips.
+const glistenIds=new WeakMap();
 export function waterGlisten(doc,points){
  const make=(name,attrs={})=>{const node=doc.createElementNS('http://www.w3.org/2000/svg',name);for(const [k,v] of Object.entries(attrs))node.setAttribute(k,String(v));return node;};
  const group=make('g',{'aria-hidden':'true',class:'yg-water-glisten'});
+ const serial=(glistenIds.get(doc)??0)+1;glistenIds.set(doc,serial);
+ const glowId=`yg-water-glow-${serial}`,defs=make('defs'),glow=make('radialGradient',{id:glowId});
+ for(const [offset,color,opacity] of [[0,'#fffef4',.95],[.18,'#fff6ce',.65],[.48,'#e4faff',.20],[1,'#d8f7ff',0]])glow.append(make('stop',{offset,'stop-color':color,'stop-opacity':opacity}));
+ defs.append(glow);group.append(defs);
  for(const [x,y,scale=1] of points){
   // Coordinate-seeded timing stays stable across renders, but separate water
   // layers no longer restart the same index-based sparkle sequence together.
-  const seed=x*73+y*157,duration=4.8+(seed%431)/100,delay=-((x*47+y*113)%10000)/1000;
-  const anchor=make('g',{transform:`translate(${x} ${y}) scale(${scale})`});
-  anchor.append(make('path',{class:'yg-water-sparkle',d:'M-9 0 Q-1 -.8 0 -5.5 Q1 -.8 9 0 Q1 .8 0 5.5 Q-1 .8 -9 0Z',style:`--delay:${delay.toFixed(3)}s;--duration:${duration.toFixed(2)}s`}));
+  const seed=x*73+y*157,duration=5.8+(seed%431)/100,delay=-((x*47+y*113)%10000)/1000;
+  const anchor=make('g',{class:'yg-water-star',transform:`translate(${x} ${y}) scale(${scale})`});
+  const sparkle=make('g',{class:'yg-water-sparkle',style:`--delay:${delay.toFixed(3)}s;--duration:${duration.toFixed(2)}s`});
+  sparkle.append(make('circle',{class:'yg-water-halo',r:10,fill:`url(#${glowId})`}));
+  const rays='M0 -21 C.45 -4 1 -1 18 0 C1 1 .45 4 0 21 C-.45 4 -1 1 -18 0 C-1 -1 -.45 -4 0 -21Z';
+  sparkle.append(make('path',{class:'yg-water-rays-faint',d:rays,transform:'rotate(45) scale(.38)'}));
+  sparkle.append(make('path',{class:'yg-water-rays',d:rays}));
+  sparkle.append(make('circle',{class:'yg-water-core',r:1.1}));
+  anchor.append(sparkle);
   group.append(anchor);
  }
  return group;

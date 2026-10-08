@@ -192,7 +192,7 @@
       "en": "Validating a generated answer",
       "ja": "生成された返答の検証"
     },
-    "explanation": "parseModel extracts and parses the structured model answer, validates emotion, gesture, destination and text length, and resolves source IDs only against supplied page or web entries. Unsupported references are not converted into invented links. These structural safeguards do not prove every natural-language claim true. Requests still need verification, usage budget and evidence."
+    "explanation": "parseModel extracts and parses the structured model answer, validates emotion, gesture, destination and text length, and resolves source IDs only against supplied page or web entries. validReply also checks the prose: cleanAssistantText removes an unmistakably duplicated serialized text tail or a recognized nested reply envelope, and rejects ambiguous dangling response fields. Repaired wording discards stale expression indices. The display repeats this check for saved replies; user messages are not rewritten. Unsupported references are not converted into invented links. These structural safeguards do not prove every natural-language claim true. Requests still need verification, usage budget and evidence."
   },
   {
     "id": "perch",

@@ -66,7 +66,7 @@ test('all three painted waterfalls use traced clips and fade out before their vi
   assert.equal(fade.children.at(-1).attrs['stop-opacity'],'0');
   assert.equal(group.children.length,spec.threads.length+1);
   for(const p of group.children.filter(n=>n.name==='path')){assert.equal(p.attrs.class,'yg-distant-fall');assert.equal(p.attrs.stroke,`url(#yg-fall-fade-${spec.id})`);assert.match(p.attrs.style,/--duration:/);}
-  assert.equal(group.children.at(-1).attrs.class,'yg-water-glisten');assert.equal(group.children.at(-1).children.length,spec.glints.length);
+  assert.equal(group.children.at(-1).attrs.class,'yg-water-glisten');assert.equal(group.children.at(-1).children.filter(n=>n.attrs.class==='yg-water-star').length,spec.glints.length);
  }
  assert.equal(gardenWaterfalls[0].top,191);assert.equal(gardenWaterfalls[0].bottom,289); // Previously y264..350: spilling into the lake.
  assert.equal(gardenWaterfalls[1].outline.match(/M/g).length,2); // Separate sections above/below the balustrade, never on it.
@@ -88,17 +88,35 @@ test('lake, stream and small waterfalls glisten only inside their own water wind
   assert.equal(+layer.attrs.opacity,spec.opacity);
   const clip=defs.children.find(n=>n.attrs.id===`yg-water-clip-${spec.id}`);
   assert.equal(clip.attrs.clipPathUnits,'userSpaceOnUse');assert.equal(clip.children[0].attrs.d,spec.outline);
-  const glints=layer.children.at(-1);assert.equal(glints.attrs.class,'yg-water-glisten');assert.equal(glints.children.length,spec.points.length);
-  for(const anchor of glints.children)timings.push(anchor.children[0].attrs.style);
+  const glints=layer.children.at(-1),stars=glints.children.filter(n=>n.attrs.class==='yg-water-star');assert.equal(glints.attrs.class,'yg-water-glisten');assert.equal(stars.length,spec.points.length);
+  for(const anchor of stars)timings.push(anchor.children[0].attrs.style);
  }
  assert(gardenWaterSurfaces[0].opacity<gardenWaterSurfaces[1].opacity&&gardenWaterSurfaces[1].opacity<gardenWaterSurfaces[2].opacity);
  assert(gardenWaterSurfaces[0].points.every(p=>p[2]<gardenWaterSurfaces[2].points[0][2]));
  // Include separate existing waterfall/pond groups: their first glints must
  // not share a zero delay or repeat an index-derived timing sequence.
- for(const spec of gardenWaterfalls)for(const n of waterGlisten(scene.ownerDocument,spec.glints).children)timings.push(n.children[0].attrs.style);
- for(const n of waterGlisten(scene.ownerDocument,[[160,578],[319,607],[403,608]]).children)timings.push(n.children[0].attrs.style);
+ for(const spec of gardenWaterfalls)for(const n of waterGlisten(scene.ownerDocument,spec.glints).children.filter(n=>n.attrs.class==='yg-water-star'))timings.push(n.children[0].attrs.style);
+ for(const n of waterGlisten(scene.ownerDocument,[[160,578],[319,607],[403,608]]).children.filter(n=>n.attrs.class==='yg-water-star'))timings.push(n.children[0].attrs.style);
  assert.equal(new Set(timings).size,timings.length);
  assert.equal(life.svg.children.filter(n=>n.attrs.class==='yg-lake-light').length,0,'no unmasked reflections over islands');
+});
+
+test('reference-style water stars have tapered rays, weaker diagonal spikes and a bounded soft halo',()=>{
+ const {scene}=fixture(),doc=scene.ownerDocument;
+ const first=waterGlisten(doc,[[319,607,1.15]]),second=waterGlisten(doc,[[483,279,.28]]);
+ const gradient=first.children[0].children[0],other=second.children[0].children[0];
+ assert.notEqual(gradient.attrs.id,other.attrs.id,'water groups never share conflicting gradient ids');
+ assert.equal(gradient.name,'radialGradient');assert.equal(gradient.children.at(-1).attrs['stop-opacity'],'0');
+ const star=first.children[1],pulse=star.children[0];assert.equal(star.attrs.transform,'translate(319 607) scale(1.15)');
+ assert.deepEqual(pulse.children.map(n=>n.attrs.class),['yg-water-halo','yg-water-rays-faint','yg-water-rays','yg-water-core']);
+ const [halo,diagonal,rays,core]=pulse.children;
+ assert.equal(halo.attrs.fill,`url(#${gradient.attrs.id})`);assert.equal(+halo.attrs.r,10);
+ assert.match(rays.attrs.d,/M0 -21 C/);assert.match(rays.attrs.d,/18 0/);assert.match(rays.attrs.d,/0 21/);
+ assert.equal(diagonal.attrs.transform,'rotate(45) scale(.38)');assert.equal(+core.attrs.r,1.1);
+ const css=readFileSync(new URL('../assets/yuki/home/garden.css',import.meta.url),'utf8');
+ assert.match(css,/\.yg-water-rays-faint\{[^}]*opacity:\.48/);
+ assert.match(css,/\.yg-water-glisten\{pointer-events:none\}/);
+ assert.doesNotMatch(css,/\.yg-water-sparkle\{[^}]*filter:/,'bounded gradient replaces an expensive blur on every star');
 });
 test('reduced motion and pause keep static interactions but do not emit or advance motion',()=>{
  const {life,scene,media,messages}=fixture(true);scene.dataset.paused='true';assert(!life.active());life.activate('books');assert.equal(life.particles.items.length,0);assert(messages[0].includes('今日'));

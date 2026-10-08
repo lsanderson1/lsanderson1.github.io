@@ -18,10 +18,21 @@ for(const p of k.pages){
   assert(html.includes(`data-yuki-section="${s.id}"`),`${p.url}: missing ${s.id}`);
   assert(html.includes(`id="${s.anchor}"`)||html.includes(`id='${s.anchor}'`),`${p.url}: missing anchor ${s.anchor}`);
   assert(s.title&&typeof s.text==='string');sections++;if(s.kind==='image')images++;
+  // Every published picture, not just the landing portrait, must survive the
+  // exact page/viewport reference and arrive as evidence for an answer.
+  if(s.kind==='image'){
+   const selected=retrieveKnowledge(k,{page:p.url,lang:p.lang,message:p.lang==='ja'?'この画像を説明して':'Explain this picture',history:[],context:{section:s.id,images:[s.id]}});
+   assert.equal(selected.view.visual.images[0]?.sourceId,`${p.id}::${s.id}`);
+   assert(selected.pages.some(entry=>entry.id===`${p.id}::${s.id}`&&entry.text.includes(s.title)));
+  }
  }
  assert(!p.text.includes('yuki-chat-consent-v1'));assert(!p.text.includes('document.querySelector'));
 }
 for(const lang of ['en','ja']){
+ const home=k.pages.find(p=>p.url===(lang==='ja'?'/ja/':'/'));
+ const portrait=home.sections.find(s=>s.kind==='image'&&s.title.includes(k.owner));assert(portrait,'Home portrait explicitly identifies the owner');
+ const identity=retrieveKnowledge(k,{page:lang==='ja'?'/ja/resume.html':'/resume.html',lang,message:lang==='ja'?'ホームページの写真の人は誰？':'Who is in the picture on the landing page?',history:[{role:'user',content:'Tell me about Yuki'}],context:{section:'s0'}});
+ assert.equal(identity.view.visual.images[0].sourceId,`${home.id}::${portrait.id}`);assert(identity.pages[0].text.includes(k.owner));
  const url=(lang==='ja'?'/ja':'')+'/unreal-journey/project-1-interactable-museum.html';
  const museum=k.pages.find(p=>p.url===url);assert(museum);
  assert(museum.text.includes('Project01.exe')); // Layout-provided download help.

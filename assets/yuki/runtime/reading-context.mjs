@@ -81,10 +81,10 @@ export function chooseReadingSection(headings,height,header=0,width=Infinity){
  }
  return chosen??valid.find(h=>h.kind==='image'&&h.bottom>header&&h.top<height)??null;
 }
-export function readPageSection(doc,height,header=0){
- const main=doc.querySelector('main');if(!main)return null;
+function pageReadingEntries(doc){
+ const main=doc.querySelector('main');if(!main)return [];
  const end=main.getBoundingClientRect().bottom,width=doc.documentElement?.clientWidth||Infinity;
- const headings=[...main.querySelectorAll('[data-yuki-section]')].filter(el=>el.getClientRects().length&&!el.closest('[hidden], [aria-hidden="true"]')).flatMap(el=>{
+ return [...main.querySelectorAll('[data-yuki-section]')].filter(el=>el.getClientRects().length&&!el.closest('[hidden], [aria-hidden="true"]')).flatMap(el=>{
   const r=el.getBoundingClientRect(),clip=el.closest('[data-feature-carousel]')?.getBoundingClientRect(),card=el.closest('.fp-feature')?.getBoundingClientRect()??r;
   const left=Math.max(0,clip?.left??0),right=Math.min(width,clip?.right??width);
   // A carousel's off-screen cards still have DOM rectangles, but they are
@@ -92,7 +92,16 @@ export function readPageSection(doc,height,header=0){
   if(r.right<=left||r.left>=right||clip&&(card.left>=(left+right)/2||card.right<=(left+right)/2))return [];
   return [{id:el.dataset.yukiSection,title:(el.getAttribute('alt')||el.textContent).trim(),kind:el.tagName==='IMG'?'image':'section',level:Number(el.tagName.slice(1))||0,top:r.top,bottom:r.bottom,left:r.left,right:r.right,end}];
  });
- return chooseReadingSection(headings,height,header,width);
+}
+export function readPageSection(doc,height,header=0){
+ return chooseReadingSection(pageReadingEntries(doc),height,header,doc.documentElement?.clientWidth||Infinity);
+}
+export function readPageImages(doc,height,header=0){
+ // IDs only: no pixels, form text, conversation content or arbitrary DOM text.
+ // Side portraits are useful context without replacing the main reading title.
+ return pageReadingEntries(doc).filter(h=>h.kind==='image'&&h.bottom>header&&h.top<height)
+  .sort((a,b)=>Math.min(b.bottom,height)-Math.max(b.top,header)-(Math.min(a.bottom,height)-Math.max(a.top,header)))
+  .slice(0,4).map(h=>h.id);
 }
 export function guideReference(el,page,url){
  if(url){const path=safeSitePath(url);if(path){const target=new URL(path,'https://portfolio.invalid');if(target.pathname!==page)return {page:target.pathname,section:''};}}

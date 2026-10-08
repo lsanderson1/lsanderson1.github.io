@@ -1,4 +1,4 @@
-import {waterGlisten} from './water-light.mjs';
+import {waterGlisten} from './water-light.mjs?v=2';
 // Coordinates are traced in the original 1536 x 1024 illustration, not the
 // viewport. The same water mask controls drawing AND pointer hit testing.
 export const pondShore=[[81,540],[112,534],[192,535],[259,530],[340,533],[406,538],[449,551],[448,579],[462,600],[438,619],[393,635],[327,648],[239,657],[175,660],[106,650],[70,639],[41,621],[22,600],[48,582],[65,573]];
@@ -65,7 +65,7 @@ export class GardenPond{
    surface.append(svgElement(this.doc,'path',{class:'yg-water-glint',d:`M${x} ${y} q${length/2} -2 ${length} 0`,style:`--delay:${-i*.71}s;--duration:${3.4+(i%5)*.6}s`}));
   }
   this.ripples=svgElement(this.doc,'g',{class:'yg-pond-ripples'});surface.append(this.ripples);
-  surface.append(waterGlisten(this.doc,ambientPoints.map((p,i)=>[p.x,p.y,.75+(i%3)*.15])));
+  surface.append(waterGlisten(this.doc,ambientPoints.map((p,i)=>[p.x,p.y,.95+(i%3)*.2])));
   for(const [i,p] of [{x:197,y:596},{x:343,y:608},{x:414,y:552}].entries()){
    const drift=svgElement(this.doc,'g',{transform:`translate(${p.x} ${p.y})`});
    drift.append(svgElement(this.doc,'path',{class:'yg-water-petal',d:'M-4 0 Q-1 -4 5 -1 Q2 4 -4 0',style:`--delay:${i*-3}s`}));surface.append(drift);

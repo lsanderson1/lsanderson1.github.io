@@ -83,7 +83,7 @@ test('translation batches remain bounded for Japanese and heavily escaped inputs
  const all=cleanMessages(Array.from({length:12},(_,i)=>messageRecord('assistant',i%2?'龍'.repeat(2000):'"\\\n'.repeat(600),'en')));
  for(let i=0;i<12;i++){
   const batch=translationBatch(all,'ja');if(!batch.length)break;
-  assert(batch.reduce((n,m)=>n+m.text.length,0)<=3000);assert(new TextEncoder().encode(JSON.stringify(batch)).length<=10000);assert.doesNotThrow(()=>validateTranslations(batch));
+  assert(batch.reduce((n,m)=>n+m.text.length,0)<=4000);assert(new TextEncoder().encode(JSON.stringify(batch)).length<=10000);assert.doesNotThrow(()=>validateTranslations(batch));
   applyTranslations(all,batch.map(m=>({id:m.id,text:'翻訳済み'})),'ja');
  }
  assert.equal(translationBatch(all,'ja').length,0);
@@ -91,7 +91,7 @@ test('translation batches remain bounded for Japanese and heavily escaped inputs
 
 test('translation validation rejects truncation, wrong IDs, duplicates, extra messages and oversized content atomically',()=>{
  const batch=[{id:'a',role:'assistant',text:original},{id:'b',role:'user',text:'Tell me more'}];
- for(const items of [[],[{id:'a',text:'ok'}],[{id:'a',text:'ok'},{id:'a',text:'ok'}],[{id:'a',text:'ok'},{id:'wrong',text:'ok'}],[{id:'a',text:'ok'},{id:'b',text:' '}],[{id:'a',text:'x'.repeat(4001)},{id:'b',text:'ok'}]]){
+ for(const items of [[],[{id:'a',text:'ok'}],[{id:'a',text:'ok'},{id:'a',text:'ok'}],[{id:'a',text:'ok'},{id:'wrong',text:'ok'}],[{id:'a',text:'ok'},{id:'b',text:' '}],[{id:'a',text:'x'.repeat(6001)},{id:'b',text:'ok'}]]){
   assert.throws(()=>checkedTranslations(items,batch));assert.throws(()=>parseTranslations({response:{translations:items}},batch));
  }
  assert.throws(()=>parseTranslations({choices:[{finish_reason:'length',message:{content:'{}'}}]},batch));
