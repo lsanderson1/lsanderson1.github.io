@@ -2,7 +2,7 @@
 // picture and pans with Yuki; her feet and travel path are remapped together.
 import {HomeDialogue} from './home-dialogue.mjs';
 import {attachAmbience} from './ambience.mjs';
-import {GardenCamera,attachGardenExplorer} from './camera.mjs';
+import {GardenCamera,attachGardenExplorer} from './camera.mjs?v=2';
 import {GardenPond} from './pond.mjs';
 import {GardenWorldLife} from './world-life.mjs';
 export const gardenSpots={nest:{x:.20,y:.775},pond:{x:.35,y:.655},lookout:{x:.53,y:.48},books:{x:.745,y:.635},treasures:{x:.67,y:.80}};
@@ -32,6 +32,7 @@ export class GardenHome{
   this.remark();
  }
  fitView(position){this.camera?.update(position,{reduced:this.reduced});}
+ setPresence(present){const thought=this.doc.querySelector('.yg-thought');if(thought&&thought.hidden===present)thought.hidden=!present;}
  get height(){return Math.max(90,Math.min(165,(this.scene.parentElement??this.scene).getBoundingClientRect().width*.155));}
  point(id=this.selected){return gardenPoint(id,this.scene.getBoundingClientRect(),window.scrollY);}
  spotAt(position){if(!position)return null;return Object.keys(gardenSpots).find(id=>{const p=this.point(id);return Math.hypot(position.x-p.x,position.y-p.y)<18;})??null;}

@@ -1,18 +1,19 @@
 /* Same shared portfolio header/theme. Only the garden below it is immersive. */
 html:has(.yg-page),body:has(.yg-page){height:100%;overflow:hidden;overscroll-behavior:none}
-/* The shared 88%-opaque, blurred header needs scenery behind its glass.
-   Keep its normal theme and layout; only supply the missing ambient backdrop. */
-body:has(.yg-page){display:flex;flex-direction:column;height:100dvh;background-image:url('./petal-nook.png');background-size:cover;background-position:center top;background-repeat:no-repeat}
+/* One moving scene extends beneath the shared glass header. No second image
+   that can drift out of alignment when the visitor pans the garden. */
+body:has(.yg-page){display:flex;flex-direction:column;height:100dvh}
 body:has(.yg-page)>.fp-nav{flex-shrink:0}
 .yg-main{position:relative;flex:1;min-height:0;isolation:isolate}
 .yg-page,.yg-world{position:absolute;inset:0;margin:0;padding:0;overflow:clip}
-.yg-world{background:#5f8160}
+.yg-page{overflow:visible}
+.yg-world{top:calc(-1 * var(--yg-header-height,64px));background:#5f8160}
 .yg-scene{position:absolute;left:0;top:0;width:100%;aspect-ratio:3/2;overflow:hidden;isolation:isolate;will-change:left,top}
 .yg-backdrop{display:block;width:100%;height:100%;max-width:none}
 .yg-hotspots button{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);display:grid;place-items:center;width:44px;height:44px;padding:0;border:1px solid #fff9;border-radius:50%;background:#20483de0;color:#fff8dc;font:24px/1 Georgia,serif;box-shadow:0 0 18px #fff2bd66;cursor:pointer;z-index:2}
 .yg-hotspots button:hover,.yg-hotspots button[aria-pressed=true]{background:#5c4435;box-shadow:0 0 0 3px #ffe5a470,0 0 22px #fff2bd88}
 .yg-page button:focus-visible,.yg-menu summary:focus-visible{outline:3px solid var(--primary);outline-offset:3px}
-.yg-controls{position:absolute;left:max(16px,env(safe-area-inset-left));top:14px;z-index:4}
+.yg-controls{position:absolute;left:max(16px,env(safe-area-inset-left));top:calc(var(--yg-header-height,64px) + 14px);z-index:4}
 .yg-world{touch-action:none}
 .yg-world:focus-visible{outline:2px solid #fff5ab;outline-offset:-3px}
 .yg-pan-edge{position:absolute;top:46%;z-index:3;display:grid;place-items:center;width:32px;height:58px;padding:0;border:1px solid #fff8;border-radius:18px;background:#234b3bb3;color:#fffef1;font:30px/1 Georgia,serif;cursor:pointer;box-shadow:0 2px 8px #10251933}
@@ -25,9 +26,10 @@ body:has(.yg-page)>.fp-nav{flex-shrink:0}
 .yg-menu button{display:block;width:100%;text-align:left;padding:10px 12px;color:var(--foreground);background:transparent;border:0;border-radius:6px;font:inherit;cursor:pointer}
 .yg-menu button:hover,.yg-menu button[aria-pressed=true]{background:var(--muted)}
 .yg-menu button:disabled{opacity:.6;cursor:wait}.yg-menu hr{margin:6px 0;border-color:var(--border)}
-.yg-beta{position:absolute;right:max(18px,env(safe-area-inset-right));top:18px;background:#203e35e6;color:#fff6dc;padding:4px 8px;border-radius:6px;font:600 10px/1.6 system-ui;letter-spacing:.1em;pointer-events:none}
+.yg-beta{position:absolute;right:max(18px,env(safe-area-inset-right));top:calc(var(--yg-header-height,64px) + 18px);background:#203e35e6;color:#fff6dc;padding:4px 8px;border-radius:6px;font:600 10px/1.6 system-ui;letter-spacing:.1em;pointer-events:none}
 .yg-thought{position:absolute;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;gap:8px;width:max-content;max-width:min(660px,calc(100% - 36px));color:#fffef1;text-shadow:0 1px 3px #0d261a,0 2px 12px #16311b,1px 0 2px #16311b,-1px 0 2px #16311b;pointer-events:none;z-index:3}
 .yg-thought::before{content:'';position:absolute;inset:-18px -24px;background:radial-gradient(ellipse,#143d27b3,transparent 72%);z-index:-1;pointer-events:none}
+.yg-thought[hidden]{display:none}
 .yg-thought p{font-family:inherit;font-weight:500;font-size:clamp(13px,1.6vw,17px);line-height:1.6;text-align:center;margin:0}
 .yg-thought button{flex-shrink:0;width:44px;height:44px;border:1px solid #fffa;border-radius:50%;background:#21462ce6;color:#fffef1;font:22px/1 system-ui;pointer-events:auto;cursor:pointer}
 @media(max-width:700px){.yg-thought{bottom:76px}}

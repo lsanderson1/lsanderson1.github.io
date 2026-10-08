@@ -60,6 +60,16 @@ export function resolveGuideRequest(text,pages,currentPath,{lang='en',base=''}={
  if(candidates.length)return {target:guideTarget(page.url,pages,lang,base)};
  return {choices:[]};
 }
+// A clarification is answered in the conversation, not by a second start button.
+// Only the offered catalog entries can match a short name or numbered answer.
+export function guideChoice(text,choices){
+ const q=words(text).replace(/^(?:the |number |option )/,'').replace(/(?: please| お願い|でお願い|番)$/,'').trim();
+ const ordinal={'first':1,'second':2,'third':3,'fourth':4,'最初':1,'一つ目':1,'二つ目':2,'三つ目':3,'四つ目':4};
+ const n=ordinal[q]??(/^\d$/.test(q)?Number(q):0);
+ if(n)return choices[n-1]??null;
+ const matches=choices.filter(t=>nameScore(q,t.title)>0);
+ return matches.length===1?matches[0]:null;
+}
 export function planGuideStep(target,currentPath,pages,{lang='en',base=''}={}){
  const checked=guideTarget(target?.url,pages,lang,base);if(!checked)return null;
  const current=guidePath(currentPath,base),destination=guidePath(checked.url,base);
@@ -107,10 +117,27 @@ export class GuideJourney {
  clear(){this.state=null;this.persist();}
 }
 
-export function guideCopy(step,{lang='en',detour=false}={}){
+export class GuideDialogue {
+ constructor(storage,random=Math.random){this.storage=storage;this.random=random;this.recent=[];try{const v=JSON.parse(storage?.getItem('yuki-guide-lines-v1'));if(Array.isArray(v))this.recent=v.filter(n=>Number.isInteger(n)&&n>=0&&n<8).slice(-6);}catch{}}
+ copy(step,options){const choices=Array.from({length:8},(_,i)=>i).filter(i=>!this.recent.includes(i));const index=choices[Math.min(choices.length-1,Math.floor(this.random()*choices.length))];
+  if(step.kind==='arrive'){this.recent=[...this.recent,index].slice(-6);try{this.storage?.setItem('yuki-guide-lines-v1',JSON.stringify(this.recent));}catch{}}
+  return guideCopy(step,{...options,variant:index});
+ }
+}
+export function guideCopy(step,{lang='en',detour=false,variant=0}={}){
  const ja=lang==='ja';
  if(detour)return ja?`あれっ、ちょっと寄り道だね。「${step.target?.title??step.title}」への道は覚えているよ。案内を続ける？`:`Oop, a little detour! I still remember the way to ${step.target?.title??step.title}. Shall we continue, or explore here?`;
  if(step.kind==='nav')return ja?`まずは上の「${step.title}」だよ。このタブをクリックしてね。次のページでも一緒に案内するよ！`:`First stop: ${step.title} up in the header! Click the tab I’m pointing to. I’ll meet you on the next page and keep guiding.`;
  if(step.kind==='link')return ja?`着いた！ここに「${step.title}」があるよ。指しているタイトルをクリックしてみて。開いたら、何から見てみたい？`:`We’re in the right section! Here’s ${step.title}—click the title I’m pointing to. What would you like to explore once we’re inside?`;
- return ja?`じゃーん、「${step.title}」に着いたよ！ぱたぱた、おつかれさま。ここの説明を聞く？それとも気になる項目へ案内しようか？`:`Ta-da, we’ve reached ${step.title}! Tiny wings, successful mission. Would you like me to explain this, or lead you to something specific here?`;
+ const endings=[
+  [`Ta-da, we’ve reached ${step.title}! Would you like me to explain what’s here?`,`じゃーん、「${step.title}」に着いたよ！ここの説明を聞く？`],
+  [`Here we are: ${step.title}. A soft landing for once! What caught your eye here?`,`「${step.title}」に到着！今日はそーっと着地できたよ。何が気になった？`],
+  [`Found it—${step.title}! My little map can rest now. What would you like to understand about this part?`,`見つけた、「${step.title}」だよ！小さな地図もちょっと休憩。ここで詳しく知りたいことはある？`],
+  [`${step.title}, right here! Wings folded, ears ready. What brought you to this part of the portfolio?`,`ここが「${step.title}」！羽をたたんで、お話を聞く準備もできたよ。どんなところに興味があった？`],
+  [`A little flutter, and we’re at ${step.title}. Shall we unpack what this page is about together?`,`ぱたぱたっ、「${step.title}」まで来たよ。一緒に、どんな内容か見てみようか？`],
+  [`This is ${step.title}—our destination! I’ll stay nearby. Is there a particular detail you want to explore?`,`目的地の「${step.title}」だよ！近くにいるからね。もっと見てみたいところはある？`],
+  [`We made it to ${step.title}! My glasses survived the flight, too. Where would you like to begin?`,`「${step.title}」に着いたね！眼鏡もちゃんと無事。どこから見てみようか？`],
+  [`Your stop: ${step.title}. One tiny guide, mission complete! What should we look into here?`,`「${step.title}」、到着でーす。小さな案内役、お仕事できた！ここでは何を調べてみようか？`]
+ ];
+ return endings[Math.abs(Math.trunc(variant))%endings.length][ja?1:0];
 }

@@ -4,11 +4,11 @@ import {IdleRenderer} from './runtime/idle-renderer.mjs';
 import {takeoffMs,landingMs,contactPhases} from './runtime/timing.mjs';
 import {airClips} from './runtime/air-reactions.mjs';
 import {emotionPlayback,applyReplyCue} from './runtime/reply-cues.mjs?v=2';
-import {SiteGuide} from './runtime/site-guide.mjs?v=5';
+import {SiteGuide} from './runtime/site-guide.mjs?v=6';
 import {pageLayout,bubblePlacement,bubbleHeightLimit,pointerTarget} from './runtime/page-layout.mjs?v=9';
 import {localizedPages,localizePath,findPageTarget,pendingGuide,targetRect,curateDestinations} from './runtime/page-targets.mjs?v=9';
 import {PageObstacles,visibleSpot,guideSpot,clampFoot,fits,atFoot} from './runtime/clear-space.mjs?v=5';
-import {GuideJourney,guideTarget as checkedGuideTarget,isGuideRequest,resolveGuideRequest,planGuideStep,findGuideElement,guideCopy} from './runtime/guide-journey.mjs?v=1';
+import {GuideJourney,GuideDialogue,guideTarget as checkedGuideTarget,isGuideRequest,resolveGuideRequest,guideChoice,planGuideStep,findGuideElement} from './runtime/guide-journey.mjs?v=3';
 import {PageMotion,pageProjection,inViewport,containPageRover,prepareCall} from './runtime/page-motion.mjs?v=8';
 import {CallPerches} from './runtime/call-perches.mjs?v=7';
 import {VisitorPersonality,conversationOpening,localizeGreetingMessages,replySequence,cueArtwork} from './runtime/visitor-personality.mjs?v=9';
@@ -16,7 +16,7 @@ import {ChatAvailability,ChatPermission,ChatSession,ChatVerification,chatEnviron
 import {ConversationMemory} from './runtime/conversation-memory.mjs?v=1';
 import {VisitorInterests} from './runtime/visitor-interests.mjs';
 import {expressionSequence} from './runtime/reply-beats.mjs';
-import {GardenHome} from './home/garden.mjs';
+import {GardenHome} from './home/garden.mjs?v=2';
 import {YukiLocation,capturePose,restorePose,poseArtwork,locationLabel,locationPage,portalSection} from './home/location.mjs';
 import {summonTiming,summonPhase,callFlightDuration,catchInFlight} from './home/summon.mjs';
 import {ConversationMoments,shouldWelcomeOnRefresh,isLeavingLink} from './runtime/conversation-moments.mjs?v=1';
@@ -41,7 +41,8 @@ async function start(){
  let lastFlop=0;try{const stamp=Number(readingStorage?.getItem('yuki-last-flop-v1'));if(Number.isFinite(stamp)&&stamp>0&&stamp<=Date.now())lastFlop=stamp;}catch{}
  const flopRemaining=()=>{try{const stamp=Number(readingStorage?.getItem('yuki-last-flop-v1'));if(Number.isFinite(stamp)&&stamp>0&&stamp<=Date.now())lastFlop=Math.max(lastFlop,stamp);}catch{}return Math.max(0,300000-(Date.now()-lastFlop));};
  const rememberFlop=()=>{lastFlop=Date.now();try{readingStorage?.setItem('yuki-last-flop-v1',String(lastFlop));}catch{}};
- let journey=new GuideJourney(readingStorage),journeySerial=0,journeyStep=null,markedTarget=null,knowledgeReady;
+ let journey=new GuideJourney(readingStorage),journeySerial=0,journeyStep=null,markedTarget=null,knowledgeReady,guideChoices=[];
+ const guideDialogue=new GuideDialogue(readingStorage);
  let visitorStorage;try{visitorStorage=localStorage;}catch{}const personality=new VisitorPersonality(visitorStorage);
  let messages=saved.messages??[],variety=cleanVariety(saved.variety),companion,guide,renderer,clips,bodyHeight=155,last=0,loading=0,busy=false,translationFailed=false,pendingCue=null,controller;
  let hidden=saved.hidden??false,paused=saved.paused??false,roam=saved.mobilityVersion===2?saved.roam:true,open=false,ready=false,onScreen=true,calling=false,callLoading=false;
@@ -65,7 +66,6 @@ async function start(){
  <div class="yuki-panel-inner"><header class="yuki-heading"><h2 id="yuki-title">ゆき <span class="yuki-beta">BETA</span><small>${tr('Small Dragon, Big Dreams','小さな案内役')}</small></h2><button class="yuki-menu" aria-expanded="false" aria-controls="yuki-more" aria-label="${tr('Guide, history and settings','案内・履歴・設定')}">⋯</button><button class="yuki-close" aria-label="${tr('Close chat','チャットを閉じる')}">×</button></header>
  <p class="yuki-aside" role="status" hidden></p><div class="yuki-speech" role="log" aria-live="polite" aria-atomic="true" aria-label="${tr('Yuki says','ゆきの返事')}"></div><p class="yuki-status" role="status"></p><button class="yuki-translate" type="button" hidden>${tr('Retry translation','翻訳を再試行')}</button>
  <p class="yuki-reading"><span class="yuki-page"></span><span class="yuki-view"></span><button class="yuki-explain" type="button" hidden>${tr('Explain what you showed me','案内したところを説明して')}</button></p>
- <div class="yuki-route-actions" hidden></div>
  <form class="yuki-form"><textarea maxlength="1000" rows="1" aria-label="${tr('Message Yuki','ゆきへのメッセージ')}" placeholder="${tr('Talk to Yuki…','ゆきに話しかける…')}"></textarea><button type="submit">${tr('Send','送信')}</button>
  <details class="yuki-setup"><summary></summary><div class="yuki-privacy"><p>${tr('Talking to Yuki sends your message, recent and relevant older chat, and the current page/guide context to Cloudflare Workers AI. Opening an empty or already-translated conversation does not send anything. After a language switch, earlier messages may be sent for translation as explained below. Please don’t share sensitive information.','ゆきへの送信時に、メッセージ・直近と関連する過去の会話・現在のページや案内先をCloudflare Workers AIへ送ります。会話が空か翻訳済みの場合、開くだけでは送信しません。言語を切り替えた後は、下記の説明のとおり過去の会話を翻訳のために送る場合があります。個人情報・機密情報は入力しないでください。')}</p><p>${tr('Requested guided routes can also generate an AI follow-up at each stop. Free usage limits still apply. A verified chat pass lasts up to two hours in this tab; the security check appears only when needed.','依頼した道案内では、各地点でAIが続きの質問を作る場合があります。無料利用上限があります。認証済みチャットはこのタブで最大2時間有効で、必要なときだけセキュリティ認証が表示されます。')}</p><p>${tr('Yuki recalls up to 40 earlier exchanges in this tab for up to 24 hours after the last exchange. This is not permanent memory or a server-side profile. Clear chat only removes the visible conversation; these memories stay until they expire or this tab’s session data is removed.','このタブでは最大40件の過去のやり取りを、最後の会話から最大24時間まで記憶します。永久的な記憶やサーバー上のプロフィールではありません。「チャットを消去」では表示中の会話だけを消し、記憶は期限切れやこのタブのセッションデータの削除まで保持します。')}</p></div></details>
  <div class="yuki-check"><p class="yuki-verification-status" role="status"></p><div class="yuki-verification"></div><button class="yuki-retry" type="button" hidden>${tr('Retry verification','認証をやり直す')}</button><button class="yuki-cancel" type="button" hidden>${tr('Cancel sending','送信をキャンセル')}</button></div></form>
@@ -122,7 +122,7 @@ async function start(){
    if(sources.length){const links=document.createElement('span');links.className='yuki-sources';for(const s of sources){
     const external=safeWebURL(s.url);
     if(external){const a=document.createElement('a');a.href=external;a.target='_blank';a.rel='noopener noreferrer';a.textContent=s.title+' ↗';a.setAttribute('aria-label',tr('Web source (opens a new tab): ','ウェブ出典（新しいタブ）：')+s.title);links.append(a);continue;}
-    const url=localizePath(s.url,knowledge,ja?'ja':'en',base);if(!url)continue;const a=document.createElement('a');a.href=url;a.textContent=s.title;a.onclick=e=>{if(e.button===0&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey&&!e.altKey){if(new URL(url,location.href).pathname===location.pathname){e.preventDefault();void visit(url,s.title);}else{try{sessionStorage.setItem('yuki-guide-v1',JSON.stringify({url,at:Date.now()}));}catch{}}}};const show=document.createElement('button');show.textContent=tr('Show me','案内して');show.setAttribute('aria-label',tr('Show me: ','案内して：')+s.title);show.onclick=()=>visit(url,s.title);links.append(a,show);}p.append(links);}
+    const url=localizePath(s.url,knowledge,ja?'ja':'en',base);if(!url)continue;const a=document.createElement('a');a.href=url;a.textContent=s.title;a.onclick=e=>{if(e.button===0&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey&&!e.altKey){if(new URL(url,location.href).pathname===location.pathname){e.preventDefault();void visit(url,s.title);}else{try{sessionStorage.setItem('yuki-guide-v1',JSON.stringify({url,at:Date.now()}));}catch{}}}};links.append(a);}p.append(links);}
    $('.yuki-speech').replaceChildren(p);$('.yuki-speech').scrollTop=0;
   }if(remember){translationUI();save();}
  }
@@ -204,13 +204,15 @@ async function start(){
   const target=chooseLandingSpot();
   return {...target,y:target.y+scrollY};
  }
- async function callYuki({keepJourney=false}={}){
+ async function callYuki({keepJourney=false,destinationPoint=null}={}){
+  // A reload during guided arrival resumes the existing timed entrance.
+  if(keepJourney&&calling&&portalTrip?.kind==='incoming')return new Promise(resolve=>{const done=portalTrip.resolve;portalTrip.resolve=()=>{done?.();resolve();};});
   if(garden&&resident&&!journey.active&&!portalTrip)return garden.action('fly');
   if(!ready||calling||callLoading)return;const button=$('.yuki-launcher');callLoading=true;button.disabled=true;
   if(!keepJourney)stopJourney();
   try{await prepareTravel();hidden=false;paused=false;portalAfterglow=null;portal.hidden=true;guide.reset();guideTarget=null;highlightUntil=0;
    if(!resident){
-    const origin={...presence.state},target=garden?garden.point(garden.selected):chooseMovementTarget();
+    const origin={...presence.state},target=destinationPoint??(garden?garden.point(garden.selected):chooseMovementTarget());
     calling=true;sync();
     const timing=summonTiming(origin,clips,{reduced:media.matches});
     status(tr('Coming! Let me fly over from my little spot. Watch for a little dragon sparkle!','今いる場所から飛んでいくね！ドラゴンのきらきらを目印に待ってて！'));
@@ -333,7 +335,13 @@ async function start(){
  async function showElement(d){
   if(!ready)return;if(d.journeySerial===undefined)stopJourney();status(tr('I’ll show you…','ご案内します…'));
   for(let parent=d.el.parentElement;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true;
-  try{if(!resident)await callYuki({keepJourney:d.journeySerial!==undefined});await prepareTravel();await wake();
+  try{if(!resident||portalTrip?.kind==='incoming'){
+    // The normal summon entrance uses her true previous page's header tab.
+    // Fly straight to the guided perch, not a random stop followed by a hop.
+    d.el.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});measure();
+    const spot=guideSpot(targetRect(d.el),restingExtent(),obstacleReader.read(layout.width,layout.height),layout,bodyHeight);
+    await callYuki({keepJourney:d.journeySerial!==undefined,destinationPoint:{...spot,y:spot.y+scrollY}});
+   }await prepareTravel();await wake();
    if(d.journeySerial!==undefined&&d.journeySerial!==journeySerial)return;
    paused=false;hidden=false;sync();
    calling=false;reactionVersion++;pendingCue=null;guide.destinations.set(d.id,d);panel(false,{restoreFocus:false});document.activeElement?.blur();guide.request(d.id);
@@ -379,15 +387,14 @@ async function start(){
   if(a==='hide'){hidden=!hidden;if(hidden){stopJourney();calling=false;controller?.abort();reactionVersion++;pendingCue=null;panel(false);}}if(a==='pause')paused=!paused;
   if(a==='roam'&&ready){b.disabled=true;try{await prepareTravel();roam=!roam;motion.defer();}catch{status(tr('Flight artwork is unavailable. Please retry.','飛行アニメーションを読み込めませんでした。'));}finally{b.disabled=false;}}
   sync();};
- async function guideDestination(id){
-  if(!paths[id])return;
-  await visit(base+(ja?'/ja':'')+paths[id],names[id]);
- }
  function clearRouteMarker(){markedTarget?.classList.remove('yuki-route-target');markedTarget=null;}
- function stopJourney(){if(controller?.guideEvent)controller.abort();journeySerial++;journey.clear();journeyStep=null;clearRouteMarker();guide?.reset();guideTarget=null;highlightUntil=0;$('.yuki-route-actions').replaceChildren();$('.yuki-route-actions').hidden=true;}
+ function stopJourney(){if(controller?.guideEvent)controller.abort();journeySerial++;journey.clear();journeyStep=null;guideChoices=[];clearRouteMarker();guide?.reset();guideTarget=null;highlightUntil=0;}
  function cancelJourney(){stopJourney();addMessage('assistant',tr('Okay! Little map tucked away. What caught your eye here?','はーい、小さな地図をしまうね。ここでは何が気になった？'));status(tr('Explore at your own pace.','好きなペースで見てみよう！'));}
- function routeButtons(items){const box=$('.yuki-route-actions');box.replaceChildren();box.hidden=!items.length;for(const [label,action] of items){const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=action;box.append(b);}placeBubble();}
- function routeOptions(targets){routeButtons(targets.filter(Boolean).map(t=>[t.title,()=>beginJourney(t)]));}
+ function routeOptions(targets){
+  guideChoices=targets.filter(Boolean).slice(0,4);
+  const titles=guideChoices.map((t,i)=>`${i+1}. ${ja?'「'+t.title+'」':t.title}`).join('\n');
+  addMessage('assistant',tr('Which place shall we explore? Tell me its name or number, and I’ll lead the way.','どこへ行こうか？名前か番号を教えてくれたら、そのまま案内するよ。')+'\n'+titles);
+ }
  async function beginJourney(target){
   const checked=checkedGuideTarget(target?.url,knowledge,ja?'ja':'en',base);if(!checked)return;
   stopJourney();journey.start(checked.url,location.pathname);await leadJourney();
@@ -399,13 +406,12 @@ async function start(){
   if(!step){stopJourney();return;}
   const el=findGuideElement(document,step);
   if(!el){panel(true);addMessage('assistant',tr('I found the page in my map, but not its clickable link here. I won’t point at the wrong thing. You can open the exact page below.','地図にはあるけれど、このページに案内できるリンクが見つからないの。違うところは指さないよ。下のリンクから正しいページを開けるよ。'));
-   const a=document.createElement('a');a.href=target.url;a.textContent=target.title;$('.yuki-speech').lastElementChild.append(a);routeButtons([[tr('Stop leading','案内を終了'),cancelJourney]]);return;}
+   const a=document.createElement('a');a.href=target.url;a.textContent=target.title;$('.yuki-speech').lastElementChild.append(a);return;}
   if(garden&&gardenScene.contains(el)){
    const b=gardenScene.getBoundingClientRect(),r=el.getBoundingClientRect();
    garden.camera.revealPoint({x:((r.left+r.right)/2-b.left)/b.width,y:((r.top+r.bottom)/2-b.top)/b.height});gardenRect=null;
   }
   journeyStep=step;journey.expect(step.kind==='arrive'?target.url:step.url,location.pathname);
-  routeButtons([[tr('Stop leading','案内を終了'),cancelJourney]]);
   await showElement({id:'journey-'+journeySerial+'-'+step.kind,name:step.title,el,url:step.url,journeySerial});
  }
  function journeyArrived(d){
@@ -415,11 +421,8 @@ async function start(){
   status(tr('Guided route · click the highlighted link yourself.','道案内中・光っているリンクをクリックしてね。'));
   highlightUntil=Infinity;
   if(step.kind==='arrive'){
-   journey.clear();status(tr('You’ve arrived. What would you like to explore?','到着したよ。どこから見てみようか？'));
-   const page=knowledge.find(p=>p.url===step.url.split('#')[0]);
-   const sections=(page?.sections??[]).filter(s=>s.id!=='s0'&&s.kind!=='image'&&s.anchor&&s.anchor!==step.url.split('#')[1]).slice(0,2);
-   routeButtons([[tr('Explain this','ここを説明して'),()=>{if(online)$('.yuki-explain').click();else status(offline);}],...sections.map(s=>[s.title,()=>beginJourney(checkedGuideTarget(page.url+'#'+s.anchor,knowledge,ja?'ja':'en',base))]),[tr('All done','案内ありがとう'),()=>{stopJourney();panel(false);}]]);
-  }else routeButtons([[tr('Point again','もう一度指して'),()=>leadJourney()],[tr('Stop leading','案内を終了'),cancelJourney]]);
+   journey.clear();status(tr(`Arrived · ${step.title}`,`到着・「${step.title}」`));
+  }
  }
  async function resumeJourney(){
   if(!journey.active)return;
@@ -427,15 +430,16 @@ async function start(){
   if(!target){stopJourney();return;}
   const result=journey.enter(location.pathname,base);
   if(result==='detour'){
+   if(!resident)await callYuki({keepJourney:true});
    panel(true);void speakGuideFollowup({...target,kind:'detour'});
-   routeButtons([[tr('Continue guiding','案内を続けて'),()=>leadJourney()],[tr('Explore here instead','ここを見てみる'),cancelJourney]]);return;
+   return;
   }
   await leadJourney();
  }
  function speakGuideFollowup(step){
-  const fallback=()=>addMessage('assistant',guideCopy(step,{lang:ja?'ja':'en',detour:step.kind==='detour'}));
+  const fallback=()=>addMessage('assistant',guideDialogue.copy(step,{lang:ja?'ja':'en',detour:step.kind==='detour'}));
   if(!online||!permission.allowed||busy){fallback();return;}
-  return runChat(tr('Offer a contextual follow-up for this guided stop.','この案内地点に合った続きの質問をしてください。'),{kind:step.kind,url:step.url},fallback);
+  return runChat(tr('Offer a contextual follow-up for this guided stop.','この案内地点に合った続きの質問をしてください。'),{kind:step.kind,url:step.url,targetUrl:step.target?.url??step.url},fallback);
  }
  let reactionVersion=0;
  let talkTurn=0;
@@ -472,12 +476,14 @@ async function start(){
  addEventListener('storage',e=>{if(e.storageArea!==visitorStorage||![chatEnabledKey,searchConsentKey,null].includes(e.key))return;const wasSearch=searchPermission.allowed;permission.reload();searchPermission.reload();permissionUI();if(wasSearch&&!searchPermission.allowed&&busy)controller?.abort();if(!permission.allowed)withdrawPermission();});
  $('.yuki-form').onsubmit=async e=>{
   e.preventDefault();if(busy||!ready)return;const text=$('textarea').value.trim();if(!text)return;
-  if(journey.active&&/^(?:stop(?: guiding| leading)?|cancel(?: guide)?|案内をやめて|案内を終了)[.!。！]?$/i.test(text)){addMessage('user',text);$('textarea').value='';stopJourney();addMessage('assistant',tr('Okay! I’ll put my little map away. We can explore at your pace.','はーい、小さな地図をしまうね。好きなペースで見てみよう！'));return;}
-  if(journey.active&&/^(?:continue(?: guiding| leading)?|resume(?: guide)?|案内を続けて|続けて)[.!。！]?$/i.test(text)){addMessage('user',text);$('textarea').value='';await leadJourney();return;}
+  if((journey.active||journeyStep||guideChoices.length)&&/^(?:stop(?: guiding| leading)?|cancel(?: guide)?|all done|explore here(?: instead)?|案内をやめて|案内を終了|ここを見てみる)[.!。！]?$/i.test(text)){addMessage('user',text);$('textarea').value='';cancelJourney();return;}
+  if(journey.active&&(/^(?:continue(?: guiding| leading)?|resume(?: guide)?|point again|案内を続けて|続けて|もう一度指して)[.!。！]?$/i.test(text)||journey.state.paused&&/^(?:yes(?: please)?|sure|はい|うん|お願い)[.!。！]?$/i.test(text))){addMessage('user',text);$('textarea').value='';await leadJourney();return;}
+  const chosen=guideChoice(text,guideChoices);guideChoices=[];
+  if(chosen){addMessage('user',text);$('textarea').value='';await beginJourney(chosen);return;}
   const requested=resolveGuideRequest(text,knowledge,location.pathname,{lang:ja?'ja':'en',base});
   if(requested?.target){addMessage('user',text);$('textarea').value='';await beginJourney(requested.target);return;}
-  if(requested?.choices?.length){addMessage('user',text);$('textarea').value='';addMessage('assistant',tr('A few places match! Which one shall my little wings lead you to?','いくつか見つかったよ！どこへ案内しようか？'));routeOptions(requested.choices);return;}
-  if(!online||busy){status(offline);if(requested){addMessage('user',text);$('textarea').value='';addMessage('assistant',tr('Which page did you mean? Try a project title or choose a section below. I can lead you without AI; open the live site for explanations.','どのページかな？作品名を教えるか、下から選んでね。AIなしでも案内できるよ。詳しいお話は公開サイトでできるよ。'));routeOptions(Object.values(paths).map(path=>checkedGuideTarget(base+(ja?'/ja':'')+path,knowledge,ja?'ja':'en',base)));}return;}
+  if(requested?.choices?.length){addMessage('user',text);$('textarea').value='';routeOptions(requested.choices);return;}
+  if(!online||busy){status(offline);if(requested){addMessage('user',text);$('textarea').value='';addMessage('assistant',tr('Which page did you mean? Tell me its project title or section name, and I’ll lead you there.','どのページかな？作品名や項目の名前を教えてくれたら、案内するね。'));}return;}
   if(!permission.allowed){status(tr('AI chat is off. You can turn it on in the menu.','AIチャットはオフです。メニューでオンにできます。'));return;}
   await runChat(text);
  };
@@ -511,7 +517,6 @@ async function start(){
     else if(unique.length>1)routeOptions(unique);
     else if(paths[cue.destination])deferredGuide=checkedGuideTarget(base+(ja?'/ja':'')+paths[cue.destination],knowledge,ja?'ja':'en',base);
    }
-   if(!guideEvent&&paths[cue.destination]&&!cue.sources.length){const button=document.createElement('button');button.textContent=tr('Show me: ','案内して：')+names[cue.destination];button.onclick=async()=>{button.disabled=true;try{await guideDestination(cue.destination);}finally{button.disabled=false;}};$('.yuki-speech').lastElementChild.append(button);}
    status(cue.searchStatus==='limit'?tr('The free search limit was reached; no live web information was verified.','無料検索の上限に達したため、最新のウェブ情報は確認できませんでした。'):cue.searchStatus==='unavailable'?tr('Web lookup was unavailable; no live web information was verified.','ウェブ検索を利用できず、最新の情報は確認できませんでした。'):tr('AI can make mistakes. Check the linked sources.','AIは誤ることがあります。リンク先の出典もご確認ください。'));react(cue).catch(()=>{});
   }catch(error){if(current()&&guideEvent)fallback();if(!requestController.signal.aborted)status(error.message==='cancelled'?tr('Sending cancelled.','送信をキャンセルしました。'):chatUnavailable(error.message,ja?'ja':'en',error.reference));reactionVersion++;pendingCue=null;}
   finally{clearTimeout(timer);busy=false;translationUI();updateReading();$('button[type=submit]').disabled=false;$('textarea').readOnly=false;$('.yuki-cancel').hidden=true;if(chatSession.get())verification.stop();else if(tokenUsed)verification.stop();save();}
@@ -549,12 +554,16 @@ async function start(){
   }
  }
  function render(){if(!companion)return;const r=companion.rover,life=companion.lifecycle;
-  if(garden&&!journey.active&&!portalTrip){
-   garden.fitView(resident?r.position:null);
+  if(garden){
+   garden.setPresence(resident&&!hidden&&!portalTrip);
+   // Exploration must keep working during summoning and guided flights too.
+   // Only automatic tracking pauses; all scene-space route points still move
+   // with the camera, including an arrival that has not started yet.
+   garden.fitView(resident&&!journey.active&&!portalTrip?r.position:null);
    const rect=gardenScene.getBoundingClientRect(),next={left:rect.left,top:rect.top+scrollY,width:rect.width,height:rect.height};
    if(gardenRect&&['left','top','width','height'].some(k=>Math.abs(next[k]-gardenRect[k])>.000001)){
     const remap=p=>{p.x=next.left+(p.x-gardenRect.left)*next.width/gardenRect.width;p.y=next.top+(p.y-gardenRect.top)*next.height/gardenRect.height;};
-    for(const point of new Set([r.position,...r.points,...(r.route?[r.route.start,r.route.end]:[])]))remap(point);bodyHeight=garden.height;
+    for(const point of new Set([r.position,...r.points,...(r.route?[r.route.start,r.route.end]:[]),...(portalTrip?.target?[portalTrip.target]:[])]))remap(point);bodyHeight=garden.height;
    }gardenRect=next;
   }
   let p=projectFrame(companion,clips,bodyHeight);if(!p.frame?.image)return;
@@ -616,7 +625,7 @@ async function start(){
   const res=await fetch(new URL('manifest.json',assets));if(!res.ok)throw Error('manifest');({clips}=await res.json());await ensure(['sleep','rest']);
   await knowledgeReady;if(journey.active&&!checkedGuideTarget(journey.state.target,knowledge,ja?'ja':'en',base))journey.clear();
   const timing={rest:clips.rest.frames.map(f=>f.durationMs),flight:clips.flight.frames.map(f=>f.durationMs??60),takeoff:takeoffMs,landing:landingMs};
-  resident=presence.here(location.pathname)||journey.active;
+  resident=presence.here(location.pathname);
   companion=new Companion(timing,measure(),{motion:contactPhases,idle:{},lifecycle:{clips,startAsleep:Boolean(presence.state.status==='sleep'&&!journey.active),inactivityMs:Infinity,crashChance:0,crashCooldownRemainingMs:flopRemaining(),onCrash:rememberFlop},greeting:clips.greeting.playback,emotions:{...emotionPlayback(clips),pointLeft:clips.pointLeft.playback,pointRight:clips.pointRight.playback},airClips});
   motion=new PageMotion(companion);
   if(gardenScene){garden=new GardenHome(gardenScene,{
@@ -627,11 +636,11 @@ async function start(){
   companion.rover.setArrivalStyle('land');try{renderer=new IdleRenderer($('.yuki-pet canvas'));}catch{}
   guide=new SiteGuide(companion,{destinations:elements,reveal:revealTarget,direction:id=>{const d=guide.destinations.get(id);return pointerTarget(targetRect(d.el),shownFoot).kind;},arrive:id=>{const d=guide.destinations.get(id);readingMemory.set(guideReference(d.el,location.pathname,d.url));if(open)updateReading();highlightUntil=performance.now()+10000;motion.defer();status(tr(`Ta-da! Here’s ${d.name}.`,`じゃーん！${d.name}だよ。`));if(d.journeySerial!==undefined)journeyArrived(d);}});
   obstacles=obstacleReader.read(layout.width,layout.height);
-  const carriedPosition=journey.position(layout);
+  const carriedPosition=resident?journey.position(layout):null;
   const gp=resident&&presence.here(location.pathname)?locationMap(presence.state.position,true):garden?.point('nest');const initial=carriedPosition?clampFoot(carriedPosition,restingExtent(),layout):gp?{x:gp.x,y:gp.y-scrollY}:visibleSpot(restingExtent(),obstacles,layout,layout.home);
   companion.rover.position={...initial,y:initial.y+scrollY};upsert({id:'home',...initial,y:initial.y+scrollY});
   if(resident&&presence.here(location.pathname)&&presence.state.pose&&!journey.active){await ensure(poseArtwork(presence.state.pose,clips));restorePose(companion,presence.state.pose,clips,p=>locationMap(p,true));if(garden){garden.floating=companion.rover.arrivalStyle==='hover';const dest=garden.spotAt(companion.rover.point(companion.rover.wanted));if(dest)garden.story(dest);}}
-  if(presence.transfer&&!journey.active){await ensure([...travel,'wake','bedtime','crash',...poseArtwork(presence.transfer.origin.pose,clips)]);continueTransfer();}
+  if(presence.transfer){await ensure([...travel,'wake','bedtime','crash',...poseArtwork(presence.transfer.origin.pose,clips)]);continueTransfer();}
   else if(resident&&presence.state.status==='returning'&&!garden){portalTrip={kind:'returning',phase:'flying',age:0};calling=true;}
   else if(garden&&resident&&companion.rover.wanted!==companion.rover.at){const id=garden.spotAt(companion.rover.point(companion.rover.wanted));if(id)garden.pending={id,sleep:id==='nest',hover:companion.rover.arrivalStyle==='hover'};}
   ready=true;sync();last=performance.now();requestAnimationFrame(tick);
@@ -660,8 +669,8 @@ async function start(){
  addEventListener('pagehide',()=>{save();if(journey.active&&companion)journey.depart({x:companion.rover.foot.x,y:companion.rover.foot.y-scrollY},layout);controller?.abort();verification.stop();});
  async function restoreLocation(){
   portalTrip=null;portalAfterglow=null;portal.hidden=true;calling=false;callLoading=false;companion.rover.hidden=true;
-  presence.reload();presence.transit();presence.settleAway(location.pathname);resident=presence.here(location.pathname)||journey.active;
-  if(presence.transfer&&!journey.active){await ensure([...travel,'wake','bedtime','crash',...poseArtwork(presence.transfer.origin.pose,clips)]);continueTransfer();sync();return;}
+  presence.reload();presence.transit();presence.settleAway(location.pathname);resident=presence.here(location.pathname);
+  if(presence.transfer){await ensure([...travel,'wake','bedtime','crash',...poseArtwork(presence.transfer.origin.pose,clips)]);continueTransfer();sync();return;}
   if(resident&&!journey.active){const s=presence.state;await ensure(poseArtwork(s.pose,clips));
    if(!restorePose(companion,s.pose,clips,p=>locationMap(p,true))){placeAt(locationMap(s.position,true));companion.lifecycle.enter(s.status==='sleep'?'sleep':'awake');}
    if(s.status==='returning'&&!garden){portalTrip={kind:'returning',phase:'flying',age:0};calling=true;}
