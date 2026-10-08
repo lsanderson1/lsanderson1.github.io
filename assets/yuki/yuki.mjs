@@ -22,7 +22,7 @@ import {YukiLocation,capturePose,restorePose,poseArtwork,locationLabel,locationP
 import {summonTiming,summonPhase,callFlightDuration,catchInFlight} from './home/summon.mjs';
 import {ConversationMoments,shouldWelcomeOnRefresh,isLeavingLink} from './runtime/conversation-moments.mjs?v=1';
 import {messageRecord,translatedText,translationBatch,checkedTranslations,applyTranslations} from './runtime/conversation-language.mjs?v=4';
-import {ReadingMemory,readPageTitle,readingDetail,readPageDisplaySection,readPageSection,readPageImages,guideReference,followUpReference} from './runtime/reading-context.mjs?v=4';
+import {ReadingMemory,readPageTitle,readingDetail,readPageDisplaySection,readPageSection,readPageImages,readGardenSpot,guideReference,followUpReference} from './runtime/reading-context.mjs?v=5';
 import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=15';
 import {safeWebURL} from './runtime/web-sources.mjs?v=1';
 import {cleanVariety,rememberReply,packChatRequest} from './runtime/reply-variety.mjs?v=3';
@@ -86,7 +86,7 @@ async function start(){
   // A local aside never creates a chat turn, spends AI quota or steals focus.
   if(reveal&&!hidden&&!busy&&!journey.active)panel(true,{focus:false,translate:false});
  }
- function readingContext(){measureHeader();const viewed=readPageSection(document,innerHeight,headerBottom),r=companion?.rover;const spot=garden&&!journey.active&&!garden.pending&&(r?.graph.state==='rest'||r?.isHovering)?garden.spotAt(r.position):null;const selected=spot&&viewed?.kind==='image'?document.getElementById('garden-'+spot)?.dataset.yukiSection:null;return {section:selected??viewed?.id??'',images:readPageImages(document,innerHeight,headerBottom),lastGuide:readingMemory.get(),...(spot?{gardenSpot:spot}:{})};}
+ function readingContext(){measureHeader();const viewed=readPageSection(document,innerHeight,headerBottom),r=companion?.rover;const nearby=garden&&!journey.active&&!garden.pending&&(r?.graph.state==='rest'||r?.isHovering)?garden.spotAt(r.position):null;const spot=readGardenSpot(document,nearby,innerHeight,headerBottom);return {section:spot?.section||viewed?.id||'',images:readPageImages(document,innerHeight,headerBottom),lastGuide:readingMemory.get(),...(spot?{gardenSpot:spot.id}:{})};}
  function updateReading(){
   measureHeader();
   const title=readPageTitle(document,{path:location.pathname,base,title:root.dataset.pageTitle,lang:ja?'ja':'en'});
@@ -495,7 +495,7 @@ async function start(){
   if(busy||!online||!permission.allowed)return;
   const routeVersion=journeySerial;
   busy=true;translationUI();$('button[type=submit]').disabled=true;$('textarea').readOnly=true;$('.yuki-cancel').hidden=false;
-  const context=readingContext();updateReading();
+  updateReading();
   const requestController=new AbortController();controller=requestController;requestController.guideEvent=guideEvent;let timer,tokenUsed=false,deferredGuide=null;
   const current=()=>!requestController.signal.aborted&&permission.allowed&&(!guideEvent||routeVersion===journeySerial);
   try{
@@ -504,6 +504,9 @@ async function start(){
    tokenUsed=!pass;
    timer=setTimeout(()=>{status(tr('Yuki took too long to answer. Please try again.','回答が時間内に届きませんでした。もう一度お試しください。'));requestController.abort();},45000);
    await wake();if(requestController.signal.aborted||!permission.allowed)throw Error('cancelled');
+   // Verification or wake-up can take time. Read the actual view immediately
+   // before sending, not the page/spot that was visible before that wait.
+   const context=readingContext();
    const history=messages.slice(-6).map(m=>({role:m.role,content:m.text}));if(!guideEvent){addMessage('user',text);$('textarea').value='';}
    if(!guideEvent)interests.remember(text);
    status(tr('Yuki is thinking…','ゆきが考えています…'));react({text:'…',emotion:'thoughtful',gesture:'none'},{thinking:true}).catch(()=>{});
