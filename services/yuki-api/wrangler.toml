@@ -13,6 +13,9 @@ FREE_PLAN_CONFIRMED = "true"
 DAILY_REQUEST_LIMIT = "100"
 VISITOR_DAILY_LIMIT = "20"
 VISITOR_MINUTE_LIMIT = "4"
+# Owner requested the visitor daily cap stay off until explicitly restored.
+# The shared 100/day and 4/minute limits remain. Set true to restore 20/day.
+VISITOR_DAILY_LIMIT_ENABLED = "false"
 # Owner stored TAVILY_API_KEY as a Worker secret; verified 2026-10-06.
 # These caps apply across all visitors; no auto-reload or paid Tavily plan.
 WEB_SEARCH_ENABLED = "true"

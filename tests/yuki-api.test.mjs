@@ -85,6 +85,23 @@ class Storage {
  async getAlarm(){return this.alarmAt;}async setAlarm(t){this.alarmAt=t;}async deleteAll(){this.m.clear();}
 }
 
+test('only the explicit operator setting disables the visitor daily cap; missing or malformed flags retain it',async()=>{
+ const config={DAILY_REQUEST_LIMIT:'100',VISITOR_DAILY_LIMIT:'20',VISITOR_MINUTE_LIMIT:'4'},hash='a'.repeat(64);
+ for(const value of [undefined,'true','FALSE','',false,0]){const storage=new Storage();await storage.put('total',20);await storage.put(hash,{day:20,minute:0,count:0});const q=new YukiQuota({storage},{...config,VISITOR_DAILY_LIMIT_ENABLED:value}),response=await q.fetch(new Request('https://quota.invalid/reserve',{method:'POST',body:JSON.stringify({hash,minute:1,VISITOR_DAILY_LIMIT_ENABLED:'false'})}));assert.equal(response.headers.get('X-Yuki-Limit'),'visitor-day');}
+ const cleaned=validateInput({...input,VISITOR_DAILY_LIMIT_ENABLED:'false',testMode:true});assert(!('testMode' in cleaned));assert(!('VISITOR_DAILY_LIMIT_ENABLED' in cleaned));
+});
+
+test('disabling the daily visitor cap unblocks existing usage without resetting counts or bypassing other caps',async()=>{
+ const storage=new Storage(),env={DAILY_REQUEST_LIMIT:'100',VISITOR_DAILY_LIMIT:'20',VISITOR_MINUTE_LIMIT:'4',VISITOR_DAILY_LIMIT_ENABLED:'false'},q=new YukiQuota({storage},env),hash='a'.repeat(64),minute=Math.floor(Date.now()/60000);
+ await storage.put('total',25);await storage.put(hash,{day:20,minute:minute-1,count:1});
+ const call=(minuteValue=minute)=>q.fetch(new Request('https://quota.invalid/reserve',{method:'POST',body:JSON.stringify({hash,minute:minuteValue})}));
+ assert.equal((await call()).status,204);assert.equal(await storage.get('total'),26);assert.equal((await storage.get(hash)).day,21);
+ for(let i=0;i<3;i++)assert.equal((await call()).status,204);
+ assert.equal((await call()).headers.get('X-Yuki-Limit'),'visitor-minute');
+ env.VISITOR_DAILY_LIMIT_ENABLED='true';assert.equal((await call(minute+1)).headers.get('X-Yuki-Limit'),'visitor-day');assert.equal(await storage.get('total'),29);
+ env.VISITOR_DAILY_LIMIT_ENABLED='false';await storage.put('total',100);assert.equal((await call(minute+1)).headers.get('X-Yuki-Limit'),'site-day');assert.equal(await storage.get('total'),100);
+});
+
 test('quota messages identify the actual cap without exposing visitor counters or lifting limits',async()=>{
  const storage=new Storage(),q=new YukiQuota({storage},{DAILY_REQUEST_LIMIT:'3',VISITOR_DAILY_LIMIT:'2',VISITOR_MINUTE_LIMIT:'1'});
  const call=(hash,minute)=>q.fetch(new Request('https://quota.invalid',{method:'POST',body:JSON.stringify({hash:hash.repeat(64),minute})}));

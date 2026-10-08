@@ -126,11 +126,14 @@ export class YukiQuota {
   const {hash,minute}=await request.json();if(!/^[a-f0-9]{64}$/.test(hash)||!Number.isSafeInteger(minute))return new Response(null,{status:400});
   const globalLimit=positive(this.env.DAILY_REQUEST_LIMIT,10000),visitorLimit=positive(this.env.VISITOR_DAILY_LIMIT,100),minuteLimit=positive(this.env.VISITOR_MINUTE_LIMIT,20);
   if(!globalLimit||!visitorLimit||!minuteLimit)return new Response(null,{status:503});
+  // Only the operator can disable this daily cap. Keep counts so restoring it
+  // does not reset usage; shared daily, minute, search and provider caps remain.
+  const effectiveVisitorLimit=this.env.VISITOR_DAILY_LIMIT_ENABLED==='false'?globalLimit:visitorLimit;
   const blockedBy=await this.state.storage.transaction(async tx=>{
    const total=(await tx.get('total'))||0,visitor=(await tx.get(hash))||{day:0,minute:-1,count:0};
    const count=visitor.minute===minute?visitor.count:0;
    if(total>=globalLimit)return 'site-day';
-   if(visitor.day>=visitorLimit)return 'visitor-day';
+   if(visitor.day>=effectiveVisitorLimit)return 'visitor-day';
    if(count>=minuteLimit)return 'visitor-minute';
    await tx.put('total',total+1);await tx.put(hash,{day:visitor.day+1,minute,count:count+1});return '';
   });

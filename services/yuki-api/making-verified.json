@@ -250,8 +250,8 @@
       "file": "services/yuki-api/worker.mjs",
       "symbol": "parseModel",
       "firstLine": 83,
-      "lastLine": 141,
-      "sha256": "ba26b406f1030ff6c09e6514ead5a387eed27e2245901c95662d35047f2c940f"
+      "lastLine": 144,
+      "sha256": "72003b5cda4ebbd4f845074406de93543796701ce619e64cf4e1d490f5cc2c67"
     }
   },
   {
