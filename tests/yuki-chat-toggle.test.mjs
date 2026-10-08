@@ -5,7 +5,8 @@ import {runInNewContext} from 'node:vm';
 import {VisitorPersonality,conversationOpening} from '../assets/yuki/runtime/visitor-personality.mjs';
 import {ConversationMemory} from '../assets/yuki/runtime/conversation-memory.mjs';
 
-const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
+// Git may check out CRLF on Windows; source extraction must work on both OSes.
+const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
 // Exercise the real click/open functions, with only the DOM and animation
 // services replaced. Keeping an animation pending must not block closing.
 function fixture({ready=true,lang='en'}={}){
