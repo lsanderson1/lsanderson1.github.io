@@ -221,8 +221,9 @@ export class VisitorPersonality {
 }
 // A remembered opening is part of this tab's conversation, not a new reply on
 // every bubble click. Any existing exchange (even a failed first send) resumes.
-export function conversationOpening(messages,personality,lang='en'){
+export function conversationOpening(messages,personality,lang='en',{home=false}={}){
  if(messages.length)return null;
+ if(home){const cue=nextHomeGreeting(personality,lang);return {...personality.opening(cue.text),greetingId:cue.greetingId};}
  const text=personality.next(lang);
  return {...personality.opening(text),greetingId:greetings[lang].indexOf(text)};
 }
@@ -233,6 +234,7 @@ export function localizeGreetingMessages(messages,lang='en'){
  const list=greetings[lang==='ja'?'ja':'en'];
  return messages.map((message,position)=>{
   if(message.role!=='assistant')return message;
+  if(message.greetingId>=homeGreetingBase)return localizeHomeGreeting(message,lang);
   let id=message.greetingId;
   if(id===undefined&&position===0){
    id=greetings.en.indexOf(message.text);
@@ -251,3 +253,4 @@ export function replySequence(cue,{firstMeeting=false,talk='talkOpen'}={}){
  return [{...cue,gesture:'none'},{text:cue.text,emotion:'neutral',gesture}];
 }
 export function cueArtwork(cue){return cue.gesture==='wave'?'greeting':cue.emotion!=='neutral'?cue.emotion:cue.gesture==='talkOpen'?'talkOpen':'talkExplain';}
+import {nextHomeGreeting,localizeHomeGreeting,homeGreetingBase} from '../home/greetings.mjs';

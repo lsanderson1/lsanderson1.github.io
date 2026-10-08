@@ -84,6 +84,7 @@ Jekyll::Hooks.register :site, :post_render do |site|
     data = p.data
     public_entry = %w[project essay].include?(data['type']) && data['published'] == true
     public_entry ||= data['type'] == 'unreal-journey'
+    public_entry ||= data['yuki_home'] == true
     public_entry ||= %w[/ /ja/ /resume.html /ja/resume.html /projects/ /ja/projects/ /essays/ /ja/essays/ /unreal-journey/ /ja/unreal-journey/].include?(p.url)
     public_entry && data['draft'] != true && data['published'] != false
   end.sort_by(&:url).filter_map { |p| YukiKnowledge.index(p, base) }

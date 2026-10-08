@@ -1,0 +1,48 @@
+{% include locale.html %}
+{% assign jp = false %}{% if page.lang == 'ja' %}{% assign jp = true %}{% endif %}
+<link rel="stylesheet" href="{{ '/assets/yuki/home/garden.css?v=7' | relative_url }}">
+<div class="yg-page">
+ <h1 class="yg-sr-only">{% if jp %}ゆきの庭{% else %}Yuki’s Garden{% endif %}</h1>
+ <section class="yg-world" aria-label="{% if jp %}ゆきのインタラクティブな庭{% else %}Yuki’s interactive garden{% endif %}">
+  <div class="yg-scene" data-yuki-garden>
+   <img class="yg-backdrop" src="{{ '/assets/yuki/home/petal-nook.png' | relative_url }}" width="1536" height="1024" fetchpriority="high" alt="{% if jp %}桜に囲まれた明るいお城の庭。葉っぱの巣、スイレンの池、本のあるベンチ、紙の鶴と小石、空を見渡すテラス。{% else %}A sunny castle garden with cherry blossoms, a leaf-lined nest, a lily pond, a reading bench, paper crane and pebble keepsakes, and a terrace overlooking floating islands.{% endif %}">
+   <div class="yg-weather" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+   <div class="yg-scene-life" aria-hidden="true"><span class="yg-butterfly"></span><span class="yg-butterfly yg-butterfly-far"></span><span class="yg-butterfly yg-butterfly-near"></span><span class="yg-sky-wisp"></span></div>
+   <span class="yg-chase-petal" hidden aria-hidden="true"></span>
+   <div class="yg-hotspots">
+    <button id="garden-nest" data-garden-spot="nest" style="--x:20%;--y:87%" aria-label="{% if jp %}葉っぱの巣でお昼寝{% else %}Nap in the leaf nest{% endif %}" title="{% if jp %}葉っぱの巣{% else %}Leaf Nest{% endif %}">☾</button>
+    <button id="garden-pond" data-garden-spot="pond" style="--x:17%;--y:54%" aria-label="{% if jp %}池を見に行く{% else %}Visit the lily pond{% endif %}" title="{% if jp %}スイレンの池{% else %}Lily Pond{% endif %}">≈</button>
+    <button id="garden-lookout" data-garden-spot="lookout" style="--x:69%;--y:38%" aria-label="{% if jp %}空の見晴らし台へ{% else %}Fly to the sky lookout{% endif %}" title="{% if jp %}空の見晴らし台{% else %}Sky Lookout{% endif %}">✧</button>
+    <button id="garden-books" data-garden-spot="books" style="--x:83%;--y:65%" aria-label="{% if jp %}読書のコーナーへ{% else %}Visit the reading nook{% endif %}" title="{% if jp %}読書のコーナー{% else %}Reading Nook{% endif %}">▤</button>
+    <button id="garden-treasures" data-garden-spot="treasures" style="--x:58%;--y:83%" aria-label="{% if jp %}小さな宝物を見る{% else %}Explore Yuki’s keepsakes{% endif %}" title="{% if jp %}小さな宝物{% else %}Little Treasures{% endif %}">◇</button>
+   </div>
+  </div>
+  <div class="yg-controls">
+   <details class="yg-menu">
+    <summary class="btn">{% if jp %}庭を探検{% else %}Explore{% endif %} <span aria-hidden="true">✧</span></summary>
+    <div>
+     <button data-garden-spot="nest">{% if jp %}葉っぱの巣{% else %}Leaf Nest{% endif %}</button>
+     <button data-garden-spot="pond">{% if jp %}スイレンの池{% else %}Lily Pond{% endif %}</button>
+     <button data-garden-spot="lookout">{% if jp %}空の見晴らし台{% else %}Sky Lookout{% endif %}</button>
+     <button data-garden-spot="books">{% if jp %}読書のコーナー{% else %}Reading Nook{% endif %}</button>
+     <button data-garden-spot="treasures">{% if jp %}小さな宝物{% else %}Little Treasures{% endif %}</button>
+     <hr>
+     <button data-garden-action="chat">{% if jp %}ゆきと話す{% else %}Talk With Yuki{% endif %}</button>
+     <button data-garden-action="fly">{% if jp %}ひとっ飛び！{% else %}A Little Flight{% endif %}</button>
+     <button data-garden-action="glide">{% if jp %}空でひと休み{% else %}Float & Daydream{% endif %}</button>
+     <button data-garden-action="chase">{% if jp %}花びらを追いかける{% else %}Chase Petals{% endif %}</button>
+     <button data-garden-action="pond-play">{% if jp %}池で波紋あそび{% else %}Make Pond Ripples{% endif %}</button>
+     <button data-garden-action="breeze">{% if jp %}庭にそよ風を送る{% else %}Send a Garden Breeze{% endif %}</button>
+     <button data-garden-action="discover" aria-pressed="false">{% if jp %}遊べる場所を見つける{% else %}Find Garden Surprises{% endif %}</button>
+     <button data-garden-action="motion" aria-pressed="false">{% if jp %}庭の動きを止める{% else %}Pause Garden{% endif %}</button>
+    </div>
+   </details>
+  </div>
+  <span class="yg-beta">BETA</span>
+  <aside class="yg-thought" aria-label="{% if jp %}ゆきのひとこと{% else %}A little thought from Yuki{% endif %}">
+   <p data-home-dialogue>{% if jp %}「小さな羽はたたんで、大きな夢は広げよう。」{% else %}“Little wings folded. Big dreams unfolding.”{% endif %}</p>
+   <button data-garden-action="home-line" aria-label="{% if jp %}別のひとこと{% else %}Another little thought{% endif %}" title="{% if jp %}別のひとこと{% else %}Another Little Thought{% endif %}">↻</button>
+  </aside>
+  <span class="yg-garden-state yg-sr-only" role="status">{% if jp %}ゆきの準備中…{% else %}Getting the garden ready…{% endif %}</span>
+ </section>
+</div>

@@ -9,11 +9,12 @@ const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8')
 // Exercise the real click/open functions, with only the DOM and animation
 // services replaced. Keeping an animation pending must not block closing.
 function fixture({ready=true,lang='en'}={}){
- const state={ready,open:false,momentKind:'',messages:[],conversationMemory:new ConversationMemory(undefined,lang),personality:new VisitorPersonality(undefined,()=>0),ja:lang==='ja',conversationOpening,panels:[],reactions:[]};
+ const state={ready,resident:true,open:false,momentKind:'',gardenScene:null,messages:[],conversationMemory:new ConversationMemory(undefined,lang),personality:new VisitorPersonality(undefined,()=>0),ja:lang==='ja',conversationOpening,panels:[],reactions:[]};
  state.panel=value=>{state.open=value;state.panels.push(value);};
  state.addMessage=(role,text,_remember,_sources,_topics,greetingId)=>state.messages.push({role,text,greetingId});
  state.react=cue=>{state.reactions.push(cue);return new Promise(()=>{});};
  state.translateConversation=()=>{};
+ state.catchTravel=()=>false;
  const functions=ui.match(/async function openConversation\(\)\{[\s\S]*?\n \}\n function toggleConversation\(\)\{[^\n]*\}/)?.[0];
  assert(functions,'The actual conversation handlers should be available');
  runInNewContext(functions,state);

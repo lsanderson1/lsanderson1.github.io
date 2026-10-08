@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {ChatSession} from '../assets/yuki/runtime/chat-access.mjs';
 import {ConversationMemory,memoryKey} from '../assets/yuki/runtime/conversation-memory.mjs';
+import {VisitorInterests} from '../assets/yuki/runtime/visitor-interests.mjs';
 import {ConversationMoments} from '../assets/yuki/runtime/conversation-moments.mjs';
 import {packChatRequest,rememberReply} from '../assets/yuki/runtime/reply-variety.mjs';
 import {validReply,chatUnavailable,readSession} from '../assets/yuki/protocol.mjs';
@@ -20,7 +21,7 @@ function fixture({network}={}){
  const storage=store(),elements=new Map(),calls={verify:0,fetch:[],stop:0,fallback:0,status:[]};
  const context={busy:false,open:false,momentKind:'',moments:new ConversationMoments(storage,()=>0),hidden:false,journey:{active:false},translationFailed:false,online:true,permission:{allowed:true},journeySerial:4,ja:false,base:'',messages:[],variety:{},knowledge:[],paths:{},names:{},pendingCue:null,reactionVersion:0,
   AbortController,setTimeout,clearTimeout,Date,Error,JSON,Map,controller:undefined,location:{pathname:'/resume.html'},endpoint:'https://api.invalid/chat',
-  chatSession:new ChatSession(storage),conversationMemory:new ConversationMemory(storage,'en'),searchPermission:{allowed:true},
+  chatSession:new ChatSession(storage),conversationMemory:new ConversationMemory(storage,'en'),interests:new VisitorInterests(storage),searchPermission:{allowed:true},
   verification:{takeToken:async()=>{calls.verify++;return 'single-use-test-token';},stop:()=>{calls.stop++;}},
   tr:(en,jp)=>context.ja?jp:en,$:selector=>{if(!elements.has(selector))elements.set(selector,{value:'Draft to preserve',disabled:false,readOnly:false,hidden:true,setAttribute:()=>{},focus:()=>{}});return elements.get(selector);},
   readingContext:()=>({}),updateReading:()=>{},translationUI:()=>{},drawMessages:()=>{},translationBatch,checkedTranslations,applyTranslations,wake:async()=>{},status:s=>calls.status.push(s),react:async()=>{},
@@ -38,6 +39,12 @@ test('ordinary send uses verification once, stores pass, then continues without 
  const f=fixture({network:async()=>new Response(JSON.stringify({...cue,chatSession:pass}))});
  await f.send('Tell me about your library');assert.equal(f.calls.verify,1);assert.equal(f.calls.fetch[0].token,'single-use-test-token');assert.equal(f.context.messages.length,2);
  await f.send('Why is that your dream?');assert.equal(f.calls.verify,1);assert.equal(f.calls.fetch[1].pass,pass.pass);assert.equal(f.calls.fetch[1].token,undefined);assert.equal(f.context.conversationMemory.turns.length,2);assert.equal(f.context.busy,false);
+});
+
+test('explicit interests accompany sends and survive Clear chat; corrections win',async()=>{
+ const f=fixture();await f.send('I like animation.');assert.deepEqual(f.calls.fetch[0].interests,['animation']);f.clear();
+ assert.deepEqual(f.context.interests.get(),['animation']);assert.equal(f.context.messages.length,0);
+ await f.send('I no longer like animation, but I love art.');assert.deepEqual(f.calls.fetch[1].interests,['art']);
 });
 test('automatic follow-up preserves the draft, adds no synthetic user message and never uses search',async()=>{
  const f=fixture();f.context.messages.push({role:'user',text:'Lead me to Resume'});

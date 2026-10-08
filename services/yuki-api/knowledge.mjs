@@ -1,5 +1,6 @@
 import {safeSitePath} from '../../assets/yuki/protocol.mjs';
 import {readingReference,sectionKey} from '../../assets/yuki/runtime/reading-context.mjs';
+import {makingKnowledge} from './making-knowledge.mjs';
 
 const clean=value=>typeof value==='string'?value.replace(/\s+/g,' ').trim():'';
 export function validateContext(value){
@@ -9,7 +10,7 @@ export function validateContext(value){
  const guide=value.lastGuide===undefined||value.lastGuide===null?null:readingReference(value.lastGuide);
  if(value.lastGuide!=null&&(!guide||(value.lastGuide.section&&guide.section!==value.lastGuide.section)))throw Error('Invalid guide');
  // Intentionally discard any client-supplied page text, titles or instructions.
- return {section:sectionKey(value.section),...(guide?{lastGuide:guide}:{})};
+ return {section:sectionKey(value.section),...(guide?{lastGuide:guide}:{}),...(['nest','pond','lookout','books','treasures'].includes(value.gardenSpot)?{gardenSpot:value.gardenSpot}:{})};
 }
 export function queryWords(text){
  const query=text.toLowerCase(),words=query.match(/[a-z0-9_+#]{2,}/g)||[];
@@ -63,5 +64,5 @@ export function retrieveKnowledge(k,input){
  // explicit questions can still retrieve a different passage anywhere in a page.
  for(const ref of focus?[focus]:[current,lastGuided])if(ref){const c=ranked.find(c=>c.page===ref.page&&c.section===ref.section);add(c);if(c)ref.sourceId=c.id;}
  for(const c of ranked)add(c);
- return {owner:k.owner,bio:clean(k.bio[input.lang]).slice(0,2000),skills:JSON.stringify(k.skills||[]).slice(0,2000),view:{current,lastGuided,focus},pages:chosen.map(({id,url,title,text})=>({id,url,title,text}))};
+ return {owner:k.owner,bio:clean(k.bio[input.lang]).slice(0,2000),skills:JSON.stringify(k.skills||[]).slice(0,2000),view:{current,lastGuided,focus,...(/^\/(?:ja\/)?yuki\/$/.test(input.page)&&input.context?.gardenSpot?{gardenSpot:input.context.gardenSpot}:{})},pages:chosen.map(({id,url,title,text})=>({id,url,title,text})),makingOf:focus?null:makingKnowledge(input)};
 }

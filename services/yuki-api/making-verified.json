@@ -1,0 +1,325 @@
+[
+  {
+    "id": "pack",
+    "topic": "images",
+    "symbol": "pack",
+    "title": {
+      "en": "Lossless image packaging",
+      "ja": "WebP 画像の準備"
+    },
+    "explanation": "Pillow opens each source as RGBA, writes WebP with lossless=True and exact=True, reopens it and asserts identical dimensions, alpha bytes and visible RGB. SHA-256 names let identical source files share an output. This reduces duplicates without deliberately changing the approved pixels. These checks do not establish anatomical consistency or document which drawing tool produced every original.",
+    "source": {
+      "file": "scripts/pack-yuki-art.py",
+      "symbol": "pack",
+      "firstLine": 13,
+      "lastLine": 27,
+      "sha256": "fc28575e49003d62704201cb91f0fce9e8aa1fc669562ca2c9531cd337b71f3c"
+    }
+  },
+  {
+    "id": "projection",
+    "topic": "movement",
+    "symbol": "projectFrame",
+    "title": {
+      "en": "Keeping her proportions between poses",
+      "ja": "ポーズ間の体型を保つ"
+    },
+    "explanation": "projectFrame selects the lifecycle, travel, attention or reaction frame, then calculates one scale and a foot anchor. Airborne sheets have registration corrections; the same scale drives width and height. This keeps sprite proportions instead of independently squeezing axes. It cannot fix inconsistencies already drawn into a frame.",
+    "source": {
+      "file": "assets/yuki/runtime/projection.mjs",
+      "symbol": "projectFrame",
+      "firstLine": 4,
+      "lastLine": 65,
+      "sha256": "9b44c5d43382f7b03d4e53817acc4b8ba0c127df2717a0d208b2a89c1036bf92"
+    }
+  },
+  {
+    "id": "route",
+    "topic": "movement",
+    "symbol": "Rover.beginRoute",
+    "title": {
+      "en": "Starting a flight route",
+      "ja": "飛行経路の開始"
+    },
+    "explanation": "beginRoute copies the current visible foot and destination into a route. Ordinary duration is distance divided by 0.15, clamped to 1000–4000 milliseconds. Explicit call routes can supply a distance-based duration up to 18000 milliseconds so distant calls take longer. Copying the current start avoids teleporting back to an old perch.",
+    "source": {
+      "file": "assets/yuki/runtime/rover.mjs",
+      "symbol": "Rover.beginRoute",
+      "firstLine": 33,
+      "lastLine": 39,
+      "sha256": "0918bbe37ff8f8d4043ffa1a0c0bdbff6116102600275c3a14049e4da4a67d69"
+    }
+  },
+  {
+    "id": "motion",
+    "topic": "movement",
+    "symbol": "Rover.step",
+    "title": {
+      "en": "Moving along the route",
+      "ja": "経路に沿った移動"
+    },
+    "explanation": "step advances the motion graph and route with elapsed time. The smooth polynomial eases position between route endpoints. Arrival either holds flight as a hover or requests landing. update subdivides input time into at most 10-millisecond steps, limiting differences at state joins on different frame rates. This is timed 2D travel, not physics simulation or new generated drawings.",
+    "source": {
+      "file": "assets/yuki/runtime/rover.mjs",
+      "symbol": "Rover.step",
+      "firstLine": 80,
+      "lastLine": 110,
+      "sha256": "f8afeb628a91982237ab4f885f8f1f05ecaa6bd85493bc64ee5b7cd76a591354"
+    }
+  },
+  {
+    "id": "breath",
+    "topic": "little-motions",
+    "symbol": "IdleMotion",
+    "title": {
+      "en": "Independent idle clocks",
+      "ja": "待機中の独立した周期"
+    },
+    "explanation": "IdleMotion.pose supplies a 3800-ms cosine breathing cycle, 10400-ms sway and 6200-ms tail wave with a small arm delay. Its level fades acting in or out, rather than snapping. Blink waits vary between 4500 and 8000 ms and use designated existing eye frames. Different clocks avoid all small motions moving in lockstep.",
+    "source": {
+      "file": "assets/yuki/runtime/idle-motion.mjs",
+      "symbol": "IdleMotion",
+      "firstLine": 3,
+      "lastLine": 18,
+      "sha256": "1bfbcf8b71bb47da7d07f5ab0b1a1d5e5cf1b6336eaeb8e31cc60eae98ce80c6"
+    }
+  },
+  {
+    "id": "deform",
+    "topic": "little-motions",
+    "symbol": "deformIdlePoint",
+    "title": {
+      "en": "Small movement over approved artwork",
+      "ja": "基準の絵に小さな動きをつける"
+    },
+    "explanation": "deformIdlePoint shifts existing image coordinates with smooth spatial weights for chest, belly, paws, wings and outer tail. Coordinates at or below source y=574 stay fixed, keeping the feet planted. The upper head/glasses share a rigid translation. It is a restrained image deformation, not a skeleton or a full redraw, and is used for idle only.",
+    "source": {
+      "file": "assets/yuki/runtime/idle-deform.mjs",
+      "symbol": "deformIdlePoint",
+      "firstLine": 4,
+      "lastLine": 26,
+      "sha256": "3d6e993cc85d9974bbd6bdcd2da071ec0f2e0969cb84ca15b42da96ae10bf91d"
+    }
+  },
+  {
+    "id": "blink",
+    "topic": "little-motions",
+    "symbol": "HoverBlink.update",
+    "title": {
+      "en": "Blinking without repeating every flap",
+      "ja": "羽ばたきごとに繰り返さないまばたき"
+    },
+    "explanation": "The countdown varies from 4200 to 8000 ms. Once it expires, update waits for wing phase 7 before using the matching closed-eye drawing; it reopens outside that phase. Thus timing is independent of each wing loop, but the actual blink is phase-gated to avoid a mismatched wing pose. Emotional drawings with closed eyes are separate.",
+    "source": {
+      "file": "assets/yuki/runtime/hover-blink.mjs",
+      "symbol": "HoverBlink.update",
+      "firstLine": 3,
+      "lastLine": 14,
+      "sha256": "45bd1c5f1b35c9505fbec7be7d5e35cb192c7e56c274a91f9822d0462a566469"
+    }
+  },
+  {
+    "id": "sleep",
+    "topic": "little-motions",
+    "symbol": "Lifecycle.bubble",
+    "title": {
+      "en": "Sleeping breath and the nose bubble",
+      "ja": "睡眠の呼吸と鼻の泡"
+    },
+    "explanation": "The bubble is present only during sleep. The breath period is the sum of the sleep-frame durations; age modulo that period feeds a cosine from zero to one. Radius is 7 + 18 times that breath value, and the renderer scales it with the character and anchors it at frame.nose. This synchronizes the bubble with the sleep cycle; it does not model real respiratory volume.",
+    "source": {
+      "file": "assets/yuki/runtime/lifecycle.mjs",
+      "symbol": "Lifecycle.bubble",
+      "firstLine": 66,
+      "lastLine": 74,
+      "sha256": "ae0a0e165c6b278c2806bee6a675dadde851287daaa7eb110dc6a8e26f702f5d"
+    }
+  },
+  {
+    "id": "beats",
+    "topic": "little-motions",
+    "symbol": "cleanReplyBeats / expressionSequence",
+    "title": {
+      "en": "Expressions at reading pace",
+      "ja": "読む速さに合わせた表情"
+    },
+    "explanation": "cleanReplyBeats accepts two to four ordered sentence indices, validates allowed emotions/gestures, and requires index zero first. expressionSequence associates each beat with its text; beatPause clamps reading time between 3.2 and 12 seconds using character count and language. Existing full clips play instead of splicing isolated hands or mouths. There is no voice audio or phoneme lip-sync.",
+    "source": {
+      "file": "assets/yuki/runtime/reply-beats.mjs",
+      "symbol": "cleanReplyBeats / expressionSequence",
+      "firstLine": 5,
+      "lastLine": 20,
+      "sha256": "d0781dc8d42051f42fb957eeb9432ef0d8465d688f4407e2d02b06bb1e651152"
+    }
+  },
+  {
+    "id": "guide",
+    "topic": "navigation",
+    "symbol": "guideTarget",
+    "title": {
+      "en": "Verified pointing destinations",
+      "ja": "確認できる指さし先"
+    },
+    "explanation": "guideTarget accepts only safe same-site URLs found in the published catalog, matches the selected language, then resolves a known section anchor. An invalid same-language anchor returns null instead of pointing to a guessed item. Navigation authority is this catalog, not an arbitrary selector or URL supplied by the model.",
+    "source": {
+      "file": "assets/yuki/runtime/guide-journey.mjs",
+      "symbol": "guideTarget",
+      "firstLine": 27,
+      "lastLine": 37,
+      "sha256": "6775415889b89df0a14abcc607b2f3854c94abda73d860677ffeb109468a9fd3"
+    }
+  },
+  {
+    "id": "journey",
+    "topic": "navigation",
+    "symbol": "GuideJourney",
+    "title": {
+      "en": "Carrying guidance between pages",
+      "ja": "ページをまたぐ案内"
+    },
+    "explanation": "GuideJourney stores target, expected next page, origin and timestamp in tab storage with a 30-minute lifetime. enter distinguishes arrival, continuation, resuming and a detour. depart stores viewport coordinates; position scales them for the new viewport. This continuity applies to an active guiding journey, not permanent location memory.",
+    "source": {
+      "file": "assets/yuki/runtime/guide-journey.mjs",
+      "symbol": "GuideJourney",
+      "firstLine": 77,
+      "lastLine": 103,
+      "sha256": "73efc21c7bda4caf86ce1fe89eb33d0ffadfbd11c00fbe83cad353072b8df331"
+    }
+  },
+  {
+    "id": "memory",
+    "topic": "memory-language",
+    "symbol": "ConversationMemory",
+    "title": {
+      "en": "Bounded conversation recall",
+      "ja": "範囲を限った会話の記憶"
+    },
+    "explanation": "ConversationMemory retains up to 40 bounded question/answer pairs in the provided same-tab storage, with a 24-hour inactivity lifetime. recall ranks token overlap, removes exchanges already in recent history, and returns up to four. A keyword filter skips obvious credentials/contact strings but is not a complete sensitive-data detector. Clearing the transcript is separate from this store; this is not server-side personal memory.",
+    "source": {
+      "file": "assets/yuki/runtime/conversation-memory.mjs",
+      "symbol": "ConversationMemory",
+      "firstLine": 8,
+      "lastLine": 31,
+      "sha256": "724c5cfbe8de07265f1cf64f47da41d0e9291b8b0a568e551ddea9492957243b"
+    }
+  },
+  {
+    "id": "translate",
+    "topic": "memory-language",
+    "symbol": "translatedText / translationBatch / applyTranslations",
+    "title": {
+      "en": "Keeping original meaning across languages",
+      "ja": "言語を変えても元の意味を保つ"
+    },
+    "explanation": "Each message keeps original text and separately stored translations. translatedText returns the original in its own language, otherwise a valid translation. translationBatch prioritizes recent untranslated messages within size caps. applyTranslations matches checked IDs and stores another language without overwriting the original. Authored bilingual greetings bypass model translation; translation quality still needs review.",
+    "source": {
+      "file": "assets/yuki/runtime/conversation-language.mjs",
+      "symbol": "translatedText / translationBatch / applyTranslations",
+      "firstLine": 21,
+      "lastLine": 45,
+      "sha256": "98c3b3c446cc3648d2f7a90f4e92bcbae1e9060b42144b595c7fb522a0bc9918"
+    }
+  },
+  {
+    "id": "retrieve",
+    "topic": "conversation",
+    "symbol": "retrieveKnowledge",
+    "title": {
+      "en": "Selecting evidence for answers",
+      "ja": "返答の根拠を選ぶ"
+    },
+    "explanation": "retrieveKnowledge filters the public catalog to the requested language and safe site paths, splits long sections into overlapping passages, scores question terms with a smaller weight for recent history, and selects at most six. Current and last-guided context are included, but explicit questions determine relevance. Curated making-of notes are supplied separately; this is local text ranking, not live repository browsing or visual perception.",
+    "source": {
+      "file": "services/yuki-api/knowledge.mjs",
+      "symbol": "retrieveKnowledge",
+      "firstLine": 39,
+      "lastLine": 68,
+      "sha256": "3c028a8a63f1488ef2ab716606d6afdff5efb2f5488a87d14a423599733c7b34"
+    }
+  },
+  {
+    "id": "parse",
+    "topic": "conversation",
+    "symbol": "parseModel",
+    "title": {
+      "en": "Validating a generated answer",
+      "ja": "生成された返答の検証"
+    },
+    "explanation": "parseModel extracts and parses the structured model answer, validates emotion, gesture, destination and text length, and resolves source IDs only against supplied page or web entries. Unsupported references are not converted into invented links. These structural safeguards do not prove every natural-language claim true. Requests still need verification, usage budget and evidence.",
+    "source": {
+      "file": "services/yuki-api/worker.mjs",
+      "symbol": "parseModel",
+      "firstLine": 74,
+      "lastLine": 130,
+      "sha256": "fe6c52afc7d581b22e3c827a426a310f0f6f2bd46500d14d0935a2133751e2e4"
+    }
+  },
+  {
+    "id": "perch",
+    "topic": "garden-testing",
+    "symbol": "gardenSpots / gardenPoint",
+    "title": {
+      "en": "Placing feet on painted landmarks",
+      "ja": "背景の目印に足元を合わせる"
+    },
+    "explanation": "gardenSpots stores hand-authored normalized coordinates for five perches. gardenPoint converts them using the rendered illustration rectangle and scroll offset. For example, the nest is at 20% of width and 77.5% of height. These are chosen interface landmarks, not AI detection of objects in the picture.",
+    "source": {
+      "file": "assets/yuki/home/garden.mjs",
+      "symbol": "gardenSpots / gardenPoint",
+      "firstLine": 8,
+      "lastLine": 9,
+      "sha256": "34a44791a515906f118e36f5692232783b39e2e92e7b71d5704c48084e629df0"
+    }
+  },
+  {
+    "id": "location",
+    "topic": "garden-testing",
+    "symbol": "YukiLocation",
+    "title": {
+      "en": "Remembering where Yuki is",
+      "ja": "ゆきの居場所を覚える"
+    },
+    "explanation": "YukiLocation stores one position, pose and travel record in the visitor's sessionStorage. English and Japanese versions share a canonical page path. A cross-page call keeps its origin, target, start time and two travel legs; revisiting the origin during departure resumes that journey and lets the visitor stop her. Unloaded pages use elapsed timing, not background rendering. Ordinary navigation does not send her back to the nest. After inactivity she sleeps, then returns home after 45 more seconds. This is same-browser-tab state, not server or cross-device memory.",
+    "source": {
+      "file": "assets/yuki/home/location.mjs",
+      "symbol": "YukiLocation",
+      "firstLine": 16,
+      "lastLine": 47,
+      "sha256": "10e03b9f4dc497aef0e2eddd27a9860ac57a310ff75d00ff0ebe7c2da65556c7"
+    }
+  },
+  {
+    "id": "summon",
+    "topic": "movement",
+    "symbol": "summonTiming / catchInFlight",
+    "title": {
+      "en": "A timed, interruptible flight",
+      "ja": "途中で呼び止められる飛行"
+    },
+    "explanation": "summonTiming adds waking, takeoff and distance-based departure time. callFlightDuration sets a bounded travel time from real current feet to the chosen destination. catchInFlight stops movement at the visible feet position and keeps existing flapping artwork in a hover, rather than replacing it with a grounded pose or resizing the drawing. A decorative magical sparkle burst appears only at the origin section's header link; it does not attach to Yuki.",
+    "source": {
+      "file": "assets/yuki/home/summon.mjs",
+      "symbol": "summonTiming / catchInFlight",
+      "firstLine": 4,
+      "lastLine": 27,
+      "sha256": "d3cdccbf640521800eb141f59953ab6a4609bd6a80ef935c1656feb56f80d3c7"
+    }
+  },
+  {
+    "id": "camera",
+    "topic": "garden-testing",
+    "symbol": "gardenCamera",
+    "title": {
+      "en": "Filling the viewport without stretching",
+      "ja": "引き伸ばさずに画面を満たす"
+    },
+    "explanation": "gardenCamera uses width=max(viewport width, viewport height times 1.5), height=width/1.5 to preserve the 1536:1024 picture ratio. Translation is clamped to avoid empty edges. The camera follows the current normalized location; the renderer remaps the character and route by the same scene change. The image is cropped when necessary, not distorted.",
+    "source": {
+      "file": "assets/yuki/home/camera.mjs",
+      "symbol": "gardenCamera",
+      "firstLine": 4,
+      "lastLine": 7,
+      "sha256": "2ccf77dc30840732ba6d4a978de598e14b29f4ab24eec36918f424377a878fd0"
+    }
+  }
+]

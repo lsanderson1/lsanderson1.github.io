@@ -1,0 +1,204 @@
+{
+  "chapters": [
+    {
+      "id": "drawings",
+      "en": {
+        "title": "From a character idea to finished drawings",
+        "intro": "Lloyd explored Yuki’s proportions with 3D blockouts and reference drawings, then chose illustrated 2D animation for the website. The approved appearance stays the reference as each pose is refined.",
+        "steps": [
+          "Start with her red body, white belly and inner wings, glasses, small limbs and tapered tail. These visual landmarks help keep different poses recognizable as the same dragon.",
+          "Prepare separate drawings for standing, flying, pointing, emotions and sleep. Check the face, hands, wings and feet across the sequence, not just one attractive frame.",
+          "The garden background has a recorded built-in image_gen prompt and is an environment-only asset; that generation did not redraw Yuki. Existing character frames were refined and packaged separately. The repository notes do not establish every app or edit used to create every historical frame."
+        ],
+        "aside": "Different poses, same little dragon. My glasses should come along for every adventure!",
+        "question": "How did Lloyd develop your drawings and keep your appearance consistent? Explain the actual process."
+      },
+      "ja": {
+        "title": "キャラクターのイメージから、一枚ずつの絵へ",
+        "intro": "Lloydは3Dのブロックアウトと参考絵でゆきの体型を探り、サイトでは2Dのフレーム絵を選びました。ポーズを調整するときも、基準になる見た目を大切にしています。",
+        "steps": [
+          "赤い体、白いお腹と翼の内側、眼鏡、小さな手足、先細りのしっぽを基準にします。姿勢が変わっても、同じドラゴンに見えるための目印です。",
+          "待機、飛行、指さし、表情、睡眠などの絵を用意します。一枚だけでなく、連続した絵の顔、手、翼、足を見比べます。",
+          "庭の背景には、組み込みのimage_genを使った生成指示が記録されています。背景だけの画像で、この生成でゆき自身は描き直していません。キャラクターの絵は別に調整・梱包されています。ただし、過去の全フレームに使ったアプリや編集手順がすべて記録されているわけではありません。"
+        ],
+        "aside": "ポーズが変わっても、同じわたし。眼鏡もちゃんと一緒に冒険しなくちゃ！",
+        "question": "Lloydが絵を作り、ゆきの見た目をそろえた流れを、制作ガイドをもとに教えて。"
+      }
+    },
+    {
+      "id": "images",
+      "en": {
+        "title": "Preparing the artwork for a website",
+        "intro": "The artwork is packaged as transparent, lossless WebP images. A playback manifest acts like a small instruction book, connecting each animation to its frames, timing and alignment.",
+        "steps": [
+          "Give identical source images a shared content-based identity so the package can reuse them instead of storing extra copies.",
+          "Save the images, reopen them, and compare dimensions, transparency and visible color pixels with the inputs. This checks that packaging has not changed the approved artwork.",
+          "Load the frames needed for playback and position them using their alignment information. The package check preserves the input; it cannot prove that every original drawing is anatomically correct."
+        ],
+        "aside": "A little travel bag for my drawings—with room for every wingbeat.",
+        "question": "How are your drawings prepared and loaded for the website without changing their appearance?"
+      },
+      "ja": {
+        "title": "絵をウェブサイトで使える形にする",
+        "intro": "絵は、透明な背景を保てる可逆圧縮のWebP画像にまとめます。再生用の一覧が小さな説明書のように働き、各アニメーションの絵、タイミング、位置合わせをつなぎます。",
+        "steps": [
+          "同じ元画像には内容にもとづく共通の識別情報をつけ、重複した画像を再利用できるようにします。",
+          "保存した画像を開き直し、縦横のサイズ、透明度、見える部分の色を元画像と比較します。変換で絵が変わっていないかを確かめる工程です。",
+          "再生に必要な絵を読み込み、位置合わせの情報に沿って表示します。変換の確認は元の絵を保つためのもので、絵の形そのものが完璧だと保証するものではありません。"
+        ],
+        "aside": "羽ばたきの絵も、ちゃんと入ったかな？小さな旅支度だね。",
+        "question": "絵の見た目を変えずにサイトへ取り込み、再生に使うまでの流れを教えて。"
+      }
+    },
+    {
+      "id": "movement",
+      "en": {
+        "title": "Connecting takeoff, flight and landing",
+        "intro": "A movement controller coordinates where Yuki goes, while the animation controller chooses the matching drawings. Traveling smoothly and having enough illustrated poses are two separate parts of the result.",
+        "steps": [
+          "Choose a destination and a safe transition from the current action. Rest, takeoff, flight, hovering and landing are distinct states, so a trip has a beginning and an arrival.",
+          "Move her foot-position reference along a smooth route using elapsed time. The browser schedules redraws with the display, rather than tying travel speed to how fast a device runs.",
+          "Display the matching frame at one uniform scale. Width and height use the same multiplier, so she is not squeezed. Complete reaction clips wait for suitable transitions; airborne reactions keep the flying pose."
+        ],
+        "aside": "First the little launch, then the flapping… and hopefully a very graceful landing.",
+        "question": "How do your movement and drawings work together during takeoff, flight, hovering and landing?"
+      },
+      "ja": {
+        "title": "離陸、飛行、着陸をつなぐ",
+        "intro": "移動の制御が行き先を管理し、アニメーションの制御が動きに合う絵を選びます。移動が滑らかなことと、描かれたポーズが十分にあることは、それぞれ別の工夫です。",
+        "steps": [
+          "行き先を選び、今の動作から無理なく切り替えます。待機、離陸、飛行、ホバリング、着陸を区別することで、出発から到着までをつなぎます。",
+          "経過時間を使って、足元の基準位置を滑らかな経路に沿って動かします。ブラウザーの描画更新に合わせるため、端末の速さだけで移動速度が決まるわけではありません。",
+          "動きに合う絵を縦横同じ倍率で表示し、体を押しつぶさないようにします。表情は適切なタイミングで切り替え、空中では飛んでいる姿勢に合う絵を使います。"
+        ],
+        "aside": "ちょこんと飛び立って、ぱたぱたっ。着地は……そーっと、ね。",
+        "question": "離陸、飛行、ホバリング、着陸で、移動と絵をどう組み合わせているか教えて。"
+      }
+    },
+    {
+      "id": "little-motions",
+      "en": {
+        "title": "Breathing, blinking and expressive reactions",
+        "intro": "Small movements help Yuki feel present even while waiting. Existing artwork is used for controlled breathing, and hovering blinks are scheduled separately from the repeated wing cycle.",
+        "steps": [
+          "Add a small controlled breath and body movement to the approved idle artwork. Sleeping uses its own curled-up sequence and a nose bubble timed with the breathing phase.",
+          "Schedule a hover blink independently of the wing loop, so it is not forced to happen on the same wingbeat each time. This is separate from deliberately closed eyes in expressive drawings.",
+          "Coordinate waking, bedtime, reactions and occasional clumsy landings. A longer AI reply can suggest a few sentence-based expression changes; these play existing clips at reading pace, not recorded speech or phoneme lip-sync."
+        ],
+        "aside": "Even when I’m quiet, there’s a tiny breath—and maybe a very big dream.",
+        "question": "How do your breathing, blinking, sleep and conversational expressions work?"
+      },
+      "ja": {
+        "title": "呼吸、まばたき、気持ちの動き",
+        "intro": "待っている間も、呼吸などの小さな動きがゆきらしさを添えます。待機の絵に控えめな呼吸をつけ、ホバリング中のまばたきは翼の周期とは別にタイミングを決めています。",
+        "steps": [
+          "基準の待機絵に、小さな呼吸と体の動きを加えます。睡眠には丸くなった専用の絵を使い、鼻の泡も呼吸の周期に合わせます。",
+          "空中のまばたきを翼のループから分け、毎回同じ羽ばたきで目を閉じないようにします。表情として意図的に目を閉じた絵とは別の仕組みです。",
+          "寝起き、寝る準備、表情、たまの転倒をつなぎます。長めのAI返答では、文章の区切りに合う表情の変化をいくつか提案できます。既存の絵を読む速さに合わせて使うもので、音声や発音単位の口合わせではありません。"
+        ],
+        "aside": "静かなときも、小さくすう、はあ。夢のほうは大きいよ。",
+        "question": "呼吸、まばたき、睡眠、おしゃべり中の表情の仕組みを教えて。"
+      }
+    },
+    {
+      "id": "navigation",
+      "en": {
+        "title": "Knowing where to point and land",
+        "intro": "The site builds a catalog from its public headings, links and image descriptions. Yuki uses those known targets and the current page context; she is not watching the visitor’s eyes or reading other tabs.",
+        "steps": [
+          "Match the request to a published page or section, then measure the corresponding element in the browser. Navigation uses confirmed targets rather than a destination invented by AI.",
+          "Keep an active guiding journey across page changes and offer a contextual follow-up. Normal portfolio positioning uses document coordinates; the full-screen garden is a separate camera-following scene.",
+          "In the garden, landing spots use proportions of the whole illustration. A uniform cover scale fills the space below the normal portfolio header, and a camera pans with Yuki on narrow screens. Her position and route are remapped together, so she stays on the same painted path without squeezing the picture."
+        ],
+        "aside": "Ask the destination first. Flap second. I’m practicing that order!",
+        "question": "How do you find the right section, point to it and choose a landing spot as the page changes?"
+      },
+      "ja": {
+        "title": "指さす場所と、着地する場所を知る",
+        "intro": "サイトは公開された見出し、リンク、画像の説明を一覧にします。ゆきはその案内先と現在のページ情報を使います。視線を追ったり、別のタブを読んだりしているわけではありません。",
+        "steps": [
+          "質問に合う公開ページや項目を選び、対応する要素の位置をブラウザーで測ります。AIが作り話で決めた場所ではなく、確認できる案内先を使います。",
+          "案内中はページを移っても道順を保持し、到着に合うひとことを返します。通常のポートフォリオではページ全体の座標を使います。全画面の庭では、別のカメラ追従の仕組みを使います。",
+          "庭の着地点は、背景絵全体に対する割合で決めます。縦横同じ倍率でヘッダーの下を満たし、狭い画面ではゆきに合わせて背景を動かします。ゆきの位置と経路も一緒に換算するため、絵を押しつぶさずに同じ道を進めます。"
+        ],
+        "aside": "まず行き先を聞いて、それから羽ばたく。順番、練習中！",
+        "question": "ページを移りながら正しい項目を案内し、指さす場所や着地点を決める仕組みを教えて。"
+      }
+    },
+    {
+      "id": "conversation",
+      "en": {
+        "title": "Turning a question into a grounded answer",
+        "intro": "Cloudflare Workers AI gives Yuki her conversational replies. A server-side service selects relevant public page passages and combines them with her character story and the current conversation.",
+        "steps": [
+          "Check the incoming message, verification and shared free-usage allowance. The browser does not receive the service’s secret keys.",
+          "Retrieve relevant public portfolio passages and curated implementation notes bundled with the backend. These notes explain verified code blocks, not a live filesystem inspection. Garden fiction informs personality, never claims about Lloyd’s real work.",
+          "Validate the returned answer and its supported references before displaying it with approved gestures. Optional internet search has separate controls and limits. Missing information should be acknowledged; a fluent answer can still be mistaken."
+        ],
+        "aside": "A curious little guide, with real information underneath the sparkle.",
+        "question": "How do you use your implementation notes and public pages to answer questions, while keeping your personality?"
+      },
+      "ja": {
+        "title": "質問から、根拠のある返答へ",
+        "intro": "自由な会話の返答にはCloudflare Workers AIを使います。サーバー側の処理が関連する公開ページの文章を選び、ゆきの物語や今の会話と組み合わせます。",
+        "steps": [
+          "届いた質問、認証、共有の無料利用枠を確認します。サービスの秘密鍵はブラウザーへ渡しません。",
+          "関連する公開ページと、サーバー側に用意した制作ノートを選びます。ノートは確認済みの処理を説明するもので、会話のたびに実際のファイルを調べるわけではありません。庭の物語を、Lloydの実績を作り出す根拠にはしません。",
+          "返答と参照先を確認してから、対応する身振りと一緒に表示します。任意のウェブ検索には別の設定と上限があります。情報が足りないときはその点を伝えますが、自然に話せても誤りがないとは限りません。"
+        ],
+        "aside": "きらきらしたお話にも、ちゃんと情報の土台を。小さな案内役の大事なお仕事だね。",
+        "question": "制作ノートや公開ページを使って、ゆきらしさを保ちながら質問に答える流れを教えて。"
+      }
+    },
+    {
+      "id": "memory-language",
+      "en": {
+        "title": "Continuity, memory and two languages",
+        "intro": "Conversation continuity helps Yuki remain the same friendly guide across English and Japanese pages. It does not give her permanent memory or human-like awareness.",
+        "steps": [
+          "Retain the original conversation text and save translations separately. Reuse a saved translation rather than translating back and forth repeatedly and drifting away from the original meaning.",
+          "Store relevant older exchanges and explicitly stated topic interests separately from the visible transcript, in the same tab with a 24-hour limit. Clearing the visible chat does not clear those memories.",
+          "Give answers and translations the same casual, lively personality guidance. Keep the established backstory consistent, vary the wording, and put the visitor’s latest correction ahead of an older memory."
+        ],
+        "aside": "English or Japanese, I’m still me—little wings, big questions.",
+        "question": "How do your memory and translations keep a conversation consistent without repeating everything?"
+      },
+      "ja": {
+        "title": "会話の続き、記憶、ふたつの言葉",
+        "intro": "英語と日本語のページを移っても、同じ親しみやすいゆきとして話せるようにします。永久に覚える記憶や、人間のような自意識を持つ仕組みではありません。",
+        "steps": [
+          "会話の元の文章を残し、翻訳は別に保存します。保存済みの訳を使うことで、何度も訳し直して意味がずれるのを避けます。",
+          "関連する過去の会話と、はっきり伝えられた興味を、表示中の会話とは別に同じタブへ最長24時間保存します。チャットの表示を消しても、その記憶までは消しません。",
+          "返答と翻訳に同じ、くだけた親しみやすい話し方の方針を渡します。物語の軸はそろえ、言い回しは変え、古い記憶より今の訂正を優先します。"
+        ],
+        "aside": "英語でも日本語でも、わたしはわたし。小さな羽と、大きな『なんで？』！",
+        "question": "記憶と翻訳で、繰り返しを減らしながら会話のつながりを保つ仕組みを教えて。"
+      }
+    },
+    {
+      "id": "garden-testing",
+      "en": {
+        "title": "Bringing the garden together—and checking it",
+        "intro": "The garden combines the existing illustrated setting, decorative motion and Yuki’s existing animations. Explanations stay in chat instead of text panels or a public code browser.",
+        "steps": [
+          "Retain the shared portfolio header. Fill the remaining viewport with one proportionally scaled illustration, cropping and gently panning as Yuki travels; the page itself does not scroll.",
+          "Use existing airborne reactions for daydreaming, then land when requested. Bilingual home greetings and little thoughts use authored pools rather than an AI request for every selection.",
+          "Build both languages, run deterministic behavior checks and inspect desktop and phone layouts. Source-mapped implementation notes must be reverified when their referenced code changes. Pause and reduced-motion controls make ambient movement optional."
+        ],
+        "aside": "A sunny home, a few wobbly wingbeats, and always a little room to improve.",
+        "question": "How did Lloyd combine the garden artwork, interactions and animations, and how is it tested?"
+      },
+      "ja": {
+        "title": "庭をひとつにつなぎ、動きを確かめる",
+        "intro": "庭は背景イラスト、装飾の動き、既存のゆきのアニメーションを組み合わせます。制作の説明はチャットで行い、文章のパネルやコード一覧は表示しません。",
+        "steps": [
+          "ポートフォリオと共通のヘッダーを残し、その下を一枚の背景絵で満たします。縦横の比率を保ったまま一部を切り抜き、ゆきの移動に合わせて表示範囲を動かします。ページ自体はスクロールしません。",
+          "空で考えごとをするときは既存の飛行用の表情を使い、操作に応じて着陸します。おうちのあいさつやひとことは英日対訳の候補から選ぶため、選ぶたびにAIへ問い合わせる必要はありません。",
+          "両言語のページを生成し、動作テストとパソコン・スマートフォンの表示を確認します。制作ノートは対応するコードが変わると再確認が必要です。一時停止や動きを減らす設定で、装飾の動きを抑えられます。"
+        ],
+        "aside": "ひなたのおうちと、ちょっとよろよろの羽ばたき。少しずつ、もっとよくしていこう。",
+        "question": "庭の背景、操作、アニメーションをどう組み合わせ、どんな確認をしているか教えて。"
+      }
+    }
+  ]
+}

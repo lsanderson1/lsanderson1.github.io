@@ -8,6 +8,7 @@
     <a{% if page.url contains '/unreal-journey/' %} class="is-active" aria-current="page"{% endif %} href="{{ '/unreal-journey/' | prepend: locale_prefix | prepend: site.baseurl }}">Unreal Journey <small>開発記録</small></a>
     <a{% if page.url contains '/projects/' %} class="is-active" aria-current="page"{% endif %} href="{{ '/projects/' | prepend: locale_prefix | prepend: site.baseurl }}">Projects <small>作品</small></a>
     <a{% if page.url contains '/essays/' %} class="is-active" aria-current="page"{% endif %} href="{{ '/essays/' | prepend: locale_prefix | prepend: site.baseurl }}">Essays <small>文章</small></a>
+    <a{% if page.yuki_home %} class="is-active" aria-current="page"{% endif %} href="{{ '/yuki/' | prepend: locale_prefix | prepend: site.baseurl }}">Yuki <small>ゆきの庭</small></a>
   </nav>
   <div class="fp-language-switch" role="group" aria-label="{{ t.language }}">
     {% if english_page %}<a href="{{ english_url | relative_url }}" lang="en" hreflang="en"{% if lang == 'en' %} class="is-active" aria-current="true"{% endif %}>{% include language-flag.html code='en' %}English</a>{% else %}<span lang="en" title="{{ t.unavailable }}">{% include language-flag.html code='en' %}English</span>{% endif %}
