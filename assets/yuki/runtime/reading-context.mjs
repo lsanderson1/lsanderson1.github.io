@@ -84,7 +84,7 @@ export function chooseReadingSection(headings,height,header=0,width=Infinity){
 function pageReadingEntries(doc){
  const main=doc.querySelector('main');if(!main)return [];
  const end=main.getBoundingClientRect().bottom,width=doc.documentElement?.clientWidth||Infinity;
- return [...main.querySelectorAll('[data-yuki-section]')].filter(el=>el.getClientRects().length&&!el.closest('[hidden], [aria-hidden="true"]')).flatMap(el=>{
+ return [...main.querySelectorAll('[data-yuki-section]')].filter(el=>!el.dataset.gardenSpot&&el.getClientRects().length&&!el.closest('[hidden], [aria-hidden="true"]')).flatMap(el=>{
   const r=el.getBoundingClientRect(),clip=el.closest('[data-feature-carousel]')?.getBoundingClientRect(),card=el.closest('.fp-feature')?.getBoundingClientRect()??r;
   const left=Math.max(0,clip?.left??0),right=Math.min(width,clip?.right??width);
   // A carousel's off-screen cards still have DOM rectangles, but they are
@@ -102,6 +102,17 @@ export function readPageImages(doc,height,header=0){
  return pageReadingEntries(doc).filter(h=>h.kind==='image'&&h.bottom>header&&h.top<height)
   .sort((a,b)=>Math.min(b.bottom,height)-Math.max(b.top,header)-(Math.min(a.bottom,height)-Math.max(a.top,header)))
   .slice(0,4).map(h=>h.id);
+}
+// A nearby perch is not the visitor's gaze. Drop it after the camera pans that
+// landmark offscreen; never reuse the last requested destination during flight.
+export function readGardenSpot(doc,id,height,header=0){
+ if(!['nest','pond','lookout','books','treasures'].includes(id))return null;
+ const el=doc.getElementById('garden-'+id);
+ if(!el?.getClientRects().length||el.closest('[hidden], [aria-hidden="true"]'))return null;
+ const r=el.getBoundingClientRect(),clip=el.closest('.yg-world')?.getBoundingClientRect();
+ const left=Math.max(0,clip?.left??0),right=Math.min(doc.documentElement.clientWidth,clip?.right??Infinity);
+ const top=Math.max(header,clip?.top??0),bottom=Math.min(height,clip?.bottom??height);
+ return r.right>left&&r.left<right&&r.bottom>top&&r.top<bottom?{id,section:sectionKey(el.dataset.yukiSection)}:null;
 }
 export function guideReference(el,page,url){
  if(url){const path=safeSitePath(url);if(path){const target=new URL(path,'https://portfolio.invalid');if(target.pathname!==page)return {page:target.pathname,section:''};}}

@@ -228,13 +228,13 @@
       "en": "Selecting evidence for answers",
       "ja": "返答の根拠を選ぶ"
     },
-    "explanation": "retrieveKnowledge filters the public catalog to the requested language and safe site paths, splits long sections into overlapping passages, scores question terms with a smaller weight for recent history, and selects at most six. An explicitly named page, a resolved picture or a current-page question limits passages to that page; unrelated site-wide matches cannot fill the budget. Relevant published image descriptions and current or explicitly guided sections take priority. Broader questions still search across the catalog. Curated making-of notes are supplied separately; this is local text ranking, not live repository browsing or visual perception.",
+    "explanation": "retrieveKnowledge filters the public catalog to the requested language and safe site paths, splits long sections into overlapping passages, and selects at most six. An explicitly named page, resolved picture or current-page question limits evidence to that page. Current-page questions ignore stale history for ranking, omit an old guided target, and do not infer a making-of topic from prior conversation. Five published garden landmarks have their own source anchors; a visible nearby perch can select its evidence without claiming eye tracking. Ordinary follow-ups can still use recent history and the guide reference. Broader questions search across the catalog. Curated making-of notes are separate; this is local text ranking, not live repository browsing or visual perception.",
     "source": {
       "file": "services/yuki-api/knowledge.mjs",
       "symbol": "retrieveKnowledge",
       "firstLine": 41,
-      "lastLine": 79,
-      "sha256": "e8f9aad17a874a1e7b90429dc73e825e775038d3ba9d38d9e9b4bd1344702a9e"
+      "lastLine": 84,
+      "sha256": "8eb8f4667b10f042a22d3e66b2900262a3dfffa9f9376a6041e05002f296ec8a"
     }
   },
   {
@@ -249,8 +249,8 @@
     "source": {
       "file": "services/yuki-api/worker.mjs",
       "symbol": "parseModel",
-      "firstLine": 83,
-      "lastLine": 144,
+      "firstLine": 85,
+      "lastLine": 146,
       "sha256": "72003b5cda4ebbd4f845074406de93543796701ce619e64cf4e1d490f5cc2c67"
     }
   },
@@ -267,8 +267,8 @@
       "file": "services/yuki-api/reply-completion.mjs",
       "symbol": "completionRequest / parseCompletion",
       "firstLine": 6,
-      "lastLine": 42,
-      "sha256": "5d7821e8995abb5c781447aff261802d54f7ac2f9c45977747adbd4625535a70"
+      "lastLine": 43,
+      "sha256": "56f39218cbb7869e3c044214d8ced15df2bfe97a7f3656e4174795c69a700e3f"
     }
   },
   {

@@ -11,6 +11,17 @@ assert.equal(k.version,2);assert(Buffer.byteLength(raw)<2000000);assert(k.pages.
 let sections=0,images=0;
 for(const p of k.pages){
  assert(safeSitePath(p.url));assert(['en','ja'].includes(p.lang));
+ const message=p.lang==='ja'?'ここってどんなところ？':"What's here?";
+ const input={page:p.url,lang:p.lang,message,history:[{role:'user',content:'How does your HoverBlink.update work?'}],context:{section:p.sections[0]?.id,lastGuide:{page:'/resume.html',section:'s0'}}};
+ const awareness=retrieveKnowledge(k,input);
+ assert.equal(awareness.view.scope,p.url);assert(awareness.pages.length);
+ assert(awareness.pages.every(s=>s.url.split('#')[0]===p.url));assert.equal(awareness.makingOf,null);
+ if(/^\/(ja\/)?yuki\/$/.test(p.url))for(const id of ['nest','pond','lookout','books','treasures']){
+  const s=p.sections.find(s=>s.anchor==='garden-'+id);assert(s,id);
+  const detail=retrieveKnowledge(k,{...input,context:{section:s.id,gardenSpot:id}});
+  assert.equal(detail.view.gardenSpot.id,id);assert(detail.pages.some(s=>s.id===detail.view.gardenSpot.sourceId));
+  assert(s.text.length>70,'Garden landmarks need useful role/interaction evidence, not only a title');
+ }
  const file=path.join(site,p.url.endsWith('/')?p.url+'index.html':p.url);
  assert(file.startsWith(site+path.sep));const html=fs.readFileSync(file,'utf8');
  const seen=new Set();

@@ -1,4 +1,4 @@
-import {voiceInstructions,yukiStory} from './personality.mjs';
+import {voiceInstructions,yukiStory,answerExplanationInstructions} from './personality.mjs';
 import {validReply,cleanAssistantText} from '../../assets/yuki/protocol.mjs';
 import {unfinishedReply,unfinishedNotice} from '../../assets/yuki/runtime/reply-completion.mjs';
 export {unfinishedReply};
@@ -16,6 +16,7 @@ export function completionRequest(request,reply,knowledge,web,language){
 Speak in Yuki's warm, curious baby-dragon voice, with everyday phrasing rather than a dry summary. Explain a mechanism or example only as far as the evidence supports it. Do not invent API names, command syntax or concrete implementation details to fill out an example; describe the idea in plain words when exact syntax is absent.
 This is a repair, not a fresh expansion: retain only claims already made in the draft and supported by the evidence. If the draft is brief, a brief complete answer is enough. Never mix Yuki's website animation implementation into a separate Blender project, or claim that Blender drives her live website movements. Do not add an imagined Yuki example to a real portfolio explanation.
 ${voiceInstructions(language)}
+${answerExplanationInstructions}
 Return only {"text":"your complete answer"}, matching this schema: ${JSON.stringify(schema)}. The prose must not contain serialized fields, beats, routing metadata, schema text or a repeated copy of the answer. No new greeting. The same hard response validator will check the result.`},{role:'user',content:JSON.stringify({question:request.messages.at(-1).content.replace(/\n\/no_think$/,''),draft:reply.text,evidence:entries.filter(p=>sourceIds.includes(p.id)),makingOf:sourceIds.length?undefined:knowledge.makingOf,characterCanon:Object.fromEntries((reply.storyTopics??[]).filter(id=>yukiStory[id]).map(id=>[id,yukiStory[id]]))})+'\n/no_think'}],stream:false,max_tokens:1200,temperature:.3,response_format:{type:'json_schema',json_schema:schema}};
 }
 

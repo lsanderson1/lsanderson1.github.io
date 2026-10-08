@@ -64,6 +64,21 @@ module YukiKnowledge
         item['text'] += "\nPublished caption: #{text(caption[1])}" if item
       end
     end
+    # Garden landmarks are real page targets, not headings laid out in reading
+    # order. Index their published labels without adding any visible captions.
+    main = main.gsub(/<button\b((?:"[^"]*"|'[^']*'|[^'">])*)>/mi) do |tag|
+      attrs = Regexp.last_match[1]
+      spot = /\bdata-garden-spot="(nest|pond|lookout|books|treasures)"/.match(attrs)
+      next tag unless spot && attrs.include?("id=\"garden-#{spot[1]}\"")
+      title = /\btitle="([^"]+)"/.match(attrs)
+      next tag unless title
+      id = "s#{sections.length}"
+      label = CGI.unescapeHTML(title[1])
+      description = /\bdata-yuki-description="([^"]+)"/.match(attrs)
+      sections << {'id'=>id, 'title'=>label, 'anchor'=>"garden-#{spot[1]}", 'kind'=>'garden',
+                   'text'=>"Published interactive garden location: #{label}. #{description ? CGI.unescapeHTML(description[1]) : ''}".strip}
+      "<button#{attrs} data-yuki-section=\"#{id}\">"
+    end
     sections.concat(images)
     # Only add nonvisual identifiers, preserving the page's artwork and layout.
     page.output = html[0...match.begin(1)] + main + html[match.end(1)..-1]

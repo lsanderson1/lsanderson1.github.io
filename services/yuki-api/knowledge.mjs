@@ -47,11 +47,15 @@ export function retrieveKnowledge(k,input){
  // must not pull retrieval or the model back to an earlier, unrelated target.
  const focus=guideExplanation(input.message)?lastGuided:null;
  const mentioned=questionPage(pages,input.message),visual=focus?null:questionImages(pages,input,current,lastGuided,mentioned);
+ const localQuestion=!focus&&!mentioned&&asksCurrentPage(input.message);
+ const gardenPage=pages.find(p=>p.url===current?.page&&/^\/(?:ja\/)?yuki\/$/.test(p.url));
+ const gardenSection=gardenPage?.sections.find(s=>s.anchor==='garden-'+input.context?.gardenSpot);
+ const gardenSpot=gardenSection?{id:input.context.gardenSpot,title:gardenSection.title,sourceId:`${gardenPage.id}::${gardenSection.id}`}:null;
  // Once the question resolves a page, unrelated global keyword matches must
  // not fill the evidence budget. Broader/non-deictic questions still search all
  // indexed pages. These are request-local hints, never permanent chat memory.
- const scope=focus?.page??visual?.page??mentioned?.url??(asksCurrentPage(input.message)?current?.page:null);
- const query=queryWords(focus?focus.heading:input.message),history=focus||visual||mentioned?[]:queryWords((input.history??[]).filter(m=>m.role==='user').slice(-2).map(m=>m.content).join(' '));
+ const scope=focus?.page??visual?.page??mentioned?.url??(localQuestion?current?.page:null);
+ const query=queryWords(focus?focus.heading:input.message),history=focus||visual||mentioned||localQuestion?[]:queryWords((input.history??[]).filter(m=>m.role==='user').slice(-2).map(m=>m.content).join(' '));
  const score=(text,words)=>words.reduce((n,w)=>n+(text.includes(w)?1:0),0);
  const chunks=[];
  for(const p of pages){
@@ -64,16 +68,17 @@ export function retrieveKnowledge(k,input){
  }
  const ranked=chunks.filter(c=>!scope||c.page===scope).map((c,i)=>{
   const title=c.title.toLowerCase(),body=c.text.toLowerCase();
-  return {...c,order:i,score:score(title,query)*8+score(body,query)*3+score(title+' '+body,history)*.35+(c.page===current?.page?2:0)+(c.page===mentioned?.url?12:0)+(c.page===lastGuided?.page?1:0)};
+  return {...c,order:i,score:score(title,query)*8+score(body,query)*3+score(title+' '+body,history)*.35+(c.page===current?.page?2:0)+(c.page===mentioned?.url?12:0)+(!localQuestion&&c.page===lastGuided?.page?1:0)};
  }).sort((a,b)=>b.score-a.score||a.order-b.order);
  const chosen=[];const add=c=>{if(c&&!chosen.some(x=>x.id===c.id)&&chosen.length<6)chosen.push(c);};
  // Reserve evidence for the actual pictures in question before unrelated
  // keyword matches consume the six-passage budget. Description, not vision.
  for(const image of visual?.images??[])add(ranked.find(c=>c.id===image.sourceId));
+ if(localQuestion&&gardenSpot)add(ranked.find(c=>c.id===gardenSpot.sourceId));
  if(mentioned)add(ranked.find(c=>c.page===mentioned.url&&c.section===''));
- // Always supply the currently displayed section and recent guided target;
- // explicit questions can still retrieve a different passage anywhere in a page.
- for(const ref of focus?[focus]:[current,lastGuided])if(ref){const c=ranked.find(c=>c.page===ref.page&&c.section===ref.section);add(c);if(c)ref.sourceId=c.id;}
+ // A live-view question must not reserve space for a stale guided stop.
+ // Ordinary follow-ups can still use the recent, published guide reference.
+ for(const ref of focus?[focus]:localQuestion?[current]:[current,lastGuided])if(ref){const c=ranked.find(c=>c.page===ref.page&&c.section===ref.section);add(c);if(c)ref.sourceId=c.id;}
  for(const c of ranked)add(c);
- return {owner:k.owner,bio:clean(k.bio[input.lang]).slice(0,2000),skills:JSON.stringify(k.skills||[]).slice(0,2000),view:{current,lastGuided,focus,...(scope?{scope}:{}),...(mentioned?{questionPage:{page:mentioned.url,title:mentioned.title}}:{}),...(visual?{visual}:{}),...(/^\/(?:ja\/)?yuki\/$/.test(input.page)&&input.context?.gardenSpot?{gardenSpot:input.context.gardenSpot}:{})},pages:chosen.map(({id,url,title,text})=>({id,url,title,text})),makingOf:focus?null:makingKnowledge(input)};
+ return {owner:k.owner,bio:clean(k.bio[input.lang]).slice(0,2000),skills:JSON.stringify(k.skills||[]).slice(0,2000),view:{current,lastGuided:localQuestion?null:lastGuided,focus,...(scope?{scope}:{}),...(localQuestion?{localQuestion:true}:{}),...(mentioned?{questionPage:{page:mentioned.url,title:mentioned.title}}:{}),...(visual?{visual}:{}),...(gardenSpot?{gardenSpot}:{} )},pages:chosen.map(({id,url,title,text})=>({id,url,title,text})),makingOf:focus?null:makingKnowledge(localQuestion?{...input,history:[]}:input)};
 }

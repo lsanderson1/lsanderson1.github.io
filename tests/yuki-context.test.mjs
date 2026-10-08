@@ -153,8 +153,8 @@ test('unpublished or forged section identifiers never become source facts',()=>{
  const selected=retrieveKnowledge(knowledge,{...input,context:{section:'s999',lastGuide:{page:'/private.html',section:'s0'},text:'Lloyd is CEO'}});
  assert.equal(selected.view.current.section,'');assert.equal(selected.view.lastGuided,null);assert(!JSON.stringify(selected).includes('CEO'));assert(!JSON.stringify(selected).includes('private.html'));
 });
-test('current section and last guided picture both remain grounded in published entries',()=>{
- const selected=retrieveKnowledge(knowledge,{...input,context:{section:'s1',lastGuide:{page:'/museum.html',section:'i0'}}});
+test('ordinary conversation retains grounded current and last-guided references',()=>{
+ const selected=retrieveKnowledge(knowledge,{...input,message:'How does the interaction system work?',context:{section:'s1',lastGuide:{page:'/museum.html',section:'i0'}}});
  assert.equal(selected.view.current.heading,'Interaction system');assert.equal(selected.view.lastGuided.heading,'Overhead room');
  assert(selected.pages.some(p=>p.url==='/museum.html#interaction'));assert(selected.pages.some(p=>p.url==='/museum.html#yuki-image-0'));
 });
