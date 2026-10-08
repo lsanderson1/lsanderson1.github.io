@@ -63,7 +63,7 @@ export class PageObstacles {
    if(!node.textContent.trim()||!parent||this.root.contains(parent)||parent.closest('script,style,noscript,[aria-hidden="true"]'))continue;
    const range=this.doc.createRange();range.selectNodeContents(node);this.ranges.push(range);
   }
-  this.elements=[...this.doc.querySelectorAll('a,button,input,textarea,select,img,video,iframe,pre,nav,header,[role="button"]')].filter(el=>!this.root.contains(el)&&!el.closest('[aria-hidden="true"]'));
+  this.elements=[...this.doc.querySelectorAll('a,button,input,textarea,select,img,video,iframe,pre,nav,header,[role="button"]')].filter(el=>!this.root.contains(el)&&!el.closest('[aria-hidden="true"]')&&!el.matches('.yg-backdrop'));
   this.dirty=false;
  }
  read(width,height){

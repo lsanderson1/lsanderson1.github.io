@@ -2,7 +2,7 @@ import {cleanVariety,cleanStoryTopics} from './runtime/reply-variety.mjs';
 import {cleanMessages} from './runtime/conversation-language.mjs?v=3';
 import {cleanReplyBeats} from './runtime/reply-beats.mjs';
 export const emotions=['neutral','confused','delighted','thoughtful','surprised','shy','proud','reassuring','amused'];
-export const destinations=['none','projects','essays','unreal','resume'];
+export const destinations=['none','projects','essays','unreal','resume','garden'];
 export function chatUnavailable(reason,lang='en',reference=''){
  const ja=lang==='ja';
  if(reason==='preview')return ja?'ここはローカルプレビューだよ。AIでのお話は公開サイトでできるんだ。ここでも動いたり、作品を案内したりできるよ！':'This is a local preview. We can chat with AI on the published website; I can still move around and guide you to projects here!';

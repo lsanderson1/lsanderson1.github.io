@@ -212,10 +212,10 @@ English</a>
 <main class="yg-main">
   
 
-<link rel="stylesheet" href="/assets/yuki/home/garden.css?v=7">
+<link rel="stylesheet" href="/assets/yuki/home/garden.css?v=9">
 <div class="yg-page">
  <h1 class="yg-sr-only" id="yuki-section-0" data-yuki-section="s0">ゆきの庭</h1>
- <section class="yg-world" aria-label="ゆきのインタラクティブな庭">
+ <section class="yg-world" tabindex="0" aria-describedby="garden-pan-hint" aria-label="ゆきのインタラクティブな庭">
   <div class="yg-scene" data-yuki-garden>
    <img class="yg-backdrop" src="/assets/yuki/home/petal-nook.png" width="1536" height="1024" fetchpriority="high" alt="桜に囲まれた明るいお城の庭。葉っぱの巣、スイレンの池、本のあるベンチ、紙の鶴と小石、空を見渡すテラス。" id="yuki-image-0" data-yuki-section="i0">
    <div class="yg-weather" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
@@ -251,6 +251,9 @@ English</a>
    </details>
   </div>
   <span class="yg-beta">BETA</span>
+  <button class="yg-pan-edge yg-pan-left" data-garden-pan="left" aria-label="庭の左側を見る">‹</button>
+  <button class="yg-pan-edge yg-pan-right" data-garden-pan="right" aria-label="庭の右側を見る">›</button>
+  <span id="garden-pan-hint" class="yg-sr-only">ホイール、スワイプ、矢印キーで庭を見渡せるよ。場所を選ぶと、ゆきを追うよ。</span>
   <aside class="yg-thought" aria-label="ゆきのひとこと">
    <p data-home-dialogue>「小さな羽はたたんで、大きな夢は広げよう。」</p>
    <button data-garden-action="home-line" aria-label="別のひとこと" title="別のひとこと">↻</button>
@@ -267,7 +270,7 @@ English</a>
   
 <link rel="stylesheet" href="/assets/yuki/yuki.css?v=14">
 <div id="yuki-companion" data-assets="/assets/yuki/" data-base="" data-page-title="ゆきの庭" data-site-origin="https://lsanderson1.github.io" data-endpoint="https://yuki-portfolio-chat.lsanderson1-github-io.workers.dev/chat" data-site-key="0x4AAAAAAFOFIN7xPRQPUV4Q"></div>
-<script type="module" src="/assets/yuki/yuki.mjs?v=29"></script>
+<script type="module" src="/assets/yuki/yuki.mjs?v=30"></script>
 
 
   </body>

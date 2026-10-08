@@ -9,7 +9,7 @@ import {pageLayout,bubblePlacement,bubbleHeightLimit,pointerTarget} from './runt
 import {localizedPages,localizePath,findPageTarget,pendingGuide,targetRect,curateDestinations} from './runtime/page-targets.mjs?v=9';
 import {PageObstacles,visibleSpot,guideSpot,clampFoot,fits,atFoot} from './runtime/clear-space.mjs?v=5';
 import {GuideJourney,guideTarget as checkedGuideTarget,isGuideRequest,resolveGuideRequest,planGuideStep,findGuideElement,guideCopy} from './runtime/guide-journey.mjs?v=1';
-import {PageMotion,pageProjection,inViewport,containPageRover} from './runtime/page-motion.mjs?v=8';
+import {PageMotion,pageProjection,inViewport,containPageRover,prepareCall} from './runtime/page-motion.mjs?v=8';
 import {CallPerches} from './runtime/call-perches.mjs?v=7';
 import {VisitorPersonality,conversationOpening,localizeGreetingMessages,replySequence,cueArtwork} from './runtime/visitor-personality.mjs?v=9';
 import {ChatAvailability,ChatPermission,ChatSession,ChatVerification,chatEnvironment,chatEnabledKey,searchConsentKey} from './runtime/chat-access.mjs?v=3';
@@ -51,8 +51,8 @@ async function start(){
  const callPerches=new CallPerches();
  let obstacles=[],clear=true,lastMeasure=-Infinity,guideScrollUntil=0,headerBottom=0;
  const measureHeader=()=>headerBottom=Math.max(0,document.querySelector('.fp-nav')?.getBoundingClientRect().bottom??0);
- const paths={projects:'/projects/',essays:'/essays/',unreal:'/unreal-journey/',resume:'/resume.html'};
- const names={projects:'Projects',essays:'Essays',unreal:'Unreal Journey',resume:'Resume'};
+ const paths={projects:'/projects/',essays:'/essays/',unreal:'/unreal-journey/',resume:'/resume.html',garden:'/yuki/'};
+ const names={projects:'Projects',essays:'Essays',unreal:'Unreal Journey',resume:'Resume',garden:tr('Yuki’s Garden','ゆきの庭')};
  const endpoint=(()=>{try{const u=new URL(root.dataset.endpoint);return u.protocol==='https:'?u.href:'';}catch{return '';}})();
  const access=chatEnvironment({origin:location.origin,siteOrigin:root.dataset.siteOrigin,endpoint,siteKey:root.dataset.siteKey});
  const online=access.available,permission=new ChatAvailability(visitorStorage);
@@ -168,7 +168,7 @@ async function start(){
  const travel=['rest','takeoff','landing','flight','flightHover','flightLeft','flightRight','pointLeft','pointRight','attention'];
  async function prepareTravel(){await ensure([...travel,'wake','bedtime','crash']);companion.lifecycle.crashChance=.08;companion.lifecycle.inactivityMs=gardenScene?Infinity:90000;if(motion)motion.prepared=true;}
  async function wake(){if(!ready||!resident)return;try{await ensure(['wake','bedtime']);companion.lifecycle.inactivityMs=gardenScene?Infinity:90000;companion.lifecycle.wake();companion.lifecycle.activity();save();}catch{status(tr('Some animation artwork could not load. Please try again.','アニメーションを読み込めませんでした。もう一度お試しください。'));}}
- const elements=Object.entries(paths).map(([id,path])=>({id,name:names[id],el:document.querySelector(id==='projects'?'#projects, .fp-project-list':id==='essays'?'#essays, .fp-essay-list':id==='unreal'?'#unreal-journey, .fp-timeline':'.fp-resume-head')})).filter(d=>d.el);
+ const elements=Object.entries(paths).map(([id,path])=>({id,name:names[id],el:document.querySelector(id==='garden'?'#garden-lookout':id==='projects'?'#projects, .fp-project-list':id==='essays'?'#essays, .fp-essay-list':id==='unreal'?'#unreal-journey, .fp-timeline':'.fp-resume-head')})).filter(d=>d.el);
  function measure(){
   layout=viewportLayout();bodyHeight=garden?garden.height:layout.bodyHeight;
   measureHeader();
@@ -400,6 +400,10 @@ async function start(){
   const el=findGuideElement(document,step);
   if(!el){panel(true);addMessage('assistant',tr('I found the page in my map, but not its clickable link here. I won’t point at the wrong thing. You can open the exact page below.','地図にはあるけれど、このページに案内できるリンクが見つからないの。違うところは指さないよ。下のリンクから正しいページを開けるよ。'));
    const a=document.createElement('a');a.href=target.url;a.textContent=target.title;$('.yuki-speech').lastElementChild.append(a);routeButtons([[tr('Stop leading','案内を終了'),cancelJourney]]);return;}
+  if(garden&&gardenScene.contains(el)){
+   const b=gardenScene.getBoundingClientRect(),r=el.getBoundingClientRect();
+   garden.camera.revealPoint({x:((r.left+r.right)/2-b.left)/b.width,y:((r.top+r.bottom)/2-b.top)/b.height});gardenRect=null;
+  }
   journeyStep=step;journey.expect(step.kind==='arrive'?target.url:step.url,location.pathname);
   routeButtons([[tr('Stop leading','案内を終了'),cancelJourney]]);
   await showElement({id:'journey-'+journeySerial+'-'+step.kind,name:step.title,el,url:step.url,journeySerial});
@@ -545,8 +549,8 @@ async function start(){
   }
  }
  function render(){if(!companion)return;const r=companion.rover,life=companion.lifecycle;
-  if(garden&&!journey.active&&resident&&!portalTrip){
-   garden.fitView(r.position);
+  if(garden&&!journey.active&&!portalTrip){
+   garden.fitView(resident?r.position:null);
    const rect=gardenScene.getBoundingClientRect(),next={left:rect.left,top:rect.top+scrollY,width:rect.width,height:rect.height};
    if(gardenRect&&['left','top','width','height'].some(k=>Math.abs(next[k]-gardenRect[k])>.000001)){
     const remap=p=>{p.x=next.left+(p.x-gardenRect.left)*next.width/gardenRect.width;p.y=next.top+(p.y-gardenRect.top)*next.height/gardenRect.height;};
