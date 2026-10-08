@@ -23,7 +23,7 @@ emotionStatus.amused='Hehe! A playful little giggle.';
 export const emotionPlayback=clips=>Object.fromEntries([...emotionKinds,...talkKinds].filter(kind=>clips[kind]).map(kind=>[kind,calmTalkPlayback[kind]??clips[kind].playback]));
 export function normalizeReplyCue(value){
  if(!value||typeof value!=='object'||Array.isArray(value)||typeof value.text!=='string')throw new Error('Invalid reply cue');
- const text=value.text.trim();if(!text||text.length>1000)throw new Error('Invalid reply text');
+ const text=value.text.trim();if(!text||text.length>2000)throw new Error('Invalid reply text');
  const emotion=['neutral',...emotionKinds].includes(value.emotion)?value.emotion:'neutral';
  // Current wave artwork is explicitly happy. Incompatible cues remain expressions.
  const gesture=value.gesture==='wave'&&emotion==='delighted'?'wave':emotion==='neutral'&&talkKinds.includes(value.gesture)?value.gesture:'none';

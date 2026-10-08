@@ -7,10 +7,10 @@ export class PageMotion {
  defer(){this.nextRoam=this.clock+75000+this.random()*45000;}
  scroll(){this.lastScroll=this.clock;this.defer();}
  get scrolling(){return this.clock-this.lastScroll<4000;}
- travel(target,{arrival='land'}={}){
+ travel(target,{arrival='land',duration}={}){
   const r=this.c.rover,id='page-move-'+(++this.serial%2);
   r.points=r.points.filter(p=>!p.id.startsWith('page-move-')||p.id===r.at||p.id===r.wanted);
-  const i=r.points.findIndex(p=>p.id===id),point={id,...target,autonomous:false};
+  const i=r.points.findIndex(p=>p.id===id),point={id,...target,autonomous:false,routeDuration:Number.isFinite(duration)?Math.max(1000,Math.min(18000,duration)):undefined};
   if(i<0)r.points.push(point);else r.points[i]=point;
   r.setArrivalStyle(arrival);r.request(id);this.defer();
  }

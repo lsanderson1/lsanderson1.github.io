@@ -33,7 +33,7 @@ export class Rover {
  beginRoute(){
   const end=this.point(this.wanted),visible=this.foot,start={x:visible.x,y:visible.y+this.graph.lift*48};
   this.position={...start};
-  this.route={id:end.id,start,end:{...end},elapsed:0,duration:clamp(distance(start,end)/.15,1000,4000),arrived:false};
+  this.route={id:end.id,start,end:{...end},elapsed:0,duration:Number.isFinite(end.routeDuration)?clamp(end.routeDuration,1000,18000):clamp(distance(start,end)/.15,1000,4000),arrived:false};
   this.hoverRemaining=0;this.hoverClock=0;
   this.graph.request('flight');
  }

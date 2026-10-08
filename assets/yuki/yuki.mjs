@@ -3,21 +3,26 @@ import {projectFrame} from './runtime/projection.mjs';
 import {IdleRenderer} from './runtime/idle-renderer.mjs';
 import {takeoffMs,landingMs,contactPhases} from './runtime/timing.mjs';
 import {airClips} from './runtime/air-reactions.mjs';
-import {emotionPlayback,applyReplyCue} from './runtime/reply-cues.mjs';
+import {emotionPlayback,applyReplyCue} from './runtime/reply-cues.mjs?v=2';
 import {SiteGuide} from './runtime/site-guide.mjs?v=5';
 import {pageLayout,bubblePlacement,bubbleHeightLimit,pointerTarget} from './runtime/page-layout.mjs?v=9';
 import {localizedPages,localizePath,findPageTarget,pendingGuide,targetRect,curateDestinations} from './runtime/page-targets.mjs?v=9';
 import {PageObstacles,visibleSpot,guideSpot,clampFoot,fits,atFoot} from './runtime/clear-space.mjs?v=5';
 import {GuideJourney,guideTarget as checkedGuideTarget,isGuideRequest,resolveGuideRequest,planGuideStep,findGuideElement,guideCopy} from './runtime/guide-journey.mjs?v=1';
-import {PageMotion,pageProjection,inViewport,prepareCall,containPageRover} from './runtime/page-motion.mjs?v=7';
+import {PageMotion,pageProjection,inViewport,containPageRover} from './runtime/page-motion.mjs?v=8';
 import {CallPerches} from './runtime/call-perches.mjs?v=7';
 import {VisitorPersonality,conversationOpening,localizeGreetingMessages,replySequence,cueArtwork} from './runtime/visitor-personality.mjs?v=9';
 import {ChatAvailability,ChatPermission,ChatSession,ChatVerification,chatEnvironment,chatEnabledKey,searchConsentKey} from './runtime/chat-access.mjs?v=3';
 import {ConversationMemory} from './runtime/conversation-memory.mjs?v=1';
+import {VisitorInterests} from './runtime/visitor-interests.mjs';
+import {expressionSequence} from './runtime/reply-beats.mjs';
+import {GardenHome} from './home/garden.mjs';
+import {YukiLocation,capturePose,restorePose,poseArtwork,locationLabel,locationPage,portalSection} from './home/location.mjs';
+import {summonTiming,summonPhase,callFlightDuration,catchInFlight} from './home/summon.mjs';
 import {ConversationMoments,shouldWelcomeOnRefresh,isLeavingLink} from './runtime/conversation-moments.mjs?v=1';
 import {messageRecord,translatedText,translationBatch,checkedTranslations,applyTranslations} from './runtime/conversation-language.mjs?v=3';
 import {ReadingMemory,readPageTitle,readingDetail,readPageDisplaySection,readPageSection,guideReference,followUpReference} from './runtime/reading-context.mjs?v=3';
-import {validReply,readSession,chatUnavailable} from './protocol.mjs?v=12';
+import {validReply,readSession,chatUnavailable} from './protocol.mjs?v=13';
 import {safeWebURL} from './runtime/web-sources.mjs?v=1';
 import {cleanVariety,rememberReply,packChatRequest} from './runtime/reply-variety.mjs?v=2';
 
@@ -29,6 +34,9 @@ async function start(){
  let saved={};try{saved=readSession(sessionStorage,Date.now(),ja?'ja':'en');}catch{}
  let readingStorage;try{readingStorage=sessionStorage;}catch{}const readingMemory=new ReadingMemory(readingStorage);
  const conversationMemory=new ConversationMemory(readingStorage,ja?'ja':'en'),chatSession=new ChatSession(readingStorage);
+ const interests=new VisitorInterests(readingStorage),gardenScene=document.querySelector('[data-yuki-garden]');let garden=null,gardenRect=null;
+ const presence=new YukiLocation(readingStorage,{base});presence.transit();presence.settleAway(location.pathname);
+ let resident=presence.here(location.pathname),portalTrip=null,portalAfterglow=null,lastLocationSave=0;
  const moments=new ConversationMoments(readingStorage);let momentKind='';
  let lastFlop=0;try{const stamp=Number(readingStorage?.getItem('yuki-last-flop-v1'));if(Number.isFinite(stamp)&&stamp>0&&stamp<=Date.now())lastFlop=stamp;}catch{}
  const flopRemaining=()=>{try{const stamp=Number(readingStorage?.getItem('yuki-last-flop-v1'));if(Number.isFinite(stamp)&&stamp>0&&stamp<=Date.now())lastFlop=Math.max(lastFlop,stamp);}catch{}return Math.max(0,300000-(Date.now()-lastFlop));};
@@ -52,7 +60,7 @@ async function start(){
  root.innerHTML=`<div class="yuki-pet" aria-hidden="true" hidden><img alt="" draggable="false"><canvas hidden></canvas><span class="yuki-bubble" hidden></span></div>
  <button class="yuki-hit" hidden aria-controls="yuki-panel" aria-expanded="false" aria-label="${tr('Wake Yuki and chat','ゆきを起こして話す')}"></button>
  <svg class="yuki-guide-line" aria-hidden="true" hidden><path></path><circle r="5"></circle></svg><div class="yuki-target-ring" hidden></div>
- <button class="yuki-launcher" hidden aria-controls="yuki-panel">${tr('Call Yuki','ゆきを呼ぶ')}</button>
+ <button class="yuki-launcher" hidden aria-controls="yuki-panel" aria-describedby="yuki-location">${tr('Call Yuki','ゆきを呼ぶ')}</button><span class="yuki-location" id="yuki-location" role="status"></span>
  <section class="yuki-panel" id="yuki-panel" role="dialog" aria-modal="false" aria-labelledby="yuki-title" hidden>
  <div class="yuki-panel-inner"><header class="yuki-heading"><h2 id="yuki-title">ゆき <span class="yuki-beta">BETA</span><small>${tr('Your little guide','小さな案内役')}</small></h2><button class="yuki-menu" aria-expanded="false" aria-controls="yuki-more" aria-label="${tr('Guide, history and settings','案内・履歴・設定')}">⋯</button><button class="yuki-close" aria-label="${tr('Close chat','チャットを閉じる')}">×</button></header>
  <p class="yuki-aside" role="status" hidden></p><div class="yuki-speech" role="log" aria-live="polite" aria-atomic="true" aria-label="${tr('Yuki says','ゆきの返事')}"></div><p class="yuki-status" role="status"></p><button class="yuki-translate" type="button" hidden>${tr('Retry translation','翻訳を再試行')}</button>
@@ -68,6 +76,7 @@ async function start(){
  <div class="yuki-settings"><button class="yuki-ai-toggle" type="button"></button><button data-action="roam"></button><button data-action="pause"></button><button data-action="hide"></button><button data-action="clear">${tr('Clear chat','チャットを消去')}</button></div></div></div></section>`;
  const varietyNote=document.createElement('p');varietyNote.textContent=tr('To reduce repetition, this tab also keeps Yuki’s discussed story topics, recent reply openings and similarity fingerprints. They are sent with your next message and kept when you clear the chat, with the existing 30-minute session expiry. A near-duplicate answer may use one extra AI rewrite within the same free usage limits.','繰り返しを減らすため、ゆきが話した物語の項目、直近の返事の書き出し、類似度を確認するためのデータも同じタブに保存し、次のメッセージと一緒に送信します。チャットを消去しても保持し、従来どおりセッションは30分で期限切れになります。よく似た回答は、同じ無料利用上限の範囲内で一度だけAIが書き直す場合があります。');$('.yuki-privacy').append(varietyNote);
  const languageNote=document.createElement('p');languageNote.textContent=tr('Switching languages keeps our conversation and memory. Earlier messages are automatically translated through Cloudflare into the new page language, within the same free limits. The original wording and translations stay in this tab and are reused between pages and when switching back. An active guided route also continues in the new language.','言語を切り替えても会話と記憶は引き継ぎます。同じ無料上限の範囲で、過去のメッセージをCloudflareで新しいページの言語に自動翻訳します。原文と翻訳はこのタブに保存し、ページの移動や言語を戻したときに再利用します。案内中の行き先も引き継ぎます。');$('.yuki-privacy').append(languageNote);
+ const interestNote=document.createElement('p');interestNote.textContent=tr('Explicitly stated interests in six public topics (animation, game development, art, Yuki’s story, making Yuki, Japanese) can also be remembered in this tab for up to 24 hours. No interests are inferred from browsing. Current corrections take priority. These topic labels accompany your next chat request; Clear chat keeps them.','明確に伝えた興味（アニメーション、ゲーム開発、絵、ゆきの物語、ゆきの制作、日本語）も、このタブで最大24時間保持できます。閲覧行動から推測はしません。新しい訂正を優先し、次の会話の送信時にトピック名を添えます。チャットを消去しても保持します。');$('.yuki-privacy').append(interestNote);
  const searchLabel=document.createElement('label'),searchBox=document.createElement('input');searchBox.type='checkbox';searchBox.className='yuki-search-consent';searchBox.disabled=!online;
  searchLabel.append(searchBox,document.createTextNode(tr('Optional: let Yuki send a short public-topic query to Tavily when an answer needs web information. This adds another provider; your full chat is not sent to Tavily. Do not include private or sensitive information. Remember this choice; you can turn it off here anytime. Search has shared free limits, and normal chat works without it.','任意：ウェブ情報が必要な回答では、ゆきが短い公開トピックの検索語をTavilyに送信することを許可します。送信先が追加されますが、会話全体はTavilyに送りません。個人情報・機密情報は入力しないでください。この設定を記憶し、ここでいつでも解除できます。検索には共有の無料上限があります。通常の会話は検索なしでも利用できます。')));$('.yuki-privacy').append(searchLabel);
  const status=text=>{$('.yuki-status').textContent=text;};
@@ -76,7 +85,7 @@ async function start(){
   // A local aside never creates a chat turn, spends AI quota or steals focus.
   if(reveal&&!hidden&&!busy&&!journey.active)panel(true,{focus:false,translate:false});
  }
- function readingContext(){measureHeader();return {section:readPageSection(document,innerHeight,headerBottom)?.id??'',lastGuide:readingMemory.get()};}
+ function readingContext(){measureHeader();const viewed=readPageSection(document,innerHeight,headerBottom),r=companion?.rover;const spot=garden&&!journey.active&&!garden.pending&&(r?.graph.state==='rest'||r?.isHovering)?garden.spotAt(r.position):null;const selected=spot&&viewed?.kind==='image'?document.getElementById('garden-'+spot)?.dataset.yukiSection:null;return {section:selected??viewed?.id??'',lastGuide:readingMemory.get(),...(spot?{gardenSpot:spot}:{})};}
  function updateReading(){
   measureHeader();
   const title=readPageTitle(document,{path:location.pathname,base,title:root.dataset.pageTitle,lang:ja?'ja':'en'});
@@ -117,7 +126,7 @@ async function start(){
    $('.yuki-speech').replaceChildren(p);$('.yuki-speech').scrollTop=0;
   }if(remember){translationUI();save();}
  }
- function save(){try{const r=companion?.rover;sessionStorage.setItem('yuki-session-v1',JSON.stringify({savedAt:Date.now(),language:ja?'ja':'en',mobilityVersion:2,awake:companion?companion.lifecycle.state!=='sleep':saved.awake,chatOpen:open,hidden,paused,roam,messages,variety,x:r?r.foot.x/innerWidth:saved.x,y:r?r.foot.y/innerHeight:saved.y}));}catch{}}
+ function save(){rememberLocation();try{const r=companion?.rover;sessionStorage.setItem('yuki-session-v1',JSON.stringify({savedAt:Date.now(),language:ja?'ja':'en',mobilityVersion:2,awake:companion?companion.lifecycle.state!=='sleep':saved.awake,chatOpen:open,hidden,paused,roam,messages,variety,x:r?r.foot.x/innerWidth:saved.x,y:r?r.foot.y/innerHeight:saved.y}));}catch{}}
  function settingLabels(){for(const [k,text] of Object.entries({roam:roam?tr('Occasional flights: on','たまにお散歩：オン'):tr('Occasional flights: off','たまにお散歩：オフ'),pause:paused?tr('Resume','再開'):tr('Pause','一時停止'),hide:hidden?tr('Show Yuki','ゆきを表示'):tr('Hide Yuki','ゆきを隠す')}))$(`[data-action="${k}"]`).textContent=text;}
  drawMessages();status(online?tr('Ready when you are.','いつでもどうぞ。'):offline);settingLabels();
  function panel(value,{restoreFocus=true,focus=true,translate=true}={}){open=value;$('.yuki-panel').hidden=!value;$('.yuki-hit').setAttribute('aria-expanded',String(value));motion?.defer();
@@ -125,13 +134,13 @@ async function start(){
   else {if(busy){controller?.abort();status(tr('Sending cancelled.','送信をキャンセルしました。'));}verification.stop();}
   if(!value&&restoreFocus){const returnFocus=!hidden?$('.yuki-hit'):$('.yuki-launcher');if(!returnFocus.hidden)returnFocus.focus({preventScroll:true});}placeBubble();save();}
  async function openConversation(){
-  if(!ready||open)return;panel(true);
+  if(!ready||open)return;if(!resident)await callYuki();if(!resident)return;panel(true);
   conversationMemory.expire();
-  const cue=momentKind||conversationMemory.turns.length?null:conversationOpening(messages,personality,ja?'ja':'en');if(!cue){void translateConversation();return;}
+  const cue=momentKind||conversationMemory.turns.length?null:conversationOpening(messages,personality,ja?'ja':'en',{home:Boolean(gardenScene)});if(!cue){void translateConversation();return;}
   addMessage('assistant',cue.text,true,[],[],cue.greetingId);
   await react(cue,{firstMeeting:cue.firstMeeting}).catch(()=>{});
  }
- function toggleConversation(){if(open)panel(false);else void openConversation();}
+ function toggleConversation(){if(catchTravel())return;if(open)panel(false);else void openConversation();}
  $('.yuki-translate').onclick=()=>translateConversation();
  $('.yuki-launcher').onclick=()=>callYuki();$('.yuki-close').onclick=()=>panel(false);$('.yuki-hit').onclick=toggleConversation;
  $('.yuki-menu').onclick=()=>{const more=$('.yuki-more');more.hidden=!more.hidden;$('.yuki-menu').setAttribute('aria-expanded',String(!more.hidden));placeBubble();};
@@ -157,11 +166,11 @@ async function start(){
   finally{loading--;}
  }
  const travel=['rest','takeoff','landing','flight','flightHover','flightLeft','flightRight','pointLeft','pointRight','attention'];
- async function prepareTravel(){await ensure([...travel,'wake','bedtime','crash']);companion.lifecycle.crashChance=.08;companion.lifecycle.inactivityMs=90000;if(motion)motion.prepared=true;}
- async function wake(){if(!ready)return;try{await ensure(['wake','bedtime']);companion.lifecycle.inactivityMs=90000;companion.lifecycle.wake();companion.lifecycle.activity();save();}catch{status(tr('Some animation artwork could not load. Please try again.','アニメーションを読み込めませんでした。もう一度お試しください。'));}}
+ async function prepareTravel(){await ensure([...travel,'wake','bedtime','crash']);companion.lifecycle.crashChance=.08;companion.lifecycle.inactivityMs=gardenScene?Infinity:90000;if(motion)motion.prepared=true;}
+ async function wake(){if(!ready||!resident)return;try{await ensure(['wake','bedtime']);companion.lifecycle.inactivityMs=gardenScene?Infinity:90000;companion.lifecycle.wake();companion.lifecycle.activity();save();}catch{status(tr('Some animation artwork could not load. Please try again.','アニメーションを読み込めませんでした。もう一度お試しください。'));}}
  const elements=Object.entries(paths).map(([id,path])=>({id,name:names[id],el:document.querySelector(id==='projects'?'#projects, .fp-project-list':id==='essays'?'#essays, .fp-essay-list':id==='unreal'?'#unreal-journey, .fp-timeline':'.fp-resume-head')})).filter(d=>d.el);
  function measure(){
-  layout=viewportLayout();bodyHeight=layout.bodyHeight;
+  layout=viewportLayout();bodyHeight=garden?garden.height:layout.bodyHeight;
   measureHeader();
   obstacles=obstacleReader.read(layout.width,layout.height);
   const p=[{id:'home',...layout.home},{id:'nearby',...layout.alternate}];
@@ -179,7 +188,7 @@ async function start(){
  }
  function upsert(point){const r=companion.rover,i=r.points.findIndex(p=>p.id===point.id);if(i<0)r.points.push(point);else r.points[i]=point;}
  function placeBubble(){if(!open)return;const panel=$('.yuki-panel'),vv=window.visualViewport;
-  panel.hidden=!onScreen||hidden;if(panel.hidden)return;
+  panel.hidden=!resident||!onScreen||hidden;if(panel.hidden)return;
   const viewTop=vv?.offsetTop??0,offset=Math.max(viewTop,headerBottom),height=Math.max(100,(vv?.height??innerHeight)-(offset-viewTop));
   panel.style.setProperty('--yuki-bubble-max',bubbleHeightLimit(shownFoot,{...layout,height},offset)+'px');
   const pos=bubblePlacement(shownFoot,{...layout,height},panel.offsetWidth,panel.offsetHeight,offset);
@@ -191,19 +200,120 @@ async function start(){
   return callPerches.choose(restingExtent(),avoid,layout,shownFoot);
  }
  function chooseMovementTarget(){
+  if(garden&&!journey.active)return garden.point(['pond','lookout','books','treasures'][Math.floor(Math.random()*4)]);
   const target=chooseLandingSpot();
   return {...target,y:target.y+scrollY};
  }
- async function callYuki(){
+ async function callYuki({keepJourney=false}={}){
+  if(garden&&resident&&!journey.active&&!portalTrip)return garden.action('fly');
   if(!ready||calling||callLoading)return;const button=$('.yuki-launcher');callLoading=true;button.disabled=true;
-  stopJourney();
-  try{await prepareTravel();await wake();hidden=false;paused=false;guide.reset();guideTarget=null;highlightUntil=0;sync();
-   const extent=restingExtent(),target=chooseLandingSpot();
-   prepareCall(companion.rover,extent,layout,scrollY);calling=true;motion.travel({...target,y:target.y+scrollY});
+  if(!keepJourney)stopJourney();
+  try{await prepareTravel();hidden=false;paused=false;portalAfterglow=null;portal.hidden=true;guide.reset();guideTarget=null;highlightUntil=0;
+   if(!resident){
+    const origin={...presence.state},target=garden?garden.point(garden.selected):chooseMovementTarget();
+    calling=true;sync();
+    const timing=summonTiming(origin,clips,{reduced:media.matches});
+    status(tr('Coming! Let me fly over from my little spot. Watch for a little dragon sparkle!','今いる場所から飛んでいくね！ドラゴンのきらきらを目印に待ってて！'));
+    const destination={page:locationPage(location.pathname,base),title:readPageTitle(document,{path:location.pathname,base,title:root.dataset.pageTitle,lang:ja?'ja':'en'}),garden:Boolean(garden),spot:garden?.selected??null,position:locationMap(target)};
+    const end=portalPoint(),arrivalMs=callFlightDuration(end,target)+landingMs.reduce((a,b)=>a+b,0)+1000;
+    const transfer=presence.beginTransfer(destination,timing,arrivalMs);
+    await new Promise(resolve=>{portalTrip={kind:'incoming',phase:'waiting',age:0,wait:timing.total,timing,target,resolve,origin,transfer};});return;
+   }
+   await wake();sync();
+   const spot=chooseLandingSpot(),target={...spot,y:spot.y+scrollY};
+   calling=true;motion.travel(target,{duration:callFlightDuration(companion.rover.foot,target)});
    status(tr('Coming! Just a little flap…','いま行くね！ぱたぱたっ…'));
   }catch{calling=false;status(tr('I couldn’t load my flight. Please try again.','飛ぶ準備ができなかったの。もう一度呼んでね。'));}finally{callLoading=false;button.disabled=calling;}
  }
- function sync(){measure();if(companion){companion.rover.hidden=hidden;companion.rover.playing=!paused;companion.setLessMotion(media.matches);}settingLabels();save();render();}
+ function sync(){measure();if(gardenScene){document.body.dataset.gardenPaused=String(paused);gardenScene.dataset.paused=String(paused);if(garden){garden.paused=paused;garden.reduced=media.matches;}const b=document.querySelector('[data-garden-action="motion"]');if(b){b.setAttribute('aria-pressed',String(paused));b.textContent=paused?tr('Resume Garden','庭の動きを再開'):tr('Pause Garden','庭の動きを止める');}}if(companion){companion.rover.hidden=hidden||!resident;companion.rover.playing=!paused;companion.setLessMotion(media.matches);}settingLabels();save();render();}
+
+ function locationMap(p,inverse=false){
+  if(gardenScene&&!journey.active){const b=gardenScene.getBoundingClientRect();return inverse?{x:b.left+p.x*b.width,y:b.top+scrollY+p.y*b.height}:{x:(p.x-b.left)/b.width,y:(p.y-b.top-scrollY)/b.height};}
+  return inverse?{x:p.x*layout.width,y:p.y}:{x:p.x/layout.width,y:p.y};
+ }
+ function rememberLocation(){
+  if(!ready||!companion||!resident||portalTrip?.phase==='waiting')return;
+  const c=companion,r=c.rover,statusName=portalTrip?.kind==='returning'?'returning':c.lifecycle.locked?c.lifecycle.state:r.isHovering?'hover':r.graph.state;
+  const a=headerAnchor(portalSection(locationPage(location.pathname,base)))?.getBoundingClientRect();
+  const departureDistance=a?Math.hypot(r.foot.x-(a.left+a.width/2),r.foot.y-(a.bottom+scrollY)):500;
+  presence.record({page:location.pathname,title:readPageTitle(document,{path:location.pathname,base,title:root.dataset.pageTitle,lang:ja?'ja':'en'}),garden:Boolean(garden&&!journey.active),spot:garden?.spotAt(r.position),position:locationMap(r.position),status:statusName,pose:capturePose(c,p=>locationMap(p)),departureDistance});
+ }
+ const portal=document.createElement('div');portal.className='yuki-magic';portal.setAttribute('aria-hidden','true');portal.hidden=true;
+ const seal=document.createElement('img');seal.src=new URL('home/dragon-magic.svg',assets).href;seal.alt='';portal.append(seal);
+ for(let n=0;n<12;n++){const spark=document.createElement('i');spark.style.setProperty('--n',n);spark.style.setProperty('--drift',(n%2?-1:1)*(18+(n*17)%42)+'px');portal.append(spark);}document.body.append(portal);
+ function headerAnchor(section){return [...document.querySelectorAll('.fp-nav a[href]')].find(a=>locationPage(new URL(a.href,location.href).pathname,base)===section)??document.querySelector('.fp-brand');}
+ function portalPoint(fixedSection){
+  const section=fixedSection??portalSection(portalTrip?.kind==='returning'?'/yuki/':portalTrip?.origin?.page??presence.state.page);
+  const anchor=headerAnchor(section);
+  const nav=anchor?.closest('nav');if(nav){const n=nav.getBoundingClientRect(),a=anchor.getBoundingClientRect();if(a.left<n.left||a.right>n.right)nav.scrollLeft+=a.left-(n.left+(n.width-a.width)/2);}
+  const b=anchor?.getBoundingClientRect();portal.dataset.source=section;
+  const x=Math.max(45,Math.min(layout.width-45,b?b.left+b.width/2:layout.width/2)),y=Math.max(12,b?.bottom??headerBottom);
+  Object.assign(portal.style,{left:x+'px',top:y+'px'});return {x,y:y+bodyHeight*.30+scrollY};
+ }
+ function placeAt(point,{flying=false}={}){
+  const c=companion,r=c.rover;c.lifecycle.neutralize();c.idle?.reset();c.lifecycle.enter('awake');r.graph.reset();r.route=null;
+  r.points=[{id:'portal-start',...point}];r.at=r.wanted='portal-start';r.position={...point};
+  if(flying&&!media.matches){r.graph.enter('flight',6);r.graph.desired='flight';r.position.y+=48;}
+ }
+ function replayTravel(ms){for(let remaining=Math.min(30000,Math.max(0,ms));remaining>0;remaining-=100)companion.update(Math.min(100,remaining));}
+ function continueTransfer(){
+  const step=presence.transit();if(!step){resident=presence.here(location.pathname);if(resident){placeAt(locationMap(presence.state.position,true));companion.lifecycle.enter(presence.state.status==='sleep'?'sleep':'awake');}return false;}const t=step.transfer,current=locationPage(location.pathname,base);
+  portal.hidden=true;portalAfterglow=null;portalTrip=null;calling=false;resident=presence.here(location.pathname);
+  if(step.leg==='departing'&&current===t.origin.page){
+   if(!restorePose(companion,t.origin.pose,clips,p=>locationMap(p,true))){placeAt(locationMap(t.origin.position,true));companion.lifecycle.enter(t.origin.status==='sleep'?'sleep':'awake');}
+   companion.rover.hidden=false;companion.lifecycle.neutralize();companion.idle?.reset();companion.lifecycle.wake();companion.lifecycle.crashChance=0;
+   portalTrip={kind:'departing',phase:'flying',age:step.age,origin:t.origin,transfer:t};calling=true;
+   motion.travel(portalPoint(),{duration:t.timing.flight});replayTravel(step.age);return true;
+  }
+  if(current!==t.target.page)return true;
+  const target=locationMap(t.target.position,true);calling=true;
+  portalTrip={kind:'incoming',phase:step.leg==='departing'?'waiting':'flying',age:step.age,wait:t.timing.total,timing:t.timing,target,origin:t.origin,transfer:t};
+  if(step.leg==='incoming'){resident=true;companion.rover.hidden=false;placeAt(portalPoint(),{flying:true});motion.travel(target,{duration:callFlightDuration(companion.rover.foot,target)});replayTravel(step.age);}
+  return true;
+ }
+ function catchTravel(){
+  if(!ready||!resident||(!portalTrip&&(companion.rover.isHovering||companion.rover.graph.state==='rest'&&companion.rover.at===companion.rover.wanted)))return false;
+  const trip=portalTrip;portalTrip=null;portalAfterglow=null;portal.hidden=true;calling=false;callLoading=false;
+  presence.cancelTransfer();garden?.cancel();stopJourney();pendingCue=null;reactionVersion++;catchInFlight(companion);motion.defer();
+  rememberLocation();trip?.resolve?.();status(tr('Oh! You caught me. I’ll stay right here with you.','あっ、呼び止めてくれたんだね！ここで一緒にいるよ。'));render();return true;
+ }
+ async function returnToGarden(){
+  if(portalTrip||!resident||garden||open||busy||journey.active)return;
+  portalAfterglow=null;portal.hidden=true;portalTrip={kind:'returning',phase:'preparing',age:0};calling=true;
+  try{await prepareTravel();await wake();companion.lifecycle.crashChance=0;pendingCue=null;reactionVersion++;guide.reset();guideTarget=null;
+   const end=portalPoint();motion.travel(end,{duration:callFlightDuration(companion.rover.foot,end)});portalTrip.phase='flying';rememberLocation();
+  }catch{portalTrip=null;calling=false;}
+ }
+ function showExitSeal(){
+  // The drawing is gone before the signature appears. Keep a separate visual
+  // afterglow so completing the journey cannot hide the seal immediately.
+  $('.yuki-pet').hidden=true;$('.yuki-hit').hidden=true;
+  portalAfterglow={section:portal.dataset.source,age:0};portal.hidden=media.matches;
+ }
+ function updatePortal(dt){
+  if(paused||hidden){portal.hidden=true;return;}
+  if(portalAfterglow){portalAfterglow.age+=dt;portalPoint(portalAfterglow.section);portal.hidden=media.matches||portalAfterglow.age>=2400;if(portalAfterglow.age>=2400)portalAfterglow=null;}
+  if(!portalTrip)return;const trip=portalTrip,r=companion.rover;
+  trip.age=trip.transfer?Math.max(0,Date.now()-trip.transfer.startedAt-(trip.phase==='flying'&&trip.kind==='incoming'?trip.transfer.timing.total:0)):trip.age+dt;
+  if(trip.kind==='departing'){
+   portalPoint();portal.hidden=true;
+   if(trip.age>=trip.transfer.timing.total){presence.transit();resident=false;r.hidden=true;showExitSeal();portalTrip=null;calling=false;}
+   return;
+  }
+  if(trip.phase==='waiting'&&trip.age>=trip.wait){
+   resident=true;companion.rover.hidden=false;placeAt(portalPoint(),{flying:true});trip.phase='flying';trip.age=0;portal.hidden=media.matches;
+   motion.travel(trip.target,{duration:callFlightDuration(r.foot,trip.target)});rememberLocation();
+  }
+  if(trip.phase!=='flying')return;
+  const end=trip.kind==='returning'?portalPoint():trip.target;
+  // The header is sticky. Keep the exit attached when a visitor scrolls.
+  if(trip.kind==='returning'){const p=r.point(r.wanted);if(Math.hypot(p.x-end.x,p.y-end.y)>3){p.x=end.x;p.y=end.y;if(r.graph.state==='flight')r.beginRoute();}portal.hidden=true;}
+  else {portalPoint();portal.hidden=media.matches||trip.age>2400;}
+  const settled=r.graph.state==='rest'&&r.at===r.wanted&&!companion.lifecycle.locked;
+  const entered=trip.kind==='returning'&&(settled||Math.hypot(r.foot.x-end.x,r.foot.y-end.y)<20);
+  if(entered){presence.home();resident=false;r.hidden=true;showExitSeal();portalTrip=null;calling=false;}
+  else if(trip.kind==='incoming'&&settled){portal.hidden=true;portalTrip=null;calling=false;presence.cancelTransfer();companion.lifecycle.activity();rememberLocation();trip.resolve?.();status(tr('There you are! A little dragon magic… and lots of flapping!','見つけた！ドラゴンの魔法をちょっぴりと、たくさんのぱたぱたで到着！'));}
+ }
 
  const sections=[...document.querySelectorAll('main [data-yuki-section]:not(h1), .fp-resume-grid h2, .fp-build-card h2, .fp-build-guide > h2, [data-yuki-interest]')].map((el,i)=>({id:'interest-'+i,name:(el.getAttribute('alt')||el.textContent).trim(),el}));
  const categoryUrls=new Set(Object.values(paths).map(path=>base+(ja?'/ja':'')+path));
@@ -222,7 +332,8 @@ async function start(){
  }
  async function showElement(d){
   if(!ready)return;if(d.journeySerial===undefined)stopJourney();status(tr('I’ll show you…','ご案内します…'));
-  try{await prepareTravel();await wake();
+  for(let parent=d.el.parentElement;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true;
+  try{if(!resident)await callYuki({keepJourney:d.journeySerial!==undefined});await prepareTravel();await wake();
    if(d.journeySerial!==undefined&&d.journeySerial!==journeySerial)return;
    paused=false;hidden=false;sync();
    calling=false;reactionVersion++;pendingCue=null;guide.destinations.set(d.id,d);panel(false,{restoreFocus:false});document.activeElement?.blur();guide.request(d.id);
@@ -325,9 +436,10 @@ async function start(){
  let reactionVersion=0;
  let talkTurn=0;
  async function react(cue,{firstMeeting=false,thinking=false}={}){const version=++reactionVersion;pendingCue=null;
-  const sequence=thinking?[cue]:replySequence(cue,{firstMeeting,talk:talkTurn++%2?'talkExplain':'talkOpen'});
+  const fallback=thinking?[cue]:replySequence(cue,{firstMeeting,talk:talkTurn++%2?'talkExplain':'talkOpen'});
+  const sequence=thinking||firstMeeting?fallback:expressionSequence(cue,fallback);
   await ensure(sequence.flatMap(c=>{const key=cueArtwork(c),air=airClips[key];return [key,...(air?[air.key,air.transitionKey??'hoverTransition']:[])];}));
-  if(version===reactionVersion)pendingCue={sequence,expires:performance.now()+60000};
+  if(version===reactionVersion)pendingCue={sequence,notBefore:0,expires:performance.now()+120000};
  }
  let verificationScript;
  function loadVerification(){
@@ -379,8 +491,9 @@ async function start(){
    timer=setTimeout(()=>{status(tr('Yuki took too long to answer. Please try again.','回答が時間内に届きませんでした。もう一度お試しください。'));requestController.abort();},45000);
    await wake();if(requestController.signal.aborted||!permission.allowed)throw Error('cancelled');
    const history=messages.slice(-6).map(m=>({role:m.role,content:m.text}));if(!guideEvent){addMessage('user',text);$('textarea').value='';}
+   if(!guideEvent)interests.remember(text);
    status(tr('Yuki is thinking…','ゆきが考えています…'));react({text:'…',emotion:'thoughtful',gesture:'none'},{thinking:true}).catch(()=>{});
-   const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:packChatRequest({message:text,history,lang:ja?'ja':'en',page:location.pathname,context,...(pass?{pass}:{token}),variety,memory:conversationMemory.recall(text,history),...(guideEvent?{guideEvent}:{}),webSearch:!guideEvent&&searchPermission.allowed}),signal:requestController.signal,credentials:'omit'});
+   const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:packChatRequest({message:text,history,lang:ja?'ja':'en',page:location.pathname,context,...(pass?{pass}:{token}),variety,memory:conversationMemory.recall(text,history),interests:interests.get(),...(guideEvent?{guideEvent}:{}),webSearch:!guideEvent&&searchPermission.allowed}),signal:requestController.signal,credentials:'omit'});
    const result=await response.json().catch(()=>({}));if(!current())return;
    if(result.chatSession)chatSession.set(result.chatSession);
    if(!response.ok){if(response.status===403)chatSession.clear();throw Object.assign(Error(response.status===429?'limit':response.status===403?'verification':'request'),{reference:result.reference});}
@@ -432,8 +545,16 @@ async function start(){
   }
  }
  function render(){if(!companion)return;const r=companion.rover,life=companion.lifecycle;
+  if(garden&&!journey.active&&resident&&!portalTrip){
+   garden.fitView(r.position);
+   const rect=gardenScene.getBoundingClientRect(),next={left:rect.left,top:rect.top+scrollY,width:rect.width,height:rect.height};
+   if(gardenRect&&['left','top','width','height'].some(k=>Math.abs(next[k]-gardenRect[k])>.000001)){
+    const remap=p=>{p.x=next.left+(p.x-gardenRect.left)*next.width/gardenRect.width;p.y=next.top+(p.y-gardenRect.top)*next.height/gardenRect.height;};
+    for(const point of new Set([r.position,...r.points,...(r.route?[r.route.start,r.route.end]:[])]))remap(point);bodyHeight=garden.height;
+   }gardenRect=next;
+  }
   let p=projectFrame(companion,clips,bodyHeight);if(!p.frame?.image)return;
-  containPageRover(r,restingExtent(),layout);p=pageProjection(projectFrame(companion,clips,bodyHeight),scrollY);
+  if(!garden||journey.active)containPageRover(r,restingExtent(),layout);p=pageProjection(projectFrame(companion,clips,bodyHeight),scrollY);
   shownFoot={...p.foot};
   const occupied=atFoot(shownFoot,poseExtent(p)),b=life.bubble;
   if(b){const [nx,ny]=p.frame.nose,rad=(media.matches?12:b.radius)*p.scale;occupied.left=Math.min(occupied.left,p.x+nx*p.scale-1.8*rad);occupied.top=Math.min(occupied.top,p.y+ny*p.scale-.4*rad);occupied.right=Math.max(occupied.right,p.x+nx*p.scale+.2*rad);occupied.bottom=Math.max(occupied.bottom,p.y+ny*p.scale+1.6*rad);}
@@ -441,18 +562,23 @@ async function start(){
   onScreen=inViewport(occupied,layout)&&occupied.bottom>headerBottom;
   // Content avoidance picks the destination, never toggles frame visibility.
   // Both dimensions use the same scale; no crowd-dependent compression.
-  const pet=$('.yuki-pet'),img=pet.querySelector('img'),canvas=pet.querySelector('canvas');pet.hidden=hidden;if(img.src!==p.frame.image.src)img.src=p.frame.image.src;
+  const pet=$('.yuki-pet'),img=pet.querySelector('img'),canvas=pet.querySelector('canvas');pet.hidden=hidden||!resident;if(img.src!==p.frame.image.src)img.src=p.frame.image.src;
+  pet.style.opacity=portalTrip?.phase==='flying'&&!media.matches?String(portalTrip.kind==='incoming'?Math.min(1,portalTrip.age/300):Math.min(1,Math.hypot(r.foot.x-portalPoint().x,r.foot.y-portalPoint().y)/65)):'1';
   const breathing=!life.locked&&r.graph.state==='rest'&&!p.isGreeting&&!p.isEmotion&&!p.isAttention&&!media.matches&&companion.idle.amount>0;
   const drawn=breathing&&renderer?.draw(p.frame.image,companion.idle.pose,p.info.width*p.scale);canvas.hidden=!drawn;img.style.visibility=drawn?'hidden':'visible';
   Object.assign(pet.style,{width:p.info.width*p.scale+'px',height:p.info.height*p.scale+'px',transform:`translate3d(${p.x}px,${p.y}px,0)`});
-  const box=p.frame.pixelBounds??[210,170,515,615],hit=$('.yuki-hit');hit.hidden=hidden;Object.assign(hit.style,{left:p.x+box[0]*p.scale+'px',top:p.y+box[1]*p.scale+'px',width:(box[2]-box[0])*p.scale+'px',height:(box[3]-box[1])*p.scale+'px'});
+  const box=p.frame.pixelBounds??[210,170,515,615],hit=$('.yuki-hit'),hitTop=Math.max(headerBottom+4,p.y+box[1]*p.scale),hitBottom=Math.min(innerHeight,p.y+box[3]*p.scale);
+  hit.hidden=hidden||!resident||hitBottom-hitTop<24||Number(pet.style.opacity)<.5;Object.assign(hit.style,{left:p.x+box[0]*p.scale+'px',top:hitTop+'px',width:(box[2]-box[0])*p.scale+'px',height:Math.max(0,hitBottom-hitTop)+'px'});
   hit.title=tr('Yuki · BETA','ゆき · BETA');
-  hit.setAttribute('aria-label',open?tr('Hide chat with Yuki','ゆきとのチャットを隠す'):life.state==='sleep'?tr('Wake Yuki and chat','ゆきを起こして話す'):tr('Chat with Yuki','ゆきと話す'));
+  hit.setAttribute('aria-label',calling||r.graph.state!=='rest'&&!r.isHovering?tr('Stop Yuki here','ここでゆきを呼び止める'):open?tr('Hide chat with Yuki','ゆきとのチャットを隠す'):life.state==='sleep'?tr('Wake Yuki and chat','ゆきを起こして話す'):tr('Chat with Yuki','ゆきと話す'));
   const bubble=$('.yuki-bubble');bubble.hidden=!b||hidden;if(b){const [nx,ny]=p.frame.nose,rad=(media.matches?12:b.radius)*p.scale;Object.assign(bubble.style,{left:nx*p.scale-1.8*rad+'px',top:ny*p.scale-.4*rad+'px',width:2*rad+'px',height:2*rad+'px'});}
-  Object.assign(pet.dataset,{state:r.graph.state,lifecycle:life.state,greeting:String(Boolean(p.isGreeting)),breathing:String(Boolean(drawn)),art:p.frame.file,emotion:companion.emotion.kind??'neutral',clear:String(clear),bounds:JSON.stringify(occupied)});
+  Object.assign(pet.dataset,{state:r.graph.state,lifecycle:life.state,greeting:String(Boolean(p.isGreeting)),breathing:String(Boolean(drawn)),art:p.frame.file,emotion:companion.emotion.kind??'neutral',clear:String(clear),bounds:JSON.stringify(occupied),foot:JSON.stringify(p.foot)});
   const launcher=$('.yuki-launcher');
-  launcher.textContent=hidden?tr('Show Yuki','ゆきを表示'):calling?tr('Flying over…','そっちに飛んでるよ…'):tr('Call Yuki','ゆきを呼ぶ');launcher.disabled=calling||callLoading;
-  launcher.hidden=open&&onScreen&&!hidden;
+  const departurePhase=portalTrip?.phase==='waiting'?summonPhase(portalTrip.age,portalTrip.timing):null;
+  launcher.textContent=hidden?tr('Show Yuki','ゆきを表示'):portalTrip?.kind==='returning'?tr('Heading Home…','おうちへ帰るよ…'):departurePhase==='waking'?tr('Waking Yuki…','ゆきが起きてるよ…'):departurePhase==='taking-off'?tr('Stretching Her Wings…','羽を広げてるよ…'):calling?tr('Flying over…','そっちに飛んでるよ…'):tr('Call Yuki','ゆきを呼ぶ');launcher.disabled=calling||callLoading;
+  launcher.hidden=resident&&open&&onScreen&&!hidden;
+  const label=locationLabel(presence.state,ja),note=$('.yuki-location');note.hidden=resident&&!portalTrip;note.textContent=label;launcher.title=label;
+  root.dataset.location=presence.state.page;root.dataset.presence=resident?(portalTrip?.kind??'here'):'away';root.dataset.locationState=presence.state.status;root.dataset.travelPhase=departurePhase??portalTrip?.phase??'';
   placeBubble();drawPointer();
  }
  let lastTrim=0;
@@ -468,36 +594,52 @@ async function start(){
   const referenced=new Set(Object.values(clips).flatMap(c=>c.frames.filter(f=>f.image).map(f=>f.file)));
   for(const file of images.keys())if(!referenced.has(file))images.delete(file);
  }
- function tick(t){const dt=Math.min(64,Math.max(0,t-last));last=t;if(companion&&!document.hidden){if((open&&onScreen)||busy||journey.active)companion.lifecycle.activity();
+ function tick(t){const dt=Math.min(64,Math.max(0,t-last));last=t;if(companion&&!document.hidden){if(resident&&((open&&onScreen)||busy||journey.active||portalTrip))companion.lifecycle.activity();
    if(t-lastMeasure>200){measureHeader();obstacles=obstacleReader.read(layout.width,layout.height);lastMeasure=t;}
-   motion.update(dt,{hidden,paused,guiding:guide.active||journey.active,open,roam,target:chooseMovementTarget,visible:onScreen,reacting:Boolean(pendingCue)});companion.update(dt);guide.update();
-   if(calling&&companion.rover.graph.state==='rest'&&companion.rover.at===companion.rover.wanted&&!companion.lifecycle.locked){calling=false;status(tr('Here I am! Phew, little wings.','着いたよ！ふぅ、小さな羽、がんばった。'));}
+   updatePortal(dt);
+   motion.update(dt,{hidden:hidden||!resident,paused,guiding:guide.active||journey.active||Boolean(portalTrip),open,roam,target:chooseMovementTarget,visible:onScreen,reacting:Boolean(pendingCue)});companion.update(dt);if(resident)guide.update();
+   if(calling&&!portalTrip&&companion.rover.graph.state==='rest'&&companion.rover.at===companion.rover.wanted&&!companion.lifecycle.locked){calling=false;status(tr('Here I am! Phew, little wings.','着いたよ！ふぅ、小さな羽、がんばった。'));}
    if(pendingCue&&performance.now()>pendingCue.expires)pendingCue=null;
-   if(pendingCue&&onScreen){const cue=pendingCue.sequence[0];
+   if(pendingCue&&resident&&!portalTrip&&onScreen&&t>=pendingCue.notBefore){const cue=pendingCue.sequence[0];
     if(media.matches){if(cue.firstMeeting)personality.markMet();pendingCue=null;}
-    else if(applyReplyCue(companion,cue).animationAccepted){if(cue.firstMeeting)personality.markMet();pendingCue.sequence.shift();if(!pendingCue.sequence.length)pendingCue=null;}
-   }render();if(t-lastTrim>5000){trimArt();lastTrim=t;}}requestAnimationFrame(tick);}
+    else if(applyReplyCue(companion,cue).animationAccepted){if(cue.firstMeeting)personality.markMet();pendingCue.notBefore=t+(cue.pauseMs??0);pendingCue.sequence.shift();if(!pendingCue.sequence.length)pendingCue=null;}
+   }
+   garden?.update(dt,{settled:companion.rover.graph.state==='rest'&&companion.rover.at===companion.rover.wanted&&!companion.emotion.active&&!companion.greeting.active,hovering:companion.rover.isHovering&&companion.rover.hoverClock>600,locked:companion.lifecycle.locked,open,busy,hidden:hidden||!resident||!onScreen||paused||Boolean(portalTrip),guiding:guide.active||journey.active});
+   if(t-lastLocationSave>750){rememberLocation();if(!resident&&!portalTrip){presence.transit();presence.settleAway(location.pathname);}lastLocationSave=t;}
+   if(resident&&!paused&&!hidden&&!portalTrip&&presence.shouldReturn)void returnToGarden();
+   render();if(t-lastTrim>5000){trimArt();lastTrim=t;}}requestAnimationFrame(tick);}
  try{
   const res=await fetch(new URL('manifest.json',assets));if(!res.ok)throw Error('manifest');({clips}=await res.json());await ensure(['sleep','rest']);
   await knowledgeReady;if(journey.active&&!checkedGuideTarget(journey.state.target,knowledge,ja?'ja':'en',base))journey.clear();
   const timing={rest:clips.rest.frames.map(f=>f.durationMs),flight:clips.flight.frames.map(f=>f.durationMs??60),takeoff:takeoffMs,landing:landingMs};
-  companion=new Companion(timing,measure(),{motion:contactPhases,idle:{},lifecycle:{clips,startAsleep:!saved.awake&&!journey.active,inactivityMs:Infinity,crashChance:0,crashCooldownRemainingMs:flopRemaining(),onCrash:rememberFlop},greeting:clips.greeting.playback,emotions:{...emotionPlayback(clips),pointLeft:clips.pointLeft.playback,pointRight:clips.pointRight.playback},airClips});
+  resident=presence.here(location.pathname)||journey.active;
+  companion=new Companion(timing,measure(),{motion:contactPhases,idle:{},lifecycle:{clips,startAsleep:Boolean(presence.state.status==='sleep'&&!journey.active),inactivityMs:Infinity,crashChance:0,crashCooldownRemainingMs:flopRemaining(),onCrash:rememberFlop},greeting:clips.greeting.playback,emotions:{...emotionPlayback(clips),pointLeft:clips.pointLeft.playback,pointRight:clips.pointRight.playback},airClips});
   motion=new PageMotion(companion);
+  if(gardenScene){garden=new GardenHome(gardenScene,{
+   prepare:async()=>{stopJourney();if(open)panel(false,{restoreFocus:false});pendingCue=null;reactionVersion++;if(!resident)await callYuki();await prepareTravel();await wake();hidden=false;paused=false;sync();},
+   travel:(point,options)=>motion.travel(point,options),land:()=>companion.rover.setArrivalStyle('land'),point:kind=>companion.express(kind),react:cue=>react(cue).catch(()=>{}),sleep:()=>{if(media.matches){companion.lifecycle.neutralize();companion.lifecycle.enter('sleep');}else companion.lifecycle.requestSleep();},
+   pause:value=>{paused=value;sync();},chat:async prompt=>{await openConversation();if(prompt){if($('textarea').value.trim()){status(tr('Your draft is still here. Send or clear it before choosing a new question.','入力中の文章は残してあるよ。新しい質問の前に送るか消してね。'));return;}$('textarea').value=prompt;$('textarea').focus({preventScroll:true});}}
+  },{ja,reduced:media.matches,storage:readingStorage});if(presence.state.garden&&presence.state.spot){garden.story(presence.state.spot);garden.remark();}measure();}
   companion.rover.setArrivalStyle('land');try{renderer=new IdleRenderer($('.yuki-pet canvas'));}catch{}
   guide=new SiteGuide(companion,{destinations:elements,reveal:revealTarget,direction:id=>{const d=guide.destinations.get(id);return pointerTarget(targetRect(d.el),shownFoot).kind;},arrive:id=>{const d=guide.destinations.get(id);readingMemory.set(guideReference(d.el,location.pathname,d.url));if(open)updateReading();highlightUntil=performance.now()+10000;motion.defer();status(tr(`Ta-da! Here’s ${d.name}.`,`じゃーん！${d.name}だよ。`));if(d.journeySerial!==undefined)journeyArrived(d);}});
   obstacles=obstacleReader.read(layout.width,layout.height);
   const carriedPosition=journey.position(layout);
-  const initial=carriedPosition?clampFoot(carriedPosition,restingExtent(),layout):visibleSpot(restingExtent(),obstacles,layout,layout.home);
+  const gp=resident&&presence.here(location.pathname)?locationMap(presence.state.position,true):garden?.point('nest');const initial=carriedPosition?clampFoot(carriedPosition,restingExtent(),layout):gp?{x:gp.x,y:gp.y-scrollY}:visibleSpot(restingExtent(),obstacles,layout,layout.home);
   companion.rover.position={...initial,y:initial.y+scrollY};upsert({id:'home',...initial,y:initial.y+scrollY});
+  if(resident&&presence.here(location.pathname)&&presence.state.pose&&!journey.active){await ensure(poseArtwork(presence.state.pose,clips));restorePose(companion,presence.state.pose,clips,p=>locationMap(p,true));if(garden){garden.floating=companion.rover.arrivalStyle==='hover';const dest=garden.spotAt(companion.rover.point(companion.rover.wanted));if(dest)garden.story(dest);}}
+  if(presence.transfer&&!journey.active){await ensure([...travel,'wake','bedtime','crash',...poseArtwork(presence.transfer.origin.pose,clips)]);continueTransfer();}
+  else if(resident&&presence.state.status==='returning'&&!garden){portalTrip={kind:'returning',phase:'flying',age:0};calling=true;}
+  else if(garden&&resident&&companion.rover.wanted!==companion.rover.at){const id=garden.spotAt(companion.rover.point(companion.rover.wanted));if(id)garden.pending={id,sleep:id==='nest',hover:companion.rover.arrivalStyle==='hover'};}
   ready=true;sync();last=performance.now();requestAnimationFrame(tick);
-  if(shouldWelcomeOnRefresh(performance.getEntriesByType('navigation')[0]?.type,saved,journey.active))showMoment('refresh',{reveal:saved.chatOpen===true});
-  if(saved.awake||open||journey.active)await wake();prepareTravel().then(()=>companion.attention.setTracking(!media.matches)).catch(()=>status(tr('Some flight drawings could not load. Please reload to retry.','飛行画像を読み込めませんでした。再読み込みしてください。')));
+  if(resident&&shouldWelcomeOnRefresh(performance.getEntriesByType('navigation')[0]?.type,saved,journey.active))showMoment('refresh',{reveal:saved.chatOpen===true});
+  if(open||journey.active)await wake();prepareTravel().then(()=>companion.attention.setTracking(!media.matches)).catch(()=>status(tr('Some flight drawings could not load. Please reload to retry.','飛行画像を読み込めませんでした。再読み込みしてください。')));
   if(journey.active)await resumeJourney();
   let requested;try{requested=pendingGuide(sessionStorage.getItem('yuki-guide-v1'),location.pathname);sessionStorage.removeItem('yuki-guide-v1');}catch{}
   if(requested&&!journey.active){const target=checkedGuideTarget(requested,knowledge,ja?'ja':'en',base);if(target)await beginJourney(target);}
   if(online&&permission.allowed&&translationBatch(messages,ja?'ja':'en').length){if(!chatSession.get())panel(true);void translateConversation();}
  }catch{status(tr('Yuki’s artwork could not load. The website and links still work.','ゆきの画像を読み込めませんでした。サイトとリンクは利用できます。'));}
- for(const name of ['pointerdown','keydown','wheel','touchstart'])addEventListener(name,()=>companion?.lifecycle.activity(),{passive:true,capture:true});
+ for(const name of ['pointerdown','keydown','wheel','touchstart'])addEventListener(name,()=>{if(resident&&!portalTrip)companion?.lifecycle.activity();if(garden&&resident)garden.inactive=0;},{passive:true,capture:true});
+ document.addEventListener('yuki:question',event=>{const text=event.detail?.text;if(garden&&typeof text==='string'&&text.length<=1000){garden.cancel();void garden.api.chat(text);}});
  addEventListener('pointermove',e=>{if(ready&&onScreen&&!open&&e.pointerType!=='touch'&&Math.abs(e.clientY-shownFoot.y)<bodyHeight*2)companion.pointer(e.clientX);},{passive:true});
  media.addEventListener('change',sync);addEventListener('resize',()=>{measure();lastMeasure=-Infinity;if(open)updateReading();});
  let readingFrame=0;
@@ -512,7 +654,18 @@ async function start(){
   motion.scroll();},{passive:true});
  window.visualViewport?.addEventListener('resize',placeBubble);window.visualViewport?.addEventListener('scroll',placeBubble);
  addEventListener('pagehide',()=>{save();if(journey.active&&companion)journey.depart({x:companion.rover.foot.x,y:companion.rover.foot.y-scrollY},layout);controller?.abort();verification.stop();});
- addEventListener('pageshow',e=>{if(momentKind==='leave')hideMoment();if(e.persisted){const restored=readSession(readingStorage,Date.now(),ja?'ja':'en');messages=restored.messages??[];variety=cleanVariety(restored.variety);conversationMemory.reload();drawMessages();save();permission.reload();permissionUI();if(!permission.allowed)withdrawPermission();if(companion)companion.lifecycle.lastCrash=companion.lifecycle.clock+flopRemaining()-companion.lifecycle.crashCooldownMs;journey=new GuideJourney(readingStorage);clearRouteMarker();if(journey.active)void resumeJourney();else stopJourney();}});
+ async function restoreLocation(){
+  portalTrip=null;portalAfterglow=null;portal.hidden=true;calling=false;callLoading=false;companion.rover.hidden=true;
+  presence.reload();presence.transit();presence.settleAway(location.pathname);resident=presence.here(location.pathname)||journey.active;
+  if(presence.transfer&&!journey.active){await ensure([...travel,'wake','bedtime','crash',...poseArtwork(presence.transfer.origin.pose,clips)]);continueTransfer();sync();return;}
+  if(resident&&!journey.active){const s=presence.state;await ensure(poseArtwork(s.pose,clips));
+   if(!restorePose(companion,s.pose,clips,p=>locationMap(p,true))){placeAt(locationMap(s.position,true));companion.lifecycle.enter(s.status==='sleep'?'sleep':'awake');}
+   if(s.status==='returning'&&!garden){portalTrip={kind:'returning',phase:'flying',age:0};calling=true;}
+  }sync();
+ }
+ addEventListener('pageshow',async e=>{if(momentKind==='leave')hideMoment();if(e.persisted){
+  // Never let a cached page save its stale local copy over the newer location.
+  resident=false;const restored=readSession(readingStorage,Date.now(),ja?'ja':'en');messages=restored.messages??[];variety=cleanVariety(restored.variety);conversationMemory.reload();drawMessages();permission.reload();permissionUI();if(!permission.allowed)withdrawPermission();if(companion)companion.lifecycle.lastCrash=companion.lifecycle.clock+flopRemaining()-companion.lifecycle.crashCooldownMs;journey=new GuideJourney(readingStorage);clearRouteMarker();if(ready)await restoreLocation();if(journey.active)void resumeJourney();else stopJourney();save();}});
  document.addEventListener('click',event=>{
   const link=event.target?.closest?.('a[href]');
   if(!link||!ready||hidden||busy||journey.active||!onScreen||!isLeavingLink(link.href,location.href,{button:event.button,defaultPrevented:event.defaultPrevented,download:link.hasAttribute('download'),altKey:event.altKey,ctrlKey:event.ctrlKey,metaKey:event.metaKey,shiftKey:event.shiftKey}))return;
