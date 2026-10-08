@@ -3,8 +3,8 @@
 import {HomeDialogue} from './home-dialogue.mjs';
 import {attachAmbience} from './ambience.mjs';
 import {GardenCamera,attachGardenExplorer} from './camera.mjs?v=2';
-import {GardenPond} from './pond.mjs?v=2';
-import {GardenWorldLife} from './world-life.mjs?v=2';
+import {GardenPond} from './pond.mjs?v=3';
+import {GardenWorldLife} from './world-life.mjs?v=3';
 export const gardenSpots={nest:{x:.20,y:.775},pond:{x:.35,y:.655},lookout:{x:.53,y:.48},books:{x:.745,y:.635},treasures:{x:.67,y:.80}};
 export function gardenPoint(id,rect,scroll=0){const p=gardenSpots[id]??gardenSpots.nest;return {x:rect.left+p.x*rect.width,y:rect.top+scroll+p.y*rect.height};}
 const tales={
