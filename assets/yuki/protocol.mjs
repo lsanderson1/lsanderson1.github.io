@@ -1,6 +1,8 @@
-import {cleanVariety,cleanStoryTopics} from './runtime/reply-variety.mjs';
-import {cleanMessages} from './runtime/conversation-language.mjs?v=3';
+import {cleanVariety,cleanStoryTopics} from './runtime/reply-variety.mjs?v=3';
+import {cleanMessages} from './runtime/conversation-language.mjs?v=4';
 import {cleanReplyBeats} from './runtime/reply-beats.mjs';
+import {cleanAssistantText} from './runtime/reply-text.mjs';
+export {cleanAssistantText} from './runtime/reply-text.mjs';
 export const emotions=['neutral','confused','delighted','thoughtful','surprised','shy','proud','reassuring','amused'];
 export const destinations=['none','projects','essays','unreal','resume','garden'];
 export function chatUnavailable(reason,lang='en',reference=''){
@@ -13,8 +15,11 @@ export function chatUnavailable(reason,lang='en',reference=''){
  return (ja?'今はAIチャットがつながらなくて、回答が届いていないんだ。下のボタンからなら、作品を案内できるよ。':'My AI chat isn’t available right now, so no AI answer came through. I can still show you around using the buttons below.')+detail;
 }
 export function validReply(value){
- if(!value||typeof value.text!=='string'||!value.text.trim()||value.text.length>2000)throw Error('Invalid reply');
- return {text:value.text.trim(),emotion:emotions.includes(value.emotion)?value.emotion:'neutral',gesture:['none','wave','talkOpen','talkExplain'].includes(value.gesture)?value.gesture:'none',destination:destinations.includes(value.destination)?value.destination:'none',sources:Array.isArray(value.sources)?value.sources.filter(s=>s&&typeof s.title==='string'&&typeof s.url==='string').slice(0,3):[],storyTopics:cleanStoryTopics(value.storyTopics),...(cleanReplyBeats(value.beats,value.text).length?{beats:cleanReplyBeats(value.beats,value.text)}:{}),...(['used','limit','unavailable'].includes(value.searchStatus)?{searchStatus:value.searchStatus}:{})};
+ if(!value)throw Error('Invalid reply');
+ const text=cleanAssistantText(value.text);if(text.length>3000)throw Error('Invalid reply');
+ // Serialized duplicate sentences must not leave stale animation indices.
+ const beats=text===value.text.trim()?cleanReplyBeats(value.beats,text):[];
+ return {text,emotion:emotions.includes(value.emotion)?value.emotion:'neutral',gesture:['none','wave','talkOpen','talkExplain'].includes(value.gesture)?value.gesture:'none',destination:destinations.includes(value.destination)?value.destination:'none',sources:Array.isArray(value.sources)?value.sources.filter(s=>s&&typeof s.title==='string'&&typeof s.url==='string').slice(0,3):[],storyTopics:cleanStoryTopics(value.storyTopics),...(beats.length?{beats}:{}),...(['used','limit','unavailable'].includes(value.searchStatus)?{searchStatus:value.searchStatus}:{})};
 }
 export function safeSitePath(value,base=''){
  if(typeof value!=='string'||!value.startsWith('/')||value.startsWith('//')||/[\\\u0000-\u0020]/.test(value)||value.includes('%'))return null;
@@ -28,6 +33,6 @@ export function readSession(storage,now=Date.now(),language){
   // A language change is presentation, not a request to forget the visitor.
   s.messages=cleanMessages(s.messages,s.language);
   s.language=language||(['en','ja'].includes(s.language)?s.language:undefined);
-  return {language:s.language,awake:s.awake===true,chatOpen:s.chatOpen===true,hidden:s.hidden===true,paused:s.paused===true,roam:s.roam===true,mobilityVersion:s.mobilityVersion===2?2:1,x:Number.isFinite(s.x)?Math.max(.1,Math.min(.9,s.x)):.2,y:Number.isFinite(s.y)?Math.max(.25,Math.min(.9,s.y)):.8,variety:cleanVariety(s.variety),messages:Array.isArray(s.messages)?s.messages.filter(m=>['user','assistant'].includes(m.role)&&typeof m.text==='string'&&m.text.length<=(m.role==='assistant'?2000:1000)).slice(-12):[]};
+  return {language:s.language,awake:s.awake===true,chatOpen:s.chatOpen===true,hidden:s.hidden===true,paused:s.paused===true,roam:s.roam===true,mobilityVersion:s.mobilityVersion===2?2:1,x:Number.isFinite(s.x)?Math.max(.1,Math.min(.9,s.x)):.2,y:Number.isFinite(s.y)?Math.max(.25,Math.min(.9,s.y)):.8,variety:cleanVariety(s.variety),messages:Array.isArray(s.messages)?s.messages.filter(m=>['user','assistant'].includes(m.role)&&typeof m.text==='string'&&m.text.length<=(m.role==='assistant'?3000:1000)).slice(-12):[]};
  }catch{return {};}
 }

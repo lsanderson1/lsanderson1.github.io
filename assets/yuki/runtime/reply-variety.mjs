@@ -15,7 +15,7 @@ export function cleanVariety(value){
  const topics={};for(const id of storyTopicIds){const n=value?.topics?.[id];if(Number.isInteger(n)&&n>0)topics[id]=Math.min(n,999);}
  const recent=[];
  for(const item of (Array.isArray(value?.recent)?value.recent:[]).slice(-recentLimit)){
-  if(!item||typeof item.digest!=='string'||!/^[a-f0-9]{16}$/.test(item.digest)||!Number.isInteger(item.length)||item.length<0||item.length>2000||!Array.isArray(item.grams))continue;
+  if(!item||typeof item.digest!=='string'||!/^[a-f0-9]{16}$/.test(item.digest)||!Number.isInteger(item.length)||item.length<0||item.length>3000||!Array.isArray(item.grams))continue;
   recent.push({digest:item.digest,length:item.length,grams:[...new Set(item.grams.filter(g=>typeof g==='string'&&hex.test(g)))].sort().slice(0,sampleSize),opening:typeof item.opening==='string'?[...item.opening.replace(/\s+/g,' ').trim()].slice(0,64).join(''):''});
  }
  return {turn:Number.isInteger(value?.turn)&&value.turn>0?Math.min(value.turn,9999):0,topics,recent};

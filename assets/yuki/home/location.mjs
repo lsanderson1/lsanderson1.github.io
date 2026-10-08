@@ -10,6 +10,12 @@ export function portalSection(page){
  const p=locationPage(page);for(const prefix of ['/yuki/','/essays/','/projects/','/unreal-journey/'])if(p.startsWith(prefix))return prefix;
  return p==='/resume.html'?p:'/';
 }
+// A doorway names the OTHER end of the journey: enter the destination's tab
+// on departure, then emerge from the origin's tab on the receiving page.
+export function travelPortalSection(trip,fallbackPage='/'){
+ const page=trip?.kind==='returning'?'/yuki/':trip?.kind==='departing'?trip.transfer?.target?.page:trip?.origin?.page??trip?.transfer?.origin?.page;
+ return portalSection(page??fallbackPage);
+}
 const number=(n,max=1e7)=>Number.isFinite(n)&&Math.abs(n)<=max;
 const point=p=>p&&number(p.x)&&number(p.y);
 const states=['sleep','awake','wake','bedtime','crash','rest','takeoff','flight','landing','hover','returning'];
