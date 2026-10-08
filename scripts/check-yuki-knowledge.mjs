@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import {retrieveKnowledge} from '../services/yuki-api/knowledge.mjs';
+import {portraitAnswer} from '../services/yuki-api/page-awareness.mjs';
 import {safeSitePath} from '../assets/yuki/protocol.mjs';
 const site=path.resolve(process.argv[2]??'_site');
 const raw=fs.readFileSync(path.join(site,'assets/yuki/knowledge.json'),'utf8'),k=JSON.parse(raw);
@@ -24,15 +25,23 @@ for(const p of k.pages){
    const selected=retrieveKnowledge(k,{page:p.url,lang:p.lang,message:p.lang==='ja'?'この画像を説明して':'Explain this picture',history:[],context:{section:s.id,images:[s.id]}});
    assert.equal(selected.view.visual.images[0]?.sourceId,`${p.id}::${s.id}`);
    assert(selected.pages.some(entry=>entry.id===`${p.id}::${s.id}`&&entry.text.includes(s.title)));
+   assert(selected.pages.every(entry=>entry.url.split('#')[0]===p.url),'Picture context must not leak unrelated pages');
   }
  }
  assert(!p.text.includes('yuki-chat-consent-v1'));assert(!p.text.includes('document.querySelector'));
+ for(const s of p.sections.filter(s=>s.kind!=='image')){
+  const selected=retrieveKnowledge(k,{page:p.url,lang:p.lang,message:p.lang==='ja'?'この項目を説明して':'Explain this section',history:[{role:'user',content:'Tell me about Yuki'}],context:{section:s.id}});
+  assert(selected.pages.every(entry=>entry.url.split('#')[0]===p.url));
+  assert(selected.pages.some(entry=>entry.id===`${p.id}::${s.id}`));
+ }
 }
 for(const lang of ['en','ja']){
  const home=k.pages.find(p=>p.url===(lang==='ja'?'/ja/':'/'));
  const portrait=home.sections.find(s=>s.kind==='image'&&s.title.includes(k.owner));assert(portrait,'Home portrait explicitly identifies the owner');
  const identity=retrieveKnowledge(k,{page:lang==='ja'?'/ja/resume.html':'/resume.html',lang,message:lang==='ja'?'ホームページの写真の人は誰？':'Who is in the picture on the landing page?',history:[{role:'user',content:'Tell me about Yuki'}],context:{section:'s0'}});
  assert.equal(identity.view.visual.images[0].sourceId,`${home.id}::${portrait.id}`);assert(identity.pages[0].text.includes(k.owner));
+ const directInput={page:home.url,lang,message:lang==='ja'?'この写真は誰？':'Who is this picture of',history:[],context:{section:'s0',images:[portrait.id]}};
+ assert(portraitAnswer(directInput,retrieveKnowledge(k,directInput)).text.includes(k.owner));
  const url=(lang==='ja'?'/ja':'')+'/unreal-journey/project-1-interactable-museum.html';
  const museum=k.pages.find(p=>p.url===url);assert(museum);
  assert(museum.text.includes('Project01.exe')); // Layout-provided download help.

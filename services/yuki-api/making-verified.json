@@ -228,13 +228,13 @@
       "en": "Selecting evidence for answers",
       "ja": "返答の根拠を選ぶ"
     },
-    "explanation": "retrieveKnowledge filters the public catalog to the requested language and safe site paths, splits long sections into overlapping passages, scores question terms with a smaller weight for recent history, and selects at most six. Current and last-guided context are included, but explicit questions determine relevance. Curated making-of notes are supplied separately; this is local text ranking, not live repository browsing or visual perception.",
+    "explanation": "retrieveKnowledge filters the public catalog to the requested language and safe site paths, splits long sections into overlapping passages, scores question terms with a smaller weight for recent history, and selects at most six. An explicitly named page, a resolved picture or a current-page question limits passages to that page; unrelated site-wide matches cannot fill the budget. Relevant published image descriptions and current or explicitly guided sections take priority. Broader questions still search across the catalog. Curated making-of notes are supplied separately; this is local text ranking, not live repository browsing or visual perception.",
     "source": {
       "file": "services/yuki-api/knowledge.mjs",
       "symbol": "retrieveKnowledge",
       "firstLine": 41,
-      "lastLine": 75,
-      "sha256": "33d7bb76735d9129253084346b9eb495954a74a3363c7cea3f4e5e3a9dccf09f"
+      "lastLine": 79,
+      "sha256": "e8f9aad17a874a1e7b90429dc73e825e775038d3ba9d38d9e9b4bd1344702a9e"
     }
   },
   {
@@ -249,8 +249,8 @@
     "source": {
       "file": "services/yuki-api/worker.mjs",
       "symbol": "parseModel",
-      "firstLine": 79,
-      "lastLine": 135,
+      "firstLine": 81,
+      "lastLine": 137,
       "sha256": "fe6c52afc7d581b22e3c827a426a310f0f6f2bd46500d14d0935a2133751e2e4"
     }
   },

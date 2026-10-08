@@ -1,7 +1,7 @@
 import {safeSitePath} from '../../assets/yuki/protocol.mjs';
 import {readingReference,sectionKey} from '../../assets/yuki/runtime/reading-context.mjs';
 import {makingKnowledge} from './making-knowledge.mjs';
-import {questionPage,questionImages} from './page-awareness.mjs';
+import {questionPage,questionImages,asksCurrentPage} from './page-awareness.mjs';
 
 const clean=value=>typeof value==='string'?value.replace(/\s+/g,' ').trim():'';
 export function validateContext(value){
@@ -17,7 +17,7 @@ export function validateContext(value){
 export function queryWords(text){
  const query=text.toLowerCase(),words=query.match(/[a-z0-9_+#]{2,}/g)||[];
  for(const run of query.match(/[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]+/gu)||[])for(let i=0;i<run.length-1;i++)words.push(run.slice(i,i+2));
- const stop=new Set(['the','this','that','these','those','what','how','about','more','tell','explain','does','with','from','you','can','she','please','there']);
+ const stop=new Set(['the','this','that','these','those','what','how','about','more','tell','explain','does','with','from','you','can','she','please','there','who','is','of','in','on','to','and','for','are','was','were','it','its','me','my']);
  return [...new Set(words)].filter(w=>!stop.has(w)).slice(0,120);
 }
 export function textChunks(text,size=1700){
@@ -47,6 +47,10 @@ export function retrieveKnowledge(k,input){
  // must not pull retrieval or the model back to an earlier, unrelated target.
  const focus=guideExplanation(input.message)?lastGuided:null;
  const mentioned=questionPage(pages,input.message),visual=focus?null:questionImages(pages,input,current,lastGuided,mentioned);
+ // Once the question resolves a page, unrelated global keyword matches must
+ // not fill the evidence budget. Broader/non-deictic questions still search all
+ // indexed pages. These are request-local hints, never permanent chat memory.
+ const scope=focus?.page??visual?.page??mentioned?.url??(asksCurrentPage(input.message)?current?.page:null);
  const query=queryWords(focus?focus.heading:input.message),history=focus||visual||mentioned?[]:queryWords((input.history??[]).filter(m=>m.role==='user').slice(-2).map(m=>m.content).join(' '));
  const score=(text,words)=>words.reduce((n,w)=>n+(text.includes(w)?1:0),0);
  const chunks=[];
@@ -58,7 +62,7 @@ export function retrieveKnowledge(k,input){
    textChunks(s.text).forEach((text,i)=>chunks.push({id:`${p.id}::${s.id||'body'}${i?'::'+i:''}`,url:p.url+(safeAnchor?'#'+safeAnchor:''),title:p.title+(s.id?' — '+s.title:''),text,page:p.url,section:s.id,part:i}));
   }
  }
- const ranked=chunks.filter(c=>!focus||c.page===focus.page).map((c,i)=>{
+ const ranked=chunks.filter(c=>!scope||c.page===scope).map((c,i)=>{
   const title=c.title.toLowerCase(),body=c.text.toLowerCase();
   return {...c,order:i,score:score(title,query)*8+score(body,query)*3+score(title+' '+body,history)*.35+(c.page===current?.page?2:0)+(c.page===mentioned?.url?12:0)+(c.page===lastGuided?.page?1:0)};
  }).sort((a,b)=>b.score-a.score||a.order-b.order);
@@ -71,5 +75,5 @@ export function retrieveKnowledge(k,input){
  // explicit questions can still retrieve a different passage anywhere in a page.
  for(const ref of focus?[focus]:[current,lastGuided])if(ref){const c=ranked.find(c=>c.page===ref.page&&c.section===ref.section);add(c);if(c)ref.sourceId=c.id;}
  for(const c of ranked)add(c);
- return {owner:k.owner,bio:clean(k.bio[input.lang]).slice(0,2000),skills:JSON.stringify(k.skills||[]).slice(0,2000),view:{current,lastGuided,focus,...(mentioned?{questionPage:{page:mentioned.url,title:mentioned.title}}:{}),...(visual?{visual}:{}),...(/^\/(?:ja\/)?yuki\/$/.test(input.page)&&input.context?.gardenSpot?{gardenSpot:input.context.gardenSpot}:{})},pages:chosen.map(({id,url,title,text})=>({id,url,title,text})),makingOf:focus?null:makingKnowledge(input)};
+ return {owner:k.owner,bio:clean(k.bio[input.lang]).slice(0,2000),skills:JSON.stringify(k.skills||[]).slice(0,2000),view:{current,lastGuided,focus,...(scope?{scope}:{}),...(mentioned?{questionPage:{page:mentioned.url,title:mentioned.title}}:{}),...(visual?{visual}:{}),...(/^\/(?:ja\/)?yuki\/$/.test(input.page)&&input.context?.gardenSpot?{gardenSpot:input.context.gardenSpot}:{})},pages:chosen.map(({id,url,title,text})=>({id,url,title,text})),makingOf:focus?null:makingKnowledge(input)};
 }

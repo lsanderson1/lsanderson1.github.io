@@ -199,7 +199,7 @@ test('guide Explain resets the topic to the selected picture rather than old con
  const other={...page,id:'patterns',url:'/patterns.html',title:'Controller design patterns'};
  const selected=retrieveKnowledge({...knowledge,pages:[page,other]},request);
  assert.equal(selected.view.focus.kind,'image');assert.equal(selected.view.focus.sourceId,'/museum.html::i0');assert(selected.pages.every(p=>p.url.startsWith('/museum.html')));
- const body=modelRequest(request,selected);assert.equal(body.messages.length,2);assert.match(body.messages[0].content,/FOCUSED GUIDE EXPLANATION/);
+ const body=modelRequest(request,selected);assert.equal(body.messages.length,3);assert.match(body.messages[0].content,/FOCUSED GUIDE EXPLANATION/);assert.match(body.messages[1].content,/CURRENT QUESTION EVIDENCE/);
  const japanese=retrieveKnowledge(knowledge,{...request,message:'さっき案内してくれたところを、もう少し詳しく説明して。この作品とどう関係しているの？'});
  assert.equal(japanese.view.focus.sourceId,'/museum.html::i0');
  const explicit=retrieveKnowledge(knowledge,{...request,message:'Explain controller design patterns instead'});

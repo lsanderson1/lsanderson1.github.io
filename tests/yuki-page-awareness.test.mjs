@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {readPageImages,readPageSection} from '../assets/yuki/runtime/reading-context.mjs';
 import {validateContext,retrieveKnowledge} from '../services/yuki-api/knowledge.mjs';
-import {questionPage} from '../services/yuki-api/page-awareness.mjs';
-import {modelRequest} from '../services/yuki-api/worker.mjs';
+import {questionPage,portraitAnswer,pageEvidenceInstruction} from '../services/yuki-api/page-awareness.mjs';
+import {modelRequest,createHandler} from '../services/yuki-api/worker.mjs';
 const picture=(id,title)=>({id,title,kind:'image',anchor:`image-${id}`,text:`Published image description (not visual analysis): ${title}`});
 const home={id:'/',url:'/',lang:'en',title:'Portfolio',summary:'The portfolio landing page.',text:'About Lloyd and featured work.',sections:[{id:'s0',title:'Introduction',anchor:'intro',text:'Lloyd is the portfolio owner.'},picture('i0','Portrait of Lloyd Sanderson'),picture('i1','Screenshot of the Museum project')]};
 const museum={id:'/museum.html',url:'/museum.html',lang:'en',title:'Interactable Museum',summary:'A museum project.',text:'An Unreal museum.',sections:[{id:'s0',title:'Overview',anchor:'overview',text:'Museum overview.'},picture('i0','Overhead room'),picture('i1','Inspection screen')]};
@@ -61,4 +61,60 @@ test('prompt answers published portrait identity directly but never pretends to 
  const prompt=modelRequest(input,retrieveKnowledge(k,input)).messages[0].content;
  for(const phrase of ['caption-based knowledge, not face recognition','Do not infer who the current visitor is','view.questionPage','view.visual.ambiguous','ask which picture'])assert(prompt.includes(phrase));
  const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');assert.match(ui,/images:readPageImages\(document,innerHeight,headerBottom\)/);
+});
+
+test('the reported portrait question cannot be replaced by Yuki lore, including with a wrong saved answer',()=>{
+ for(const [lang,message] of [['en','Who is this picture of'],['en','Who is this picture of (on the landing page assuming the picture)'],['en','Is that you in the picture?'],['en','Do you know who the person in this photo is?'],['en','What is this picture of?'],['ja','この写真は誰？'],['ja','この写真に写っている人は誰？'],['ja','写真の人が誰か分かる？']]){
+  const request={...input,lang,page:lang==='ja'?'/ja/':'/',message,history:[{role:'assistant',content:"That’s me! I’m Yuki, a baby dragon."}]};
+  const evidence=retrieveKnowledge(k,request),reply=portraitAnswer(request,evidence);
+  assert(reply);assert.match(reply.text,/Lloyd Sanderson/);assert.doesNotMatch(reply.text,/Yuki|ゆき|baby dragon|red scales/);
+  assert.equal(reply.sources[0].url,(lang==='ja'?'/ja/':'/')+'#image-i0');assert.deepEqual(reply.storyTopics,[]);
+  assert(evidence.pages.every(p=>p.url.split('#')[0]===request.page));
+ }
+});
+
+test('portrait facts never identify an unlabeled image, an ambiguous picture, its photographer, or the visitor',()=>{
+ for(const patch of [
+  {page:'/museum.html',message:'Who is this picture of'},
+  {message:'Who took this picture?'},{message:'Who drew this picture?'},
+  {message:'Who is in this picture and what did they make?'},
+  {message:'Who are you?'},{message:'Who am I?'},{message:'Tell me your story'}
+ ]){const request={...input,...patch};assert.equal(portraitAnswer(request,retrieveKnowledge(k,request)),null);}
+ const evidence=retrieveKnowledge(k,input);
+ assert.equal(portraitAnswer(input,{...evidence,owner:'Someone Else'}),null);
+ assert.equal(portraitAnswer(input,{...evidence,pages:[]}),null);
+ assert.equal(portraitAnswer(input,{...evidence,view:{...evidence.view,visual:{...evidence.view.visual,ambiguous:true}}}),null);
+ assert.equal(portraitAnswer({...input,guideEvent:{kind:'arrive'}},evidence),null);
+});
+
+test('current-page and named-page evidence stays on topic in both languages, despite stale guide and memory',()=>{
+ for(const [lang,message] of [['en','Explain this section'],['en','What am I looking at?'],['ja','この項目を説明して'],['ja','今見ているページについて教えて']]){
+  const page=lang==='ja'?'/ja/museum.html':'/museum.html';
+  const request={...input,lang,page,message,context:{section:'s0',lastGuide:{page:'/',section:'i0'}},history:[{role:'user',content:'Lloyd portrait'}]};
+  const evidence=retrieveKnowledge(k,request);assert.equal(evidence.view.scope,page);assert(evidence.pages.every(p=>p.url.split('#')[0]===page));
+  const model=modelRequest(request,evidence);assert.match(model.messages.at(-2).content,/CURRENT QUESTION EVIDENCE/);assert.equal(model.messages.at(-2).role,'system');
+  assert(!model.messages.at(-2).content.includes('Portrait of Lloyd'));
+ }
+ const explicit={...input,message:'Explain Interactable Museum',context:{section:'s0'}};
+ const evidence=retrieveKnowledge(k,explicit);assert.equal(evidence.view.scope,'/museum.html');assert(evidence.pages.every(p=>p.url.startsWith('/museum.html')));
+ const broad=retrieveKnowledge(k,{...input,message:'Compare the portfolio work',context:{section:'s0'}});assert.equal(broad.view.scope,undefined);
+ assert.equal(pageEvidenceInstruction({pages:[],view:{}}),'');
+});
+
+test('a home-story question does not accidentally select the portfolio Home page, and comparisons stay broad',()=>{
+ const pages=[{...home,title:'Home'},museum,{...museum,id:'/new.html',url:'/new.html',title:'Floating Library'}];
+ assert.equal(questionPage(pages,'Tell me about your home'),null);
+ assert.equal(questionPage(pages,'Compare Interactable Museum and Floating Library'),null);
+ assert.equal(questionPage(pages,'Tell me about the home page').url,'/');
+});
+
+test('verified and rate-limited portrait replies bypass unreliable generation and optional web search',async()=>{
+ for(const lang of ['en','ja']){
+  const requests=[];let models=0,reservations=0;
+  const handler=createHandler(async url=>{requests.push(url);return Response.json(url.includes('siteverify')?{success:true,hostname:'lsanderson1.github.io',action:'yuki-chat'}:k);});
+  const env={SITE_ORIGIN:'https://lsanderson1.github.io',CHAT_ENABLED:'true',FREE_PLAN_CONFIRMED:'true',TURNSTILE_SECRET:'test',IP_HASH_SECRET:'test'.repeat(10),AI:{run:async()=>{models++;throw Error('Must not ask the model to guess a labeled identity');}},QUOTA:{idFromName:n=>n,get:()=>({fetch:async()=>{reservations++;return new Response(null,{status:204});}})}};
+  const body={...input,lang,page:lang==='ja'?'/ja/':'/',message:lang==='ja'?'この写真の人は誰？':'Who is this picture of',token:'test',webSearch:true,history:[{role:'assistant',content:"That's me! I'm Yuki!"}]};
+  const response=await handler(new Request('https://worker.example/chat',{method:'POST',headers:{Origin:env.SITE_ORIGIN,'Content-Type':'application/json','CF-Connecting-IP':'192.0.2.2'},body:JSON.stringify(body)}),env);
+  assert.equal(response.status,200);const reply=await response.json();assert.match(reply.text,/Lloyd Sanderson/);assert.equal(models,0);assert.equal(reservations,1);assert.equal(requests.length,2);assert(reply.chatSession);assert.equal(reply.sources.length,1);
+ }
 });
