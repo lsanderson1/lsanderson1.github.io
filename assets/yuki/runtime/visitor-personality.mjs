@@ -253,4 +253,4 @@ export function replySequence(cue,{firstMeeting=false,talk='talkOpen'}={}){
  return [{...cue,gesture:'none'},{text:cue.text,emotion:'neutral',gesture}];
 }
 export function cueArtwork(cue){return cue.gesture==='wave'?'greeting':cue.emotion!=='neutral'?cue.emotion:cue.gesture==='talkOpen'?'talkOpen':'talkExplain';}
-import {nextHomeGreeting,localizeHomeGreeting,homeGreetingBase} from '../home/greetings.mjs';
+import {nextHomeGreeting,localizeHomeGreeting,homeGreetingBase} from '../home/greetings.mjs?v=2';

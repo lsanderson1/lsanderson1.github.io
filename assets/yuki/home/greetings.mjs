@@ -26,8 +26,8 @@ export const homeGreetings=[
   "いらっしゃい！ドラゴンサイズの入場料はないよ。ひとこと、やっほって言ってくれたらうれしいな。"
  ],
  [
-  "I was planning a grand adventure. It currently involves that bench and a snack-shaped pebble.",
-  "大冒険の計画中だったんだ。今のところ、あのベンチと、おやつみたいな小石が登場する予定。"
+  "I was planning a grand adventure. It currently involves that bench and my very shiny crystal orb.",
+  "大冒険の計画中だったんだ。今のところ、あのベンチと、きらきらの水晶玉が登場する予定。"
  ],
  [
   "Hello from my little patch of sunshine! Want to hear a garden story or how my wingbeats work?",
@@ -58,8 +58,8 @@ export const homeGreetings=[
   "わあ、来てくれた！おうちを探検してもいいし、作品の話もできるよ。気になることから始めよっか。"
  ],
  [
-  "Hello! I’ve appointed myself garden guide. My qualifications include knowing the softest leaf.",
-  "こんにちは！今日はわたしが庭の案内役。いちばん柔らかい葉っぱの場所、ちゃんと知ってるよ。"
+  "Hello! I’ve appointed myself garden guide. My qualifications include knowing the comfiest cushion.",
+  "こんにちは！今日はわたしが庭の案内役。いちばんふかふかのクッションの場所、ちゃんと知ってるよ。"
  ],
  [
   "A little breeze, a warm nest, and now a visitor. That’s a lovely beginning.",

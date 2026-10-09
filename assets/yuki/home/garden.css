@@ -53,6 +53,8 @@ body:has(.yg-page)>.fp-nav{flex-shrink:0}
 @keyframes yg-water-drift{0%,100%{transform:translate(-3px,0) rotate(-4deg)}50%{transform:translate(9px,2px) rotate(9deg)}}
 @keyframes yg-water-flow{to{stroke-dashoffset:-48}}
 .yg-world-magic,.yg-discoveries{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:hidden;z-index:1}
+.yg-sky-dragons{pointer-events:none}
+@media(prefers-reduced-motion:reduce){.yg-sky-dragons{display:none}}
 .yg-discovery{position:absolute;display:block;min-width:0;min-height:0;margin:0;padding:0;border:0;border-radius:40%;background:transparent!important;box-shadow:none;color:transparent;pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .yg-discovery:focus-visible{outline:2px dashed #fff4a7!important;outline-offset:-3px;background:#ffebaf14!important}
 .yg-scene[data-discoveries=true] .yg-discovery{outline:1px dashed #fff6b9a6;outline-offset:-4px;background:radial-gradient(ellipse,#fff1ba30,transparent 70%)!important}

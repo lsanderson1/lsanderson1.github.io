@@ -84,7 +84,7 @@ export function restorePose(c,p,clips,unmap=p=>({...p})){
  return true;
 }
 export function locationLabel(s,ja=false){
- const places={nest:['Leaf Nest','葉っぱの巣'],pond:['Lily Pond','スイレンの池'],lookout:['Sky Lookout','空の見晴らし台'],books:['Reading Nook','読書のコーナー'],treasures:['Little Treasures','小さな宝物']};
+ const places={nest:['Dragon Roost','ドラゴンのねぐら'],pond:['Lily Pond','スイレンの池'],lookout:['Sky Lookout','空の見晴らし台'],books:['Reading Nook','読書のコーナー'],treasures:['Little Treasures','小さな宝物']};
  const place=s.garden?(places[s.spot]?.[ja?1:0]??(ja?'ゆきの庭':'Yuki’s Garden')):s.title||s.page;
  return s.status==='sleep'?(ja?`${place}でお昼寝中`:`Sleeping in ${place}`):s.status==='returning'?(ja?'巣へ帰るところ':'Returning to Her Nest'):(ja?`${place}にいるよ`:`Currently at ${place}`);
 }

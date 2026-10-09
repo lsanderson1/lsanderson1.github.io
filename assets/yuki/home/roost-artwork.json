@@ -1,0 +1,12 @@
+{
+  "tool": "built-in image_gen",
+  "asset": "petal-nook-roost.png",
+  "source": "exec-873d1828-8f80-4f6f-853a-98d1c18ca411.png",
+  "sha256": "03b5a9073c32e3b3c55ae7d55f1c6f0ff4aefde47789df2f496817426d1b6360",
+  "approved": "2026-10-09",
+  "selection": "The complete garden artwork shown in dragon-garden-preview.html, approved by the owner for publication with the flying dragons, new roost and look.",
+  "changes": "Wing-shaped dragon roost with a pink-and-ivory scale-pattern cushion, small gems, gold coins and a pearl; crystal orb replaces the pebble beside the notebook.",
+  "preservation": "Exact approved preview PNG copied without additional image editing. Original petal-nook.png retained unchanged as the previous artwork. The approved full-image redraw is not claimed to be pixel-identical outside the roost.",
+  "promptAvailability": "The original garden generation prompt is retained in artwork.json. The exact later roost-redesign prompt was not captured in this manifest.",
+  "characterRedrawn": false
+}

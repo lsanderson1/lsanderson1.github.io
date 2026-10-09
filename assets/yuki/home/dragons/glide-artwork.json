@@ -1,0 +1,40 @@
+{
+  "tool": "built-in image_gen",
+  "date": "2026-10-09",
+  "purpose": "Gentle side and rear glides with wing-tip correction and tail follow-through; original side, turn and rear wingbeat PNGs preserved.",
+  "selectedAssets": [
+    {
+      "asset": "lavender-glide.png",
+      "reference": "lavender.png",
+      "source": "exec-55e8a569-bdea-4f5a-873d-8576d19739b5.png"
+    },
+    {
+      "asset": "lavender-rear-glide.png",
+      "reference": "lavender-rear.png",
+      "source": "exec-c2f386b1-c848-4f59-b6f5-d3fe51b8f901.png"
+    },
+    {
+      "asset": "amber-glide.png",
+      "reference": "amber.png",
+      "source": "exec-305239c1-e97d-4b1f-bf57-602345786abf.png"
+    },
+    {
+      "asset": "amber-rear-glide.png",
+      "reference": "amber-rear.png",
+      "source": "exec-b6b9b510-a452-4eaa-a6da-79a70a35359f.png"
+    },
+    {
+      "asset": "sage-glide.png",
+      "reference": "sage.png",
+      "source": "exec-3b1370da-539c-4a6f-ab67-9188b8e425c1.png"
+    },
+    {
+      "asset": "sage-rear-glide.png",
+      "reference": "sage-rear.png",
+      "source": "exec-c02b6462-b404-49f5-a197-17f5cd315882.png"
+    }
+  ],
+  "sidePrompt": "Use case: identity-preserve. Asset type: transparent eight-frame GLIDE animation companion sheet.\nImage 1 is the APPROVED original dragon artwork reference. Reuse exactly the dragon in TOP ROW THIRD FRAME: facing right, wings extended nearly horizontally back, slim body, tucked four legs, cream underside and long tail. This is a gentle living glide, NOT another wing-flapping cycle.\nMake 8 adjacent poses, 4 columns x 2 rows, 1536x1024 true transparent PNG. Hold identical head, neck, body, paws, horns, scale pattern, palette, proportions and right-facing side-view angle throughout. Do not turn or shrink.\nOnly change small wing-tip flex and a soft tail-tip ripple. Frame1 neutral glide exactly like reference frame3. Frame2 tiny upward wing-tip flex, tail starting to rise. Frame3 slightly more flex up (maximum 10 degrees), tail lifted a little. Frame4 wings returning level, tail following behind. Frame5 neutral wings, tail relaxed. Frame6 wings flex just below level (maximum 6 degrees), tail gently down. Frame7 soft recovery, tail curling back. Frame8 returns almost to frame1 for a seamless loop. All motion subtle and organic; no large wingbeat, no wide raised wings, no rubbery body bending, no changed facial expression.\nStable registration: each cell384x512, torso center at local(235,320), tail tip around x25,y350, head around x340,y275, overall width350px and height160px maximum. Second row is same positions plus512y. At least12px transparent padding on all edges; no adjacent sprites overlap or crop. No extra spur above wing leading edge, no extra wings, no new ornaments. Preserve the original approved character.\nBackground fully alpha-transparent; no colored glow/haze, no scene, no grid, no labels or text.",
+  "rearPrompt": "Use case: identity-preserve. Asset type: transparent eight-frame REAR GLIDE animation companion sheet.\nThe attached image shows an approved dragon from the back. Reuse EXACTLY the character and rear-facing angle of the TOP LEFT FRAME (level extended wings, head above torso, tucked legs, tail down). This is a living gentle glide, NOT a wingbeat and NOT a turn.\nMake 8 successive poses in a 4-column by 2-row sheet, 1536x1024 true transparent PNG. Keep the head, horns, shoulders, torso, legs, wing roots, scale pattern, palette and body proportions identical throughout. Both wings remain extended mostly level throughout.\nThe only changes are subtle soft corrections of the outer wing tips (5 to 8 degrees at most), a small tail-tip sway side to side with delayed follow-through, and slight organic wing-membrane flex. Frame 1 level glide. Frames 2-3 gently flex the tips up and tail tip to one side. Frame 4 relax level. Frame 5 neutral glide. Frames 6-7 tips relax slightly downward and tail tip sways the opposite way. Frame 8 recovers almost exactly to frame 1, making a seamless calm loop.\nKeep the body perfectly stable, no turning/yaw, no resizing, no full up/down stroke, no raised V wings. No frozen tail.\nEach cell384x512. Torso center local(192,290), head at(192,225), wingtips roughly(30,245)and(354,245), tail tip around(175,410). Same registration in every cell, second row positions plus512Y. Fit every sprite entirely inside its cell with at least16px padding, no overlaps or cropping.\nKeep the original two wings only, no extra prong above leading edge, no added ornaments or new anatomy. Transparent background with no haze, no glow, no dark matte, no shadow, no labels or grid.",
+  "registration": "Opaque head/torso patch matching followed by browser review; no source PNG edits."
+}
