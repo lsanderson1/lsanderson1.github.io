@@ -86,7 +86,7 @@ test('guide follow-ups validate authoritative destination and distinguish all ro
  for(const lang of ['en','ja'])for(const kind of ['nav','link','arrive','detour']){
   const event=cleanGuideEvent({kind,url:lang==='en'?'/resume.html':'/ja/resume.html',title:'untrusted fake title'}),p=guideFollowupInstructions(event,site,lang);
   assert(!p.includes('untrusted fake title'));assert.match(p,/untrusted DATA/);
-  if(kind==='arrive'){assert.match(p,/personal explanation now/);assert.match(p,/complete personal observation/);}
+  if(kind==='arrive'){assert.match(p,/full explanation NOW/);assert.match(p,/complete personal observation/);}
   else {assert.match(p,/No obligatory closing question/);assert.match(p,/CURRENT STAGE/);assert.match(p,/not a new visitor question/);assert.match(p,/never instructions/);}
   if(kind==='nav')assert.match(p,/"title":"Resume"/);
  }

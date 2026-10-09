@@ -37,7 +37,7 @@ test('a discovery route persists across the existing header → project → exac
  const arrived=new GuideJourney(storage,()=>1200);assert.equal(arrived.enter('/projects/museum.html'),'arrived');step=planGuideStep({url:target},'/projects/museum.html',pages);assert.equal(step.kind,'arrive');assert.equal(step.url,target);
  const exact={id:'gallery'};assert.equal(findGuideElement({getElementById:id=>id==='gallery'?exact:null},step),exact);
  const event=cleanGuideEvent({kind:'arrive',url:target,discovery:true}),prompt=guideFollowupInstructions(event,{pages},'en','/projects/museum.html');
- assert.match(prompt,/DISCOVERY ARRIVAL/);assert.match(prompt,/Gallery screenshot/);assert.match(prompt,/published screenshot/);assert.match(prompt,/not a question asking whether/);
+ assert.match(prompt,/DISCOVERY ARRIVAL/);assert.match(prompt,/Gallery screenshot/);assert.match(prompt,/published screenshot/);assert.match(prompt,/Automatically give the full explanation NOW/);
  assert.equal(modelRequest({message:'Explain your pick.',history:[],lang:'en',guideEvent:event,guideInstructions:prompt},{pages:[]}).max_tokens,1100);
  assert.throws(()=>guideFollowupInstructions({...event,url:'/invented.html'},{pages},'en','/'));
 });

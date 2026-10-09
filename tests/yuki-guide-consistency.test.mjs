@@ -62,7 +62,7 @@ test('every AI guide stage paraphrases with a personal thought and the correct s
   const request=modelRequest(input,selectKnowledge(site,input)),prompt=request.messages.map(m=>m.content).join('\n');
   assert.match(prompt,/OWN WORDS AT EVERY STOP/);assert.match(prompt,/do not quote, recite, or closely copy/);assert.match(prompt,/topic-specific personal thought/);
   assert.match(prompt,/Coding Strategies/);assert(!prompt.includes('Project Reap'));
-  assert.match(prompt,kind==='arrive'?/4–6 connected sentences/:/2–3 sentence guide preview/);
+  assert.match(prompt,kind==='arrive'?/6–8 connected sentences/:/2–3 sentence guide preview/);
   if(kind!=='arrive'){const action=guideNextAction(guideEvent,site,lang);assert.match(action,kind==='nav'?/Essays/:new RegExp(label));assert(guideReplyMatches('Coding Strategies! '+action,guideEvent,pages,lang));}
   if(kind==='link')assert(prompt.includes('"linkLabel":"'+label+'"'));
  }
@@ -72,6 +72,15 @@ test('every AI guide stage paraphrases with a personal thought and the correct s
  assert(!guideFollowupInstructions(malicious,site,'en','/essays/').includes(malicious.linkLabel));
  assert(guideReplyMatches('Coding Strategies is next! Click the Read essay link for it.',event,pages));
  assert(!guideReplyMatches('Coding Strategies is next! Click Project Reap.',event,pages));
+});
+
+test('arrival automatically explains actual page details or the exact pointed section, never another project',()=>{
+ const page={lang:'en',url:'/projects/reap.html',title:'Project Reap',summary:'A platformer.',text:'Overview.',sections:[{id:'s0',title:'Project Reap',text:'A platformer.'},{id:'s1',anchor:'gameplay',title:'Gameplay',text:'Defeating five enemies fills the Flow meter.'},{id:'s2',anchor:'controls',title:'Controls',text:'K activates Flow.'}]};
+ const catalog={pages:[page,{lang:'en',url:'/essays/other.html',title:'Unrelated Essay',text:'Unrelated code standards.'}]};
+ const full=guideFollowupInstructions({kind:'arrive',url:page.url},catalog,'en',page.url);
+ assert.match(full,/Automatically give the full explanation NOW/);assert.match(full,/No extra visitor question or Explain button/);assert.match(full,/Defeating five enemies/);assert.match(full,/K activates Flow/);assert(!full.includes('Unrelated code standards'));
+ const section=guideFollowupInstructions({kind:'arrive',url:page.url+'#gameplay'},catalog,'en',page.url);
+ assert.match(section,/Defeating five enemies/);assert(!section.includes('K activates Flow'),'the selected section is the explanation subject');
 });
 
 test('Japanese title matching allows natural particles without requiring spaces or quotation marks',()=>{
