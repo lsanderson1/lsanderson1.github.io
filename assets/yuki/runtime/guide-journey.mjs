@@ -96,7 +96,7 @@ export class GuideJourney {
  }catch{}}
  get active(){return Boolean(this.state);}
  persist(){try{if(this.state)this.storage?.setItem(journeyKey,JSON.stringify(this.state));else this.storage?.removeItem(journeyKey);}catch{}}
- start(target,from){if(!safeSitePath(target)||!safeSitePath(from))return false;this.state={target,from,expected:null,at:this.now(),paused:false};this.persist();return true;}
+ start(target,from,{discovery=false}={}){if(!safeSitePath(target)||!safeSitePath(from))return false;this.state={target,from,expected:null,at:this.now(),paused:false,...(discovery?{discovery:true}:{})};this.persist();return true;}
  expect(url,from){if(!this.state)return;this.state.expected=url;this.state.from=from;this.state.at=this.now();this.state.paused=false;this.persist();}
  enter(current,base=''){
   const s=this.state;if(!s)return 'none';

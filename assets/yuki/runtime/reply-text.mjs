@@ -17,6 +17,13 @@ export function cleanAssistantText(value){
    if(/['"]text['"]\s*:/u.test(json)&&/['"](?:emotion|gesture|destination|sourceIds)['"]\s*:/u.test(json))throw Error('Malformed nested reply');
   }
   const fields=/(['"])\s*,\s*(['"])(text|emotion|gesture|destination|sourceIds|storyTopics|beats)\2\s*:\s*/gu;
+  // Observed Japanese generation used corner quotes at a broken envelope
+  // boundary. Reject that tail; don't erase legitimate quotations or examples.
+  const localizedTail=/[」』]\s*(?:[,、]\s*)?[「『'"](?:text|emotion|gesture|destination|sourceIds|storyTopics|beats)(?:['"」』]\s*:|\s*\[\s*\{)/gu;
+  for(const match of text.matchAll(localizedTail)){
+   const prefix=text.slice(0,match.index).trim();
+   if(prefix.length>=40&&/[.!?。！？]$/u.test(prefix)&&!/[{`]/u.test(prefix))throw Error('Reply contains response fields');
+  }
   let repaired=false;
   for(const match of text.matchAll(fields)){
    const prefix=text.slice(0,match.index).trim(),tail=text.slice(match.index+match[0].length);

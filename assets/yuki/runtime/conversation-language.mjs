@@ -1,3 +1,4 @@
+import {wrongReplyLanguage} from './reply-quality.mjs';
 const languages=['en','ja'];
 export const translationVoiceVersion=2;
 // This revision improves Japanese only; do not spend quota retranslating English.
@@ -9,7 +10,10 @@ export function messageRecord(role,text,language){
 export function cleanMessages(value,fallbackLanguage='en'){
  const ids=new Set();
  return (Array.isArray(value)?value:[]).filter(m=>m&&['user','assistant'].includes(m.role)&&typeof m.text==='string'&&m.text.trim()&&m.text.length<=(m.role==='assistant'?3000:1000)).slice(-12).map((m,i)=>{
-  const language=languages.includes(m.language)?m.language:languages.includes(fallbackLanguage)?fallbackLanguage:'en';
+  let language=languages.includes(m.language)?m.language:languages.includes(fallbackLanguage)?fallbackLanguage:'en';
+  // Previously a wrong-language answer could be mislabeled as the page's
+  // language, making it look already translated. Preserve its actual original.
+  if(m.role==='assistant'&&wrongReplyLanguage(m.text,language))language=language==='ja'?'en':'ja';
   let id=typeof m.id==='string'&&/^[\w-]{1,80}$/.test(m.id)?m.id:`legacy-${i}`;while(ids.has(id))id=`legacy-${i}-${++sequence}`;ids.add(id);
   const translations={};for(const lang of languages)if(typeof m.translations?.[lang]==='string'&&m.translations[lang].trim()&&m.translations[lang].length<=6000)translations[lang]=m.translations[lang];
   translations[language]=m.text;
@@ -23,7 +27,11 @@ export function translatedText(message,language){
  // Refresh older-style assistant translations once, never original/user wording
  // or authored bilingual greetings. Keep stale variants stored until replaced.
  if(message.role==='assistant'&&!Number.isInteger(message.greetingId)&&message.translationVoices?.[language]!==voiceVersion(language))return null;
- return message.translations?.[language]||null;
+ const text=message.translations?.[language];
+ return text&&!wrongReplyLanguage(text,language)?text:null;
+}
+export function conversationHistory(messages,language){
+ return messages.slice(-6).map(m=>{const display=translatedText(m,language),limit=m.role==='assistant'?3000:1000;return {role:m.role,content:display&&display.length<=limit?display:m.text};});
 }
 // Prioritize what is currently visible (latest reply), then older history.
 export function translationBatch(messages,language){

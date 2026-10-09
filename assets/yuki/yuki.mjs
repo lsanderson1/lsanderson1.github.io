@@ -9,7 +9,7 @@ import {SiteGuide} from './runtime/site-guide.mjs?v=6';
 import {pageLayout,bubblePlacement,bubbleHeightLimit,pointerTarget} from './runtime/page-layout.mjs?v=9';
 import {localizedPages,localizePath,findPageTarget,pendingGuide,targetRect,curateDestinations} from './runtime/page-targets.mjs?v=9';
 import {PageObstacles,visibleSpot,guideSpot,clampFoot,fits,atFoot} from './runtime/clear-space.mjs?v=5';
-import {GuideJourney,GuideDialogue,guideTarget as checkedGuideTarget,isGuideRequest,resolveGuideRequest,guideChoice,planGuideStep,findGuideElement} from './runtime/guide-journey.mjs?v=3';
+import {GuideJourney,GuideDialogue,guideTarget as checkedGuideTarget,isGuideRequest,resolveGuideRequest,guideChoice,planGuideStep,findGuideElement} from './runtime/guide-journey.mjs?v=4';
 import {PageMotion,pageProjection,inViewport,containPageRover,prepareCall} from './runtime/page-motion.mjs?v=8';
 import {CallPerches} from './runtime/call-perches.mjs?v=7';
 import {VisitorPersonality,conversationOpening,localizeGreetingMessages,replySequence,cueArtwork} from './runtime/visitor-personality.mjs?v=9';
@@ -21,9 +21,12 @@ import {GardenHome} from './home/garden.mjs?v=4';
 import {YukiLocation,capturePose,restorePose,poseArtwork,locationLabel,locationPage,portalSection,travelPortalSection} from './home/location.mjs?v=2';
 import {summonTiming,summonPhase,callFlightDuration,catchInFlight} from './home/summon.mjs';
 import {ConversationMoments,shouldWelcomeOnRefresh,isLeavingLink} from './runtime/conversation-moments.mjs?v=1';
-import {messageRecord,translatedText,translationBatch,checkedTranslations,applyTranslations} from './runtime/conversation-language.mjs?v=4';
+import {messageRecord,translatedText,translationBatch,checkedTranslations,applyTranslations,conversationHistory} from './runtime/conversation-language.mjs?v=5';
+import {replyLanguage,replyQualityIssues} from './runtime/reply-quality.mjs';
+import {DiscoveryGuide,isDiscoveryRequest,discoveryExcerpt} from './runtime/discovery-guide.mjs';
+import {CallDialogue} from './runtime/call-dialogue.mjs';
 import {ReadingMemory,readPageTitle,readingDetail,readPageDisplaySection,readPageSection,readPageImages,readGardenSpot,guideReference,followUpReference} from './runtime/reading-context.mjs?v=5';
-import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=15';
+import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=16';
 import {safeWebURL} from './runtime/web-sources.mjs?v=1';
 import {cleanVariety,rememberReply,packChatRequest} from './runtime/reply-variety.mjs?v=3';
 
@@ -31,11 +34,14 @@ const root=document.querySelector('#yuki-companion');
 if(root)start().catch(()=>{root.textContent='';}); // Portfolio remains usable on failure.
 async function start(){
  const ja=document.documentElement.lang==='ja',base=root.dataset.base||'',assets=new URL(root.dataset.assets,location.href);
+ let conversationLanguage=ja?'ja':'en'; // Page navigation resets the display default, not memory.
  const tr=(en,jp)=>ja?jp:en,$=s=>root.querySelector(s),media=matchMedia('(prefers-reduced-motion: reduce)');
  let saved={};try{saved=readSession(sessionStorage,Date.now(),ja?'ja':'en');}catch{}
  let readingStorage;try{readingStorage=sessionStorage;}catch{}const readingMemory=new ReadingMemory(readingStorage);
  const conversationMemory=new ConversationMemory(readingStorage,ja?'ja':'en'),chatSession=new ChatSession(readingStorage);
  const interests=new VisitorInterests(readingStorage),gardenScene=document.querySelector('[data-yuki-garden]');let garden=null,gardenRect=null;
+ const discoveryGuide=new DiscoveryGuide(readingStorage);
+ const callDialogue=new CallDialogue(readingStorage);let announceCall=false;
  const presence=new YukiLocation(readingStorage,{base});presence.transit();presence.settleAway(location.pathname);
  let resident=presence.here(location.pathname),portalTrip=null,portalAfterglow=null,lastLocationSave=0;
  const moments=new ConversationMoments(readingStorage);let momentKind='';
@@ -106,21 +112,24 @@ async function start(){
   translationUI();
  }
  permissionUI();
- function translationUI(){$('.yuki-translate').hidden=!translationFailed||!online||busy||!translationBatch(messages,ja?'ja':'en').length;$('.yuki-translate').disabled=!permission.allowed;}
+ function translationUI(){$('.yuki-translate').hidden=!translationFailed||!online||busy||!translationBatch(messages,conversationLanguage).length;$('.yuki-translate').disabled=!permission.allowed;}
  function drawMessages(){
-  const lang=ja?'ja':'en',greetings=localizeGreetingMessages(messages,lang);
+  const lang=conversationLanguage,greetings=localizeGreetingMessages(messages,lang);
   messages.forEach((m,i)=>{if(greetings[i]!==m){m.greetingId=greetings[i].greetingId;m.translations={...m.translations,[lang]:greetings[i].text};}});
   const log=$('.yuki-log');log.replaceChildren();$('.yuki-speech').replaceChildren();
   for(const m of messages)addMessage(m.role,translatedText(m,lang),false,m.sources??[],[],m.greetingId);
   translationUI();
  }
- function addMessage(role,text,remember=true,sources=[],storyTopics=[],greetingId){
+ function addMessage(role,text,remember=true,sources=[],storyTopics=[],greetingId,language=ja?'ja':'en'){
+  // A missing local-preview translation is not a chat message. Keep the
+  // original in saved history without repeating a development notice in her bubble.
+  if(text==null&&!online)return;
   // Also protects previously saved replies and cached language variants without
   // erasing the conversation or changing the visitor's own quoted examples.
   if(role==='assistant'&&text!=null){try{text=cleanAssistantText(text);if(unfinishedReply(text)){text=unfinishedNotice(ja?'ja':'en');sources=[];storyTopics=[];}}catch{text=tr('Oops, that reply got tangled up. Could you ask me again?','あれっ、返事がこんがらがっちゃった。もう一度聞いてくれる？');sources=[];storyTopics=[];}}
   if(remember)hideMoment();
-  if(remember){messages.push({...messageRecord(role,text,ja?'ja':'en'),...(sources.length?{sources}:{}),...(Number.isInteger(greetingId)?{greetingId}:{})});messages=messages.slice(-12);if(role==='assistant')variety=rememberReply(variety,text,storyTopics);}
-  const p=document.createElement('p');p.className='yuki-message';p.dataset.role=role;const label=document.createElement('strong');label.textContent=role==='user'?tr('YOU','あなた'):'ゆき';p.append(label,document.createTextNode(text??(online?tr('Switching this message to English…','このメッセージを日本語に切り替えています…'):tr('Your conversation is saved. Automatic translation is available on the live site.','会話は保存されています。自動翻訳は公開サイトで利用できます。'))));
+  if(remember){messages.push({...messageRecord(role,text,language),...(sources.length?{sources}:{}),...(Number.isInteger(greetingId)?{greetingId}:{})});messages=messages.slice(-12);if(role==='assistant')variety=rememberReply(variety,text,storyTopics);}
+  const p=document.createElement('p');p.className='yuki-message';p.dataset.role=role;const label=document.createElement('strong');label.textContent=role==='user'?tr('YOU','あなた'):'ゆき';p.append(label,document.createTextNode(text??tr('Switching this message to English…','このメッセージを日本語に切り替えています…')));
   const history=p.cloneNode(true);$('.yuki-log').append(history);$('.yuki-log').scrollTop=$('.yuki-log').scrollHeight;
   if(role==='assistant'){
    if(sources.length){const links=document.createElement('span');links.className='yuki-sources';for(const s of sources){
@@ -146,7 +155,7 @@ async function start(){
  }
  function toggleConversation(){if(catchTravel())return;if(open)panel(false);else void openConversation();}
  $('.yuki-translate').onclick=()=>translateConversation();
- $('.yuki-launcher').onclick=()=>callYuki();$('.yuki-close').onclick=()=>panel(false);$('.yuki-hit').onclick=toggleConversation;
+ $('.yuki-launcher').onclick=()=>callYuki({announce:true});$('.yuki-close').onclick=()=>panel(false);$('.yuki-hit').onclick=toggleConversation;
  $('.yuki-menu').onclick=()=>{const more=$('.yuki-more');more.hidden=!more.hidden;$('.yuki-menu').setAttribute('aria-expanded',String(!more.hidden));placeBubble();};
  $('textarea').oninput=()=>{const field=$('textarea');field.style.height='42px';field.style.height=Math.min(90,field.scrollHeight)+'px';placeBubble();};
  $('textarea').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();$('.yuki-form').requestSubmit();}};
@@ -208,11 +217,18 @@ async function start(){
   const target=chooseLandingSpot();
   return {...target,y:target.y+scrollY};
  }
- async function callYuki({keepJourney=false,destinationPoint=null}={}){
+ function announceCalledArrival(){
+  if(!announceCall)return;announceCall=false;if(journey.active||busy)return;
+  const title=readPageTitle(document,{path:location.pathname,base,title:root.dataset.pageTitle,lang:ja?'ja':'en'});
+  momentKind='call';$('.yuki-aside').textContent=callDialogue.next(title,ja?'ja':'en');$('.yuki-aside').hidden=false;
+  panel(true,{focus:false,translate:false}); // An aside, not a duplicate chat greeting or AI request.
+ }
+ async function callYuki({keepJourney=false,destinationPoint=null,announce=false}={}){
   // A reload during guided arrival resumes the existing timed entrance.
   if(keepJourney&&calling&&portalTrip?.kind==='incoming')return new Promise(resolve=>{const done=portalTrip.resolve;portalTrip.resolve=()=>{done?.();resolve();};});
   if(garden&&resident&&!journey.active&&!portalTrip)return garden.action('fly');
   if(!ready||calling||callLoading)return;const button=$('.yuki-launcher');callLoading=true;button.disabled=true;
+  announceCall=announce&&!keepJourney&&!resident;
   if(!keepJourney)stopJourney();
   try{await prepareTravel();hidden=false;paused=false;portalAfterglow=null;portal.hidden=true;guide.reset();guideTarget=null;highlightUntil=0;
    if(!resident){
@@ -229,7 +245,7 @@ async function start(){
    const spot=chooseLandingSpot(),target={...spot,y:spot.y+scrollY};
    calling=true;motion.travel(target,{duration:callFlightDuration(companion.rover.foot,target)});
    status(tr('Coming! Just a little flap…','いま行くね！ぱたぱたっ…'));
-  }catch{calling=false;status(tr('I couldn’t load my flight. Please try again.','飛ぶ準備ができなかったの。もう一度呼んでね。'));}finally{callLoading=false;button.disabled=calling;}
+  }catch{calling=false;announceCall=false;status(tr('I couldn’t load my flight. Please try again.','飛ぶ準備ができなかったの。もう一度呼んでね。'));}finally{callLoading=false;button.disabled=calling;}
  }
  function sync(){measure();if(gardenScene){document.body.dataset.gardenPaused=String(paused);gardenScene.dataset.paused=String(paused);if(garden){garden.paused=paused;garden.reduced=media.matches;}const b=document.querySelector('[data-garden-action="motion"]');if(b){b.setAttribute('aria-pressed',String(paused));b.textContent=paused?tr('Resume Garden','庭の動きを再開'):tr('Pause Garden','庭の動きを止める');}}if(companion){companion.rover.hidden=hidden||!resident;companion.rover.playing=!paused;companion.setLessMotion(media.matches);}settingLabels();save();render();}
 
@@ -279,7 +295,7 @@ async function start(){
  }
  function catchTravel(){
   if(!ready||!resident||(!portalTrip&&(companion.rover.isHovering||companion.rover.graph.state==='rest'&&companion.rover.at===companion.rover.wanted)))return false;
-  const trip=portalTrip;portalTrip=null;portalAfterglow=null;portal.hidden=true;calling=false;callLoading=false;
+  const trip=portalTrip;portalTrip=null;portalAfterglow=null;portal.hidden=true;calling=false;callLoading=false;announceCall=false;
   presence.cancelTransfer();garden?.cancel();stopJourney();pendingCue=null;reactionVersion++;catchInFlight(companion);motion.defer();
   rememberLocation();trip?.resolve?.();status(tr('Oh! You caught me. I’ll stay right here with you.','あっ、呼び止めてくれたんだね！ここで一緒にいるよ。'));render();return true;
  }
@@ -318,7 +334,7 @@ async function start(){
   const settled=r.graph.state==='rest'&&r.at===r.wanted&&!companion.lifecycle.locked;
   const entered=trip.kind==='returning'&&(settled||Math.hypot(r.foot.x-end.x,r.foot.y-end.y)<20);
   if(entered){presence.home();resident=false;r.hidden=true;showExitSeal();portalTrip=null;calling=false;}
-  else if(trip.kind==='incoming'&&settled){portal.hidden=true;portalTrip=null;calling=false;presence.cancelTransfer();companion.lifecycle.activity();rememberLocation();trip.resolve?.();status(tr('There you are! A little dragon magic… and lots of flapping!','見つけた！ドラゴンの魔法をちょっぴりと、たくさんのぱたぱたで到着！'));}
+  else if(trip.kind==='incoming'&&settled){portal.hidden=true;portalTrip=null;calling=false;presence.cancelTransfer();companion.lifecycle.activity();rememberLocation();trip.resolve?.();status(tr('There you are! A little dragon magic… and lots of flapping!','見つけた！ドラゴンの魔法をちょっぴりと、たくさんのぱたぱたで到着！'));announceCalledArrival();}
  }
 
  const sections=[...document.querySelectorAll('main [data-yuki-section]:not(h1), .fp-resume-grid h2, .fp-build-card h2, .fp-build-guide > h2, [data-yuki-interest]')].map((el,i)=>({id:'interest-'+i,name:(el.getAttribute('alt')||el.textContent).trim(),el}));
@@ -399,9 +415,9 @@ async function start(){
   const titles=guideChoices.map((t,i)=>`${i+1}. ${ja?'「'+t.title+'」':t.title}`).join('\n');
   addMessage('assistant',tr('Which place shall we explore? Tell me its name or number, and I’ll lead the way.','どこへ行こうか？名前か番号を教えてくれたら、そのまま案内するよ。')+'\n'+titles);
  }
- async function beginJourney(target){
+ async function beginJourney(target,{discovery=false}={}){
   const checked=checkedGuideTarget(target?.url,knowledge,ja?'ja':'en',base);if(!checked)return;
-  stopJourney();journey.start(checked.url,location.pathname);await leadJourney();
+  stopJourney();journey.start(checked.url,location.pathname,{discovery});await leadJourney();
  }
  async function leadJourney(){
   if(!journey.active||!ready)return;
@@ -441,9 +457,17 @@ async function start(){
   await leadJourney();
  }
  function speakGuideFollowup(step){
-  const fallback=()=>addMessage('assistant',guideDialogue.copy(step,{lang:ja?'ja':'en',detour:step.kind==='detour'}));
+  const discovery=journey.state?.discovery===true;
+  const fallback=()=>{
+   addMessage('assistant',guideDialogue.copy(step,{lang:ja?'ja':'en',detour:step.kind==='detour'}));
+   if(discovery&&step.kind==='arrive'){
+    const [path,anchor]=step.url.split('#'),page=knowledge.find(p=>p.url===path),entry=anchor?page?.sections?.find(s=>s.anchor===anchor):page;
+    const description=discoveryExcerpt(entry?.summary||entry?.text);
+    if(description)addMessage('assistant',tr(`My pick is ${step.title}! Here’s how the site describes it: `,`わたしが選んだのは「${step.title}」！サイトでは、こんなふうに紹介されているよ：`)+description);
+   }
+  };
   if(!online||!permission.allowed||busy){fallback();return;}
-  return runChat(tr('Offer a contextual follow-up for this guided stop.','この案内地点に合った続きの質問をしてください。'),{kind:step.kind,url:step.url,targetUrl:step.target?.url??step.url},fallback);
+  return runChat(tr('Respond naturally for this guided stop.','この案内地点に合う自然なひとことを。'),{kind:step.kind,url:step.url,targetUrl:step.target?.url??step.url,...(discovery?{discovery:true}:{})},fallback);
  }
  let reactionVersion=0;
  let talkTurn=0;
@@ -484,6 +508,10 @@ async function start(){
   if(journey.active&&(/^(?:continue(?: guiding| leading)?|resume(?: guide)?|point again|案内を続けて|続けて|もう一度指して)[.!。！]?$/i.test(text)||journey.state.paused&&/^(?:yes(?: please)?|sure|はい|うん|お願い)[.!。！]?$/i.test(text))){addMessage('user',text);$('textarea').value='';await leadJourney();return;}
   const chosen=guideChoice(text,guideChoices);guideChoices=[];
   if(chosen){addMessage('user',text);$('textarea').value='';await beginJourney(chosen);return;}
+  if(isDiscoveryRequest(text)){
+   const target=discoveryGuide.pick(knowledge,location.pathname,{lang:ja?'ja':'en',base,interests:interests.get(),request:text});
+   if(target){addMessage('user',text);$('textarea').value='';await beginJourney(target,{discovery:true});return;}
+  }
   const requested=resolveGuideRequest(text,knowledge,location.pathname,{lang:ja?'ja':'en',base});
   if(requested?.target){addMessage('user',text);$('textarea').value='';await beginJourney(requested.target);return;}
   if(requested?.choices?.length){addMessage('user',text);$('textarea').value='';routeOptions(requested.choices);return;}
@@ -507,7 +535,8 @@ async function start(){
    // Verification or wake-up can take time. Read the actual view immediately
    // before sending, not the page/spot that was visible before that wait.
    const context=readingContext();
-   const history=messages.slice(-6).map(m=>({role:m.role,content:m.text}));if(!guideEvent){addMessage('user',text);$('textarea').value='';}
+   conversationLanguage=guideEvent?(ja?'ja':'en'):replyLanguage(text,ja?'ja':'en');
+   const history=conversationHistory(messages,conversationLanguage);drawMessages();if(!guideEvent){addMessage('user',text,true,[],[],undefined,conversationLanguage);$('textarea').value='';}
    if(!guideEvent)interests.remember(text);
    status(tr('Yuki is thinking…','ゆきが考えています…'));react({text:'…',emotion:'thoughtful',gesture:'none'},{thinking:true}).catch(()=>{});
    const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:packChatRequest({message:text,history,lang:ja?'ja':'en',page:location.pathname,context,...(pass?{pass}:{token}),variety,memory:conversationMemory.recall(text,history),interests:interests.get(),...(guideEvent?{guideEvent}:{}),webSearch:!guideEvent&&searchPermission.allowed}),signal:requestController.signal,credentials:'omit'});
@@ -515,8 +544,9 @@ async function start(){
    if(result.chatSession)chatSession.set(result.chatSession);
    if(!response.ok){if(response.status===403)chatSession.clear();throw Object.assign(Error(response.status===429?'limit':response.status===403?'verification':'request'),{reference:result.reference,limit:result.limit});}
    const cue=validReply(result);
+   if(replyQualityIssues(cue.text,conversationLanguage).includes('language'))throw Error('request');
    if(!guideEvent){const followUp=followUpReference(cue,context.lastGuide,knowledge);if(followUp)readingMemory.set(followUp);else readingMemory.clear();conversationMemory.remember(text,cue.text);}
-   addMessage('assistant',cue.text,true,cue.sources,cue.storyTopics);
+   addMessage('assistant',cue.text,true,cue.sources,cue.storyTopics,undefined,conversationLanguage);
    if(!guideEvent&&isGuideRequest(text)){
     const targets=cue.sources.map(s=>checkedGuideTarget(s.url,knowledge,ja?'ja':'en',base)).filter(Boolean);
     const unique=[...new Map(targets.map(t=>[t.url,t])).values()];
@@ -531,7 +561,7 @@ async function start(){
   if(open&&!requestController.signal.aborted)void translateConversation();
  }
  async function translateConversation(){
-  const language=ja?'ja':'en';
+  const language=conversationLanguage;
   if(busy||!online||!permission.allowed||!translationBatch(messages,language).length)return;
   busy=true;translationFailed=false;translationUI();$('button[type=submit]').disabled=true;$('textarea').readOnly=true;$('.yuki-cancel').hidden=false;
   const requestController=new AbortController();controller=requestController;let timer,tokenUsed=false;
@@ -553,7 +583,7 @@ async function start(){
     applyTranslations(messages,translated,language);drawMessages();save();
     if(!chatSession.get())verification.stop();
    }
-   status(tr('Same conversation, now in English.','同じ会話を日本語で表示しています。'));
+   status(language==='ja'?'同じ会話を日本語で表示しています。':'Same conversation, now in English.');
   }catch(error){
    if(current()){translationFailed=true;status(error.message==='limit'?tr('The free translation allowance is temporarily full. Your conversation is saved; try again later.','無料利用上限に達しました。会話は保存されています。時間をおいて翻訳を試してください。'):error.message==='verification'?chatUnavailable('verification',language):tr('Translation is temporarily unavailable. Your conversation is saved and hasn’t been cleared.','現在は翻訳を利用できません。会話は保存され、消去されていません。'));}
   }finally{
@@ -618,7 +648,7 @@ async function start(){
    if(t-lastMeasure>200){measureHeader();obstacles=obstacleReader.read(layout.width,layout.height);lastMeasure=t;}
    updatePortal(dt);
    motion.update(dt,{hidden:hidden||!resident,paused,guiding:guide.active||journey.active||Boolean(portalTrip),open,roam,target:chooseMovementTarget,visible:onScreen,reacting:Boolean(pendingCue)});companion.update(dt);if(resident)guide.update();
-   if(calling&&!portalTrip&&companion.rover.graph.state==='rest'&&companion.rover.at===companion.rover.wanted&&!companion.lifecycle.locked){calling=false;status(tr('Here I am! Phew, little wings.','着いたよ！ふぅ、小さな羽、がんばった。'));}
+   if(calling&&!portalTrip&&companion.rover.graph.state==='rest'&&companion.rover.at===companion.rover.wanted&&!companion.lifecycle.locked){calling=false;status(tr('Here I am! Phew, little wings.','着いたよ！ふぅ、小さな羽、がんばった。'));announceCalledArrival();}
    if(pendingCue&&performance.now()>pendingCue.expires)pendingCue=null;
    if(pendingCue&&resident&&!portalTrip&&onScreen&&t>=pendingCue.notBefore){const cue=pendingCue.sequence[0];
     if(media.matches){if(cue.firstMeeting)personality.markMet();pendingCue=null;}
