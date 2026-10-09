@@ -24,7 +24,7 @@ import {ConversationMoments,shouldWelcomeOnRefresh,isLeavingLink} from './runtim
 import {messageRecord,translatedText,translationBatch,checkedTranslations,applyTranslations,conversationHistory} from './runtime/conversation-language.mjs?v=5';
 import {replyLanguage,replyQualityIssues} from './runtime/reply-quality.mjs';
 import {DiscoveryGuide,isDiscoveryRequest} from './runtime/discovery-guide.mjs?v=2';
-import {CallDialogue} from './runtime/call-dialogue.mjs';
+import {CallDialogue} from './runtime/call-dialogue.mjs?v=2';
 import {ReadingMemory,readPageTitle,readingDetail,readPageDisplaySection,readPageSection,readPageImages,readGardenSpot,guideReference,followUpReference} from './runtime/reading-context.mjs?v=5';
 import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=17';
 import {safeWebURL} from './runtime/web-sources.mjs?v=1';
@@ -87,8 +87,14 @@ async function start(){
  const searchLabel=document.createElement('label'),searchBox=document.createElement('input');searchBox.type='checkbox';searchBox.className='yuki-search-consent';searchBox.disabled=!online;
  searchLabel.append(searchBox,document.createTextNode(tr('Optional: let Yuki send a short public-topic query to Tavily when an answer needs web information. This adds another provider; your full chat is not sent to Tavily. Do not include private or sensitive information. Remember this choice; you can turn it off here anytime. Search has shared free limits, and normal chat works without it.','任意：ウェブ情報が必要な回答では、ゆきが短い公開トピックの検索語をTavilyに送信することを許可します。送信先が追加されますが、会話全体はTavilyに送りません。個人情報・機密情報は入力しないでください。この設定を記憶し、ここでいつでも解除できます。検索には共有の無料上限があります。通常の会話は検索なしでも利用できます。')));$('.yuki-privacy').append(searchLabel);
  const status=text=>{$('.yuki-status').textContent=text;};
- function hideMoment(){momentKind='';$('.yuki-aside').hidden=true;$('.yuki-aside').textContent='';}
- function showMoment(kind,{reveal=false}={}){momentKind=kind;$('.yuki-aside').textContent=moments.next(kind,ja?'ja':'en');$('.yuki-aside').hidden=false;
+ function hideMoment(){momentKind='';$('.yuki-aside').hidden=true;$('.yuki-aside').textContent='';$('.yuki-speech').hidden=false;}
+ function setMoment(kind,text){
+  momentKind=kind;$('.yuki-aside').textContent=text;$('.yuki-aside').hidden=false;
+  // Show one current utterance, without deleting the transcript or recall.
+  // History/translation redraws leave this visibility intact until a new turn.
+  $('.yuki-speech').hidden=true;
+ }
+ function showMoment(kind,{reveal=false}={}){setMoment(kind,moments.next(kind,ja?'ja':'en'));
   // A local aside never creates a chat turn, spends AI quota or steals focus.
   if(reveal&&!hidden&&!busy&&!journey.active)panel(true,{focus:false,translate:false});
  }
@@ -220,7 +226,8 @@ async function start(){
  function announceCalledArrival(){
   if(!announceCall)return;announceCall=false;if(journey.active||busy)return;
   const title=readPageTitle(document,{path:location.pathname,base,title:root.dataset.pageTitle,lang:ja?'ja':'en'});
-  momentKind='call';$('.yuki-aside').textContent=callDialogue.next(title,ja?'ja':'en');$('.yuki-aside').hidden=false;
+  setMoment('call',callDialogue.next(title,ja?'ja':'en',{home:Boolean(gardenScene)}));
+  status(''); // The greeting replaces the completed flight's status line too.
   panel(true,{focus:false,translate:false}); // An aside, not a duplicate chat greeting or AI request.
  }
  async function callYuki({keepJourney=false,destinationPoint=null,announce=false}={}){

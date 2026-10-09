@@ -22,14 +22,24 @@ const details=[
  [t=>`We can explore ${t} together. Questions are welcome—even the tiny ones!`,t=>`「${t}」を一緒に見よう。小さな疑問も大歓迎！`],
  [t=>`I’m here with you at ${t}. A new corner for my curiosity to settle into!`,t=>`今は一緒に「${t}」にいるよ。好奇心もここで、ちょこんとひと休み！`]
 ];
+const homeDetails=[
+ ['Home again! This is my little garden, and I’m happy you came to visit. Make yourself cozy while I tuck my wings in!', 'ただいま！ここがわたしのお庭だよ。遊びに来てくれてうれしいな。羽をたたむから、のんびりしていってね！'],
+ ['Welcome to my little home! My leaf nest is lovely for naps, but having company is worth staying awake for.', 'わたしのおうちへようこそ！葉っぱの巣でお昼寝するのも好きだけど、一緒に過ごす時間も大好き。'],
+ ['Back in my own garden! I love a little adventure, but coming home with a friend makes my wings extra happy.', 'わたしのお庭に帰ってきた！冒険も好きだけど、お友だちと一緒に帰ると羽までうれしくなっちゃう。'],
+ ['You called me home! We can watch the pond, peek at my books, or simply have a cozy little chat here.', 'おうちに呼んでくれたんだね！池を眺めたり、本をのぞいたり、ここでのんびりお話ししたりしよう。'],
+ ['Ahh, my little garden home! There’s room for big discoveries here—and very small dragon naps. I’m glad you’re here with me.', 'ああ、わたしのお庭だ！大きな発見も、小さなドラゴンのお昼寝もできるおうち。一緒にいられてうれしいな。'],
+ ['My garden feels even cozier with you here! Welcome home with me. We can explore a little or just enjoy being here.', '遊びに来てくれると、お庭がもっと居心地よく感じるよ！わたしのおうちで、ちょこっと探検してものんびりしてもいいね。'],
+ ['Made it back to my little home! My nest can wait; I’d rather spend a little time with my visitor first.', '小さなおうちに帰ってきた！巣で休むのはあとにして、まずは遊びに来てくれたあなたと過ごしたいな。'],
+ ['Here we are in my garden! This is where I rest my little wings between adventures. Today, I get to share it with you.', 'わたしのお庭に到着！冒険の合間に、小さな羽を休めるおうちだよ。今日は一緒に過ごせるね。']
+];
 export class CallDialogue{
  constructor(storage,random=Math.random){this.storage=storage;this.random=random;this.used=[];try{const data=JSON.parse(storage?.getItem('yuki-call-lines-v1'));if(Array.isArray(data))this.used=data.filter(n=>Number.isInteger(n)&&n>=0&&n<openings.length*details.length);}catch{}}
- next(title,lang='en'){
+ next(title,lang='en',{home=false}={}){
   const total=openings.length*details.length;if(this.used.length>=total)this.used=this.used.slice(-8);
   const last=this.used.at(-1),unused=Array.from({length:total},(_,i)=>i).filter(i=>!this.used.includes(i)),different=unused.filter(i=>Math.floor(i/details.length)!==Math.floor(last/details.length)),choices=different.length?different:unused;
   const id=choices[Math.min(choices.length-1,Math.max(0,Math.floor(this.random()*choices.length)))];
   this.used.push(id);try{this.storage?.setItem('yuki-call-lines-v1',JSON.stringify(this.used));}catch{}
   const l=lang==='ja'?1:0,label=String(title|| (l?'このページ':'this page')).replace(/\s+/gu,' ').trim().slice(0,160);
-  return openings[Math.floor(id/details.length)][l]+' '+details[id%details.length][l](label);
+  return openings[Math.floor(id/details.length)][l]+' '+(home?homeDetails[id%homeDetails.length][l]:details[id%details.length][l](label));
  }
 }
