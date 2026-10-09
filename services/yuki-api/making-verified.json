@@ -160,13 +160,13 @@
       "en": "Verified pointing destinations",
       "ja": "確認できる指さし先"
     },
-    "explanation": "guideTarget accepts only safe same-site URLs found in the published catalog, matches the selected language, then resolves a known section anchor. An invalid same-language anchor returns null instead of pointing to a guessed item. Navigation authority is this catalog, not an arbitrary selector or URL supplied by the model.",
+    "explanation": "guideTarget accepts only safe same-site URLs found in the published catalog, matches the selected language, then resolves a known section anchor. An invalid same-language anchor returns null instead of pointing to a guessed item. Navigation authority is this catalog, not an arbitrary selector or URL supplied by the model. The adjacent guideReplyMatches guard requires an arrival reply to name that target and rejects names of unrelated indexed pages absent from its supporting description; this is a title-consistency check, not general fact verification.",
     "source": {
       "file": "assets/yuki/runtime/guide-journey.mjs",
       "symbol": "guideTarget",
       "firstLine": 27,
-      "lastLine": 38,
-      "sha256": "7661007dae3d768d51ccfbc9ff7d524c873aa16d34115d5916819cb9f86913f6"
+      "lastLine": 53,
+      "sha256": "2b3bfd6df3f5984795613a3332daf25cf99a558c80b2f6fb97370e1c6633a6a8"
     }
   },
   {
@@ -177,13 +177,13 @@
       "en": "Carrying guidance between pages",
       "ja": "ページをまたぐ案内"
     },
-    "explanation": "GuideJourney stores target, expected next page, origin and timestamp in tab storage with a 30-minute lifetime. enter distinguishes arrival, continuation, resuming and a detour. depart stores viewport coordinates; position scales them for a resized viewport when Yuki is already on that page. A guided page change instead uses her physical location and the normal timed magical summon from the previous page's header category, flying directly to the next guided perch. Guidance starts from a clear visitor request, with conversational clarification only for ambiguous destinations. AI follow-ups distinguish the next link from the final destination; offline arrival wording avoids its six most recent variants in this tab. Route memory is separate from physical location memory.",
+    "explanation": "GuideJourney stores target, expected next page, origin and timestamp in tab storage with a 30-minute lifetime. enter distinguishes arrival, continuation, resuming and a detour. claimStep persists the last spoken stage so repeated callbacks or a reload cannot deliver the same stage again. depart stores viewport coordinates; position scales them for a resized viewport when Yuki is already on that page. A guided page change uses her physical location and the normal timed magical summon from the previous page's header category, flying directly to the next guided perch. Guidance starts from a clear visitor request, with conversational clarification only for ambiguous destinations. Each stage can request a route-only AI explanation in Yuki's own words with a relevant personal reaction: a brief preview while travelling, then a fuller explanation on arrival. The backend appends a precise next-step sentence for header and list stops, using the validated route and known link labels such as Read essay. Invalid, repeated or unavailable AI replies use one friendly local direction or arrival line, without quoting page descriptions. Route memory is separate from physical location memory.",
     "source": {
       "file": "assets/yuki/runtime/guide-journey.mjs",
       "symbol": "GuideJourney",
-      "firstLine": 92,
-      "lastLine": 118,
-      "sha256": "2c6063f736631bdac1deb6f823ff38dda7fe548a390f42783f3bbeb565b28620"
+      "firstLine": 107,
+      "lastLine": 138,
+      "sha256": "5bd9690db652ca43c164cc67d8317f678c2e356cdf2376f610487e15a382ca29"
     }
   },
   {
@@ -228,13 +228,13 @@
       "en": "Selecting evidence for answers",
       "ja": "返答の根拠を選ぶ"
     },
-    "explanation": "retrieveKnowledge filters the public catalog to the requested language and safe site paths, splits long sections into overlapping passages, and selects at most six. An explicitly named page, resolved picture or current-page question limits evidence to that page. Current-page questions ignore stale history for ranking, omit an old guided target, and do not infer a making-of topic from prior conversation. Five published garden landmarks have their own source anchors; a visible nearby perch can select its evidence without claiming eye tracking. Ordinary follow-ups can still use recent history and the guide reference. Broader questions search across the catalog. Curated making-of notes are separate; this is local text ranking, not live repository browsing or visual perception.",
+    "explanation": "retrieveKnowledge filters the public catalog to the requested language and safe site paths. A validated guided event takes an early route-only path: it selects the final destination's overview and exact section, without old conversation, previously pointed images or making-of material. Other questions split long sections into overlapping passages and select at most six. An explicitly named page, resolved picture or current-page question limits evidence to that page. Current-page questions ignore stale history for ranking, omit an old guided target, and do not infer a making-of topic from prior conversation. Five published garden landmarks have their own source anchors; a nearby perch can select its evidence without claiming eye tracking. Ordinary follow-ups can still use recent history and the guide reference. Broader questions search across the catalog. Curated making-of notes are separate; this is local text ranking, not live repository browsing or visual perception.",
     "source": {
       "file": "services/yuki-api/knowledge.mjs",
       "symbol": "retrieveKnowledge",
       "firstLine": 41,
-      "lastLine": 84,
-      "sha256": "8eb8f4667b10f042a22d3e66b2900262a3dfffa9f9376a6041e05002f296ec8a"
+      "lastLine": 94,
+      "sha256": "dcb5fc49205eb2b2d2edca8c999e629b54e73b2c7f5717228313287b9ff3a5ac"
     }
   },
   {
@@ -249,8 +249,8 @@
     "source": {
       "file": "services/yuki-api/worker.mjs",
       "symbol": "parseModel",
-      "firstLine": 89,
-      "lastLine": 150,
+      "firstLine": 91,
+      "lastLine": 152,
       "sha256": "72003b5cda4ebbd4f845074406de93543796701ce619e64cf4e1d490f5cc2c67"
     }
   },

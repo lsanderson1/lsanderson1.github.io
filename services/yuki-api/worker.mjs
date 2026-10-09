@@ -11,7 +11,8 @@ import {searchEnabled,safeSearchQuery,searchInstructions,searchTavily,reserveSea
 import {issueChatSession,verifyChatSession} from './chat-session.mjs';
 import {cleanRecall} from '../../assets/yuki/runtime/conversation-memory.mjs';
 import {cleanInterests} from '../../assets/yuki/runtime/visitor-interests.mjs';
-import {cleanGuideEvent,guideFollowupInstructions} from './guide-followup.mjs';
+import {cleanGuideEvent,guideFollowupInstructions,guideReplyRequest,guideNextAction} from './guide-followup.mjs';
+import {guideReplyMatches} from '../../assets/yuki/runtime/guide-journey.mjs';
 import {validateTranslations,translationRequest,parseTranslations} from './conversation-translation.mjs';
 import {unfinishedReply,completionRequest,parseCompletion,completeRevision,incompleteAnswer} from './reply-completion.mjs';
 
@@ -55,6 +56,7 @@ export function modelRequest(input,knowledge,web={}){
  const schema={type:'object',properties:{text:{type:'string',minLength:1,maxLength:2800,description:'One reader-facing answer in plain prose. Never serialize another reply object or duplicate this answer inside the text.'},emotion:{type:'string',enum:emotions},gesture:{type:'string',enum:['none','wave','talkOpen','talkExplain']},destination:{type:'string',enum:destinations},sourceIds:{type:'array',items:{type:'string'}},storyTopics:{type:'array',items:{type:'string',enum:storyTopicIds},maxItems:3}},required:['text','emotion','gesture','destination','sourceIds','storyTopics'],additionalProperties:false};
  schema.properties.beats={type:'array',minItems:2,maxItems:4,items:{type:'object',properties:{sentence:{type:'integer',minimum:0,maximum:20},emotion:{type:'string',enum:emotions},gesture:{type:'string',enum:['none','talkOpen','talkExplain']}},required:['sentence','emotion','gesture'],additionalProperties:false}};
  if(web.mode==='eligible'){schema.properties.webQuery={type:'string',maxLength:180};schema.required.push('webQuery');}
+ if(input.guideEvent)return guideReplyRequest(input,schema,knowledge);
  if(knowledge.view?.localQuestion&&!input.guideEvent)return pageAnswerRequest({...input,lang:language},knowledge,web,schema);
  const lightKind=lightChatKind(input,knowledge);if(lightKind)return lightChatRequest(input,web,schema,lightKind);
  const instructions=`${personalityInstructions(language)}
@@ -199,8 +201,8 @@ export function createHandler(network=fetch){
     if(!result.ok)throw failure(503,'Site information unavailable');
     cached={origin:allowed,at:now,data:await boundedJSON(result,2000000)};
    }
-   const knowledge=selectKnowledge(cached.data,input);
    try{input.guideInstructions=guideFollowupInstructions(input.guideEvent,cached.data,input.lang,input.page);}catch{throw failure(400,'Invalid guide target');}
+   const knowledge=selectKnowledge(cached.data,input);
    // After the same verification/quota checks: a labeled portrait's identity
    // must not be rewritten into mascot lore, even by a repetition rewrite.
    const portrait=portraitAnswer({...input,lang:input.replyLanguage},knowledge);
@@ -267,6 +269,9 @@ export function createHandler(network=fetch){
    // Never display or remember a known wrong-language/looping answer. The UI
    // shows a localized retry status and keeps the existing conversation intact.
    if(quality(reply.text).length)throw failure(502,'Reply unavailable');
+   if(input.guideEvent){const action=guideNextAction(input.guideEvent,cached.data,input.lang);if(action)reply={...reply,text:reply.text+' '+action};}
+   if(input.guideEvent&&needsFreshReply(reply,input))throw failure(502,'Repeated guide reply');
+   if(input.guideEvent&&!guideReplyMatches(reply.text,input.guideEvent,cached.data.pages,input.lang))throw failure(502,'Guide reply does not match target');
    if(input.guideEvent)reply={...reply,destination:'none',sources:[],storyTopics:[]};
    return response(200,{...validReply(reply),...(chatSession?{chatSession}:{})});
   }catch(error){

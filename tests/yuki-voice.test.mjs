@@ -15,7 +15,7 @@ test('ordinary, web, guided and revised responses all receive the same casual vo
   assert(personalityInstructions(lang).includes(JSON.stringify(yukiStory)));
   const requests=[modelRequest({...input,lang},site),modelRequest({...input,lang},site,{mode:'results',entries:[]}),modelRequest({...input,lang,guideEvent:{kind:'arrive',url:lang==='en'?'/resume.html':'/ja/resume.html'}},site)];
   requests.push(rewriteRequest(requests[0],{text:'An earlier answer',sources:[]}));
-  for(const request of requests){assert(request.messages[0].content.includes(voice));assert(request.messages[0].content.includes(JSON.stringify(yukiStory)));}
+  for(const [i,request] of requests.entries()){assert(request.messages[0].content.includes(voice));if(i!==2)assert(request.messages[0].content.includes(JSON.stringify(yukiStory)));else assert.match(request.messages[0].content,/ONLY subject and factual source/);}
   assert.match(voice,/serious topics/);assert.match(voice,/never excuses inventing/);
   if(lang==='ja'){assert.match(voice,/plain forms/);assert.match(voice,/Do not default to です・ます/);assert.match(voice,/direct quotations/);}
   else assert.match(voice,/natural contractions/);

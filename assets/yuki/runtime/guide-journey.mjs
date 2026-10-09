@@ -36,6 +36,21 @@ export function guideTarget(url,pages,lang='en',base=''){
  const pageTitle=clean(path==='/yuki'?page.title:categoryNames[path]||page.title);
  return {url:page.url+(section?'#'+section.anchor:''),title:clean(section?.title||pageTitle),pageTitle,section:section?.id??''};
 }
+// A guided reply must name its actual target, not recycle a different
+// portfolio item's introduction. This is a title guard, not fact verification.
+export function guideReplyMatches(text,event,pages,lang='en',base=''){
+ const target=guideTarget(event.targetUrl||event.url,pages,lang,base);if(!target)return false;
+ const prose=words(text),title=words(target.title),path=guidePath(target.url,base);
+ const includes=value=>/[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(value)?prose.includes(words(value)):(' '+prose+' ').includes(' '+words(value)+' ');
+ if(!includes(title))return false;
+ const stop=guideTarget(event.url,pages,lang,base);
+ if(event.kind==='nav'&&stop&&!includes(stop.title)&&!(guidePath(stop.url,base)==='/yuki'&&includes('Yuki')))return false;
+ if(event.kind==='link'&&['Read essay','記事を読む'].includes(event.linkLabel)&&!includes(event.linkLabel))return false;
+ const page=pages.find(p=>p.lang===lang&&guidePath(p.url,base)===path);
+ const section=page?.sections?.find(s=>s.id===target.section);
+ const evidence=words([target.title,page?.title,page?.summary,section?.text||page?.text].join(' '));
+ return !pages.some(p=>guidePath(p.url,base)!==path&&guidePath(p.url,base)!==guidePath(event.url,base)&&words(p.title).length>=10&&includes(p.title)&&!evidence.includes(words(p.title)));
+}
 export function resolveGuideRequest(text,pages,currentPath,{lang='en',base=''}={}){
  if(!isGuideRequest(text))return null;
  const query=words(text),localized=pages.filter(p=>p.lang===lang&&safeSitePath(p.url,base));
@@ -98,6 +113,11 @@ export class GuideJourney {
  persist(){try{if(this.state)this.storage?.setItem(journeyKey,JSON.stringify(this.state));else this.storage?.removeItem(journeyKey);}catch{}}
  start(target,from,{discovery=false}={}){if(!safeSitePath(target)||!safeSitePath(from))return false;this.state={target,from,expected:null,at:this.now(),paused:false,...(discovery?{discovery:true}:{})};this.persist();return true;}
  expect(url,from){if(!this.state)return;this.state.expected=url;this.state.from=from;this.state.at=this.now();this.state.paused=false;this.persist();}
+ claimStep(step){
+  if(!this.state)return false;const key=step.kind+':'+step.url;
+  if(this.state.spoken===key)return false;
+  this.state.spoken=key;this.persist();return true;
+ }
  enter(current,base=''){
   const s=this.state;if(!s)return 'none';
   const path=guidePath(current,base);
@@ -119,25 +139,41 @@ export class GuideJourney {
 
 export class GuideDialogue {
  constructor(storage,random=Math.random){this.storage=storage;this.random=random;this.recent=[];try{const v=JSON.parse(storage?.getItem('yuki-guide-lines-v1'));if(Array.isArray(v))this.recent=v.filter(n=>Number.isInteger(n)&&n>=0&&n<8).slice(-6);}catch{}}
- copy(step,options){const choices=Array.from({length:8},(_,i)=>i).filter(i=>!this.recent.includes(i));const index=choices[Math.min(choices.length-1,Math.floor(this.random()*choices.length))];
-  if(step.kind==='arrive'){this.recent=[...this.recent,index].slice(-6);try{this.storage?.setItem('yuki-guide-lines-v1',JSON.stringify(this.recent));}catch{}}
+ copy(step,options){const count=step.kind==='arrive'?8:4,used=this.recent.slice(-(count-1)).map(i=>i%count);const choices=Array.from({length:count},(_,i)=>i).filter(i=>!used.includes(i));const index=choices[Math.min(choices.length-1,Math.floor(this.random()*choices.length))];
+  this.recent=[...this.recent,index].slice(-6);try{this.storage?.setItem('yuki-guide-lines-v1',JSON.stringify(this.recent));}catch{}
   return guideCopy(step,{...options,variant:index});
  }
 }
 export function guideCopy(step,{lang='en',detour=false,variant=0}={}){
  const ja=lang==='ja';
  if(detour)return ja?`あれっ、ちょっと寄り道だね。「${step.target?.title??step.title}」への道は覚えているよ。案内を続ける？`:`Oop, a little detour! I still remember the way to ${step.target?.title??step.title}. Shall we continue, or explore here?`;
- if(step.kind==='nav')return ja?`まずは上の「${step.title}」だよ。このタブをクリックしてね。次のページでも一緒に案内するよ！`:`First stop: ${step.title} up in the header! Click the tab I’m pointing to. I’ll meet you on the next page and keep guiding.`;
- if(step.kind==='link')return ja?`着いた！ここに「${step.title}」があるよ。指しているタイトルをクリックしてみて。開いたら、何から見てみたい？`:`We’re in the right section! Here’s ${step.title}—click the title I’m pointing to. What would you like to explore once we’re inside?`;
+ const destination=step.target?.title??step.title;
+ if(step.kind==='nav'||step.kind==='link'){
+  const nav=step.kind==='nav',link=ja?`「${step.title}」`:`${step.title}`;
+  const separate=step.linkLabel&&!words(step.linkLabel).includes(words(step.title));
+  const action=ja?(nav?`ヘッダーの${link}をクリックしてね。`:separate?`${link}の「${step.linkLabel}」リンクをクリックしてね。`:`指している${link}のタイトルをクリックしてね。`):(nav?`Click the ${link} header tab.`:separate?`Click the “${step.linkLabel}” link for ${link}, where I’m pointing.`:`Click ${link} where I’m pointing.`);
+  const directions=ja?[
+   `一緒に「${destination}」を見に行こう！${action}次のページでも案内するよ。`,
+   `こっちだよ！「${destination}」への道は、ここから続いているんだ。${action}`,
+   `小さな寄り道、出発！行き先は「${destination}」。${action}そこから一緒に進もう。`,
+   `「${destination}」まで、もう少し！${action}開いたら、一緒に続きを見てみよう。`
+  ]:[
+   `Come along—let’s explore ${destination} together! ${action} I’ll keep leading you from there.`,
+   `This way! Our destination is ${destination}. ${action} We’ll take the next step together.`,
+   `Ooh, a little detour for us! I’m taking you to ${destination}. ${action} We’re not at the final stop yet.`,
+   `Let’s go have a look at ${destination}! ${action} I’ll be there to show you the way.`
+  ];
+  return directions[Math.abs(Math.trunc(variant))%directions.length];
+ }
  const endings=[
-  [`Ta-da, we’ve reached ${step.title}! Would you like me to explain what’s here?`,`じゃーん、「${step.title}」に着いたよ！ここの説明を聞く？`],
-  [`Here we are: ${step.title}. A soft landing for once! What caught your eye here?`,`「${step.title}」に到着！今日はそーっと着地できたよ。何が気になった？`],
-  [`Found it—${step.title}! My little map can rest now. What would you like to understand about this part?`,`見つけた、「${step.title}」だよ！小さな地図もちょっと休憩。ここで詳しく知りたいことはある？`],
-  [`${step.title}, right here! Wings folded, ears ready. What brought you to this part of the portfolio?`,`ここが「${step.title}」！羽をたたんで、お話を聞く準備もできたよ。どんなところに興味があった？`],
-  [`A little flutter, and we’re at ${step.title}. Shall we unpack what this page is about together?`,`ぱたぱたっ、「${step.title}」まで来たよ。一緒に、どんな内容か見てみようか？`],
-  [`This is ${step.title}—our destination! I’ll stay nearby. Is there a particular detail you want to explore?`,`目的地の「${step.title}」だよ！近くにいるからね。もっと見てみたいところはある？`],
-  [`We made it to ${step.title}! My glasses survived the flight, too. Where would you like to begin?`,`「${step.title}」に着いたね！眼鏡もちゃんと無事。どこから見てみようか？`],
-  [`Your stop: ${step.title}. One tiny guide, mission complete! What should we look into here?`,`「${step.title}」、到着でーす。小さな案内役、お仕事できた！ここでは何を調べてみようか？`]
+  [`We’ve reached ${step.title}! Let’s take a closer look together, one little detail at a time.`,`「${step.title}」に着いたよ！小さなところから、一緒にじっくり見ていこう。`],
+  [`Here we are: ${step.title}. I’ll stay nearby while you have a look—there’s no hurry to rush away.`,`「${step.title}」に到着！そばにいるから、ゆっくり見てね。急いで次に行かなくても大丈夫。`],
+  [`Found it—${step.title}! My little map can rest now. Exploring together is my favorite part.`,`見つけた、「${step.title}」だよ！小さな地図もちょっと休憩。一緒に見て回る時間が好きなんだ。`],
+  [`${step.title}, right here! We can pause and take it in together.`,`ここが「${step.title}」！ひと休みしながら、一緒に見てみよう。`],
+  [`We’re at ${step.title}. I’m glad we followed this little trail together.`,`「${step.title}」まで来たよ。一緒にここまでたどり着けてうれしい！`],
+  [`This is ${step.title}—our destination! I’ll keep you company while you explore.`,`目的地の「${step.title}」だよ！見て回るあいだ、わたしもそばにいるね。`],
+  [`We made it to ${step.title}! Finding our way is lovely; taking time to look is lovely too.`,`「${step.title}」に着いたね！道を探すのも楽しいけど、ゆっくり眺める時間も好き。`],
+  [`Your stop: ${step.title}. One tiny guide, mission complete! Now we can settle in and look together.`,`「${step.title}」、到着でーす。小さな案内役、お仕事できた！落ち着いて一緒に見てみよう。`]
  ];
  return endings[Math.abs(Math.trunc(variant))%endings.length][ja?1:0];
 }

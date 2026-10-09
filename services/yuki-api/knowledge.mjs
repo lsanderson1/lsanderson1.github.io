@@ -41,6 +41,16 @@ function resolve(pages,ref){
 export function retrieveKnowledge(k,input){
  if(!k||typeof k.owner!=='string'||!k.bio||!Array.isArray(k.pages))throw Error('Site information unavailable');
  const pages=k.pages.filter(p=>p&&p.lang===input.lang&&typeof p.id==='string'&&typeof p.title==='string'&&safeSitePath(p.url)&&typeof p.text==='string').map(p=>({id:p.id,url:p.url,lang:p.lang,title:p.title,summary:clean(p.summary).slice(0,500),text:p.text,sections:Array.isArray(p.sections)?p.sections.filter(s=>sectionKey(s?.id)&&typeof s.title==='string'&&typeof s.text==='string'):[]}));
+ // An active route is authoritative. Generic event wording, old chat and the
+ // image left in view must never select a different project's evidence.
+ if(input.guideEvent){
+  const [path,anchor]=(input.guideEvent.targetUrl||input.guideEvent.url).split('#');
+  const page=pages.find(p=>p.url===path),section=anchor?page?.sections.find(s=>s.anchor===anchor):null;
+  if(!page||(anchor&&!section))throw Error('Unknown guide target');
+  const entries=[{id:page.id,url:page.url,title:page.title,text:page.summary||textChunks(page.text)[0]||''}];
+  if(section)entries.push({id:`${page.id}::${section.id}`,url:path+'#'+anchor,title:section.title,text:textChunks(section.text)[0]||''});
+  return {owner:k.owner,view:{scope:path,route:input.guideEvent},pages:entries,makingOf:null};
+ }
  const current=resolve(pages,{page:input.page,section:input.context?.section});
  const lastGuided=resolve(pages,input.context?.lastGuide);
  // The guide's explicit Explain button starts a new subject. Stale conversation

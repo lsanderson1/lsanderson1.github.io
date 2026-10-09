@@ -127,7 +127,7 @@
       "en": "Verified pointing destinations",
       "ja": "確認できる指さし先"
     },
-    "explanation": "guideTarget accepts only safe same-site URLs found in the published catalog, matches the selected language, then resolves a known section anchor. An invalid same-language anchor returns null instead of pointing to a guessed item. Navigation authority is this catalog, not an arbitrary selector or URL supplied by the model."
+    "explanation": "guideTarget accepts only safe same-site URLs found in the published catalog, matches the selected language, then resolves a known section anchor. An invalid same-language anchor returns null instead of pointing to a guessed item. Navigation authority is this catalog, not an arbitrary selector or URL supplied by the model. The adjacent guideReplyMatches guard requires an arrival reply to name that target and rejects names of unrelated indexed pages absent from its supporting description; this is a title-consistency check, not general fact verification."
   },
   {
     "id": "journey",
@@ -140,7 +140,7 @@
       "en": "Carrying guidance between pages",
       "ja": "ページをまたぐ案内"
     },
-    "explanation": "GuideJourney stores target, expected next page, origin and timestamp in tab storage with a 30-minute lifetime. enter distinguishes arrival, continuation, resuming and a detour. depart stores viewport coordinates; position scales them for a resized viewport when Yuki is already on that page. A guided page change instead uses her physical location and the normal timed magical summon from the previous page's header category, flying directly to the next guided perch. Guidance starts from a clear visitor request, with conversational clarification only for ambiguous destinations. AI follow-ups distinguish the next link from the final destination; offline arrival wording avoids its six most recent variants in this tab. Route memory is separate from physical location memory."
+    "explanation": "GuideJourney stores target, expected next page, origin and timestamp in tab storage with a 30-minute lifetime. enter distinguishes arrival, continuation, resuming and a detour. claimStep persists the last spoken stage so repeated callbacks or a reload cannot deliver the same stage again. depart stores viewport coordinates; position scales them for a resized viewport when Yuki is already on that page. A guided page change uses her physical location and the normal timed magical summon from the previous page's header category, flying directly to the next guided perch. Guidance starts from a clear visitor request, with conversational clarification only for ambiguous destinations. Each stage can request a route-only AI explanation in Yuki's own words with a relevant personal reaction: a brief preview while travelling, then a fuller explanation on arrival. The backend appends a precise next-step sentence for header and list stops, using the validated route and known link labels such as Read essay. Invalid, repeated or unavailable AI replies use one friendly local direction or arrival line, without quoting page descriptions. Route memory is separate from physical location memory."
   },
   {
     "id": "memory",
@@ -179,7 +179,7 @@
       "en": "Selecting evidence for answers",
       "ja": "返答の根拠を選ぶ"
     },
-    "explanation": "retrieveKnowledge filters the public catalog to the requested language and safe site paths, splits long sections into overlapping passages, and selects at most six. An explicitly named page, resolved picture or current-page question limits evidence to that page. Current-page questions ignore stale history for ranking, omit an old guided target, and do not infer a making-of topic from prior conversation. Five published garden landmarks have their own source anchors; a visible nearby perch can select its evidence without claiming eye tracking. Ordinary follow-ups can still use recent history and the guide reference. Broader questions search across the catalog. Curated making-of notes are separate; this is local text ranking, not live repository browsing or visual perception."
+    "explanation": "retrieveKnowledge filters the public catalog to the requested language and safe site paths. A validated guided event takes an early route-only path: it selects the final destination's overview and exact section, without old conversation, previously pointed images or making-of material. Other questions split long sections into overlapping passages and select at most six. An explicitly named page, resolved picture or current-page question limits evidence to that page. Current-page questions ignore stale history for ranking, omit an old guided target, and do not infer a making-of topic from prior conversation. Five published garden landmarks have their own source anchors; a nearby perch can select its evidence without claiming eye tracking. Ordinary follow-ups can still use recent history and the guide reference. Broader questions search across the catalog. Curated making-of notes are separate; this is local text ranking, not live repository browsing or visual perception."
   },
   {
     "id": "parse",

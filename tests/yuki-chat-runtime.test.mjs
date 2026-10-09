@@ -6,7 +6,8 @@ import {ChatSession} from '../assets/yuki/runtime/chat-access.mjs';
 import {ConversationMemory,memoryKey} from '../assets/yuki/runtime/conversation-memory.mjs';
 import {VisitorInterests} from '../assets/yuki/runtime/visitor-interests.mjs';
 import {ConversationMoments} from '../assets/yuki/runtime/conversation-moments.mjs';
-import {packChatRequest,rememberReply} from '../assets/yuki/runtime/reply-variety.mjs';
+import {packChatRequest,rememberReply,repetitionScore} from '../assets/yuki/runtime/reply-variety.mjs';
+import {guideReplyMatches} from '../assets/yuki/runtime/guide-journey.mjs';
 import {validReply,chatUnavailable,readSession} from '../assets/yuki/protocol.mjs';
 import {messageRecord,translationBatch,checkedTranslations,applyTranslations,conversationHistory} from '../assets/yuki/runtime/conversation-language.mjs';
 import {replyLanguage,replyQualityIssues} from '../assets/yuki/runtime/reply-quality.mjs';
@@ -15,6 +16,7 @@ import {replyLanguage,replyQualityIssues} from '../assets/yuki/runtime/reply-qua
 const source=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
 const run=source.slice(source.indexOf(' async function runChat('),source.indexOf(' function render(){'));
 const clear=source.slice(source.indexOf(' function clearConversation(){'),source.indexOf(" for(const b of root.querySelectorAll('[data-action]'))"));
+const guideSpeak=source.slice(source.indexOf(' function speakGuideFollowup('),source.indexOf(' let reactionVersion='));
 const momentFunctions=source.slice(source.indexOf(' function hideMoment(){'),source.indexOf(' function readingContext(){'));
 const store=()=>{const m=new Map();return {getItem:k=>m.get(k)??null,setItem:(k,v)=>m.set(k,v),removeItem:k=>m.delete(k)};};
 const cue={text:'Ooh, the little library dream! A cozy perch matters as much as its books.',emotion:'thoughtful',gesture:'none',destination:'none',sources:[],storyTopics:['bigDream']};
@@ -25,7 +27,7 @@ function fixture({network}={}){
   chatSession:new ChatSession(storage),conversationMemory:new ConversationMemory(storage,'en'),interests:new VisitorInterests(storage),searchPermission:{allowed:true},
   verification:{takeToken:async()=>{calls.verify++;return 'single-use-test-token';},stop:()=>{calls.stop++;}},
   tr:(en,jp)=>context.ja?jp:en,$:selector=>{if(!elements.has(selector))elements.set(selector,{value:'Draft to preserve',disabled:false,readOnly:false,hidden:true,setAttribute:()=>{},focus:()=>{}});return elements.get(selector);},
-  conversationLanguage:'en',replyLanguage,replyQualityIssues,conversationHistory,
+  conversationLanguage:'en',replyLanguage,replyQualityIssues,conversationHistory,repetitionScore,guideReplyMatches,
   readingContext:()=>({}),updateReading:()=>{},translationUI:()=>{},drawMessages:()=>{},translationBatch,checkedTranslations,applyTranslations,wake:async()=>{},status:s=>calls.status.push(s),react:async()=>{},
   stopJourney:()=>{context.journeySerial++;},
   save:()=>storage.setItem('yuki-session-v1',JSON.stringify({savedAt:Date.now(),language:context.ja?'ja':'en',messages:context.messages,variety:context.variety})),
@@ -65,10 +67,22 @@ test('explicit interests accompany sends and survive Clear chat; corrections win
  await f.send('I no longer like animation, but I love art.');assert.deepEqual(f.calls.fetch[1].interests,['art']);
 });
 test('automatic follow-up preserves the draft, adds no synthetic user message and never uses search',async()=>{
- const f=fixture();f.context.messages.push({role:'user',text:'Lead me to Resume'});
+ const f=fixture({network:async()=>new Response(JSON.stringify({...cue,text:'Here we are at Resume! This page introduces Lloyd’s published skills and education.'}))});f.context.knowledge=[{lang:'en',url:'/resume.html',title:'Resume',text:'Published skills and education.'}];f.context.messages.push({role:'user',text:'Lead me to Resume'});
  await f.send('Offer a contextual follow-up',{kind:'arrive',url:'/resume.html'});
  assert.equal(f.context.messages.length,2);assert.equal(f.context.messages[1].role,'assistant');assert.equal(f.context.$('textarea').value,'Draft to preserve');
  assert.equal(f.calls.fetch[0].webSearch,false);assert.equal(f.calls.fetch[0].guideEvent.kind,'arrive');assert.equal(f.context.conversationMemory.turns.length,0);
+});
+
+test('every guide step uses AI narration when available, with a single non-quoted offline fallback',async()=>{
+ for(const kind of ['nav','link','arrive','detour']){
+  const requests=[],messages=[],context={online:true,busy:false,permission:{allowed:true},ja:false,journey:{state:{discovery:true}},tr:en=>en,
+   guideDialogue:{copy:step=>'Let’s explore '+step.title+' together!'},addMessage:(_role,text)=>messages.push(text),
+   runChat:async(...args)=>requests.push(args)};
+  vm.createContext(context);vm.runInContext(guideSpeak+'\nthis.speak=speakGuideFollowup;',context);
+  const step={kind,url:'/essays/coding.html',title:'Coding Standards',target:{url:'/essays/coding.html'},linkLabel:'Read essay'};
+  await context.speak(step);assert.equal(requests.length,1);assert.equal(messages.length,0);assert.equal(requests[0][1].linkLabel,'Read essay');
+  context.online=false;await context.speak(step);assert.equal(requests.length,1);assert.equal(messages.length,1);assert(!messages[0].includes('site describes'));
+ }
 });
 test('route change or cancellation discards a late follow-up without storing it or starting another request',async()=>{
  for(const cancel of [f=>f.context.journeySerial++,f=>f.context.controller.abort(),f=>{f.context.permission.allowed=false;}]){
@@ -76,6 +90,17 @@ test('route change or cancellation discards a late follow-up without storing it 
   const sending=f.send('Follow up',{kind:'nav',url:'/resume.html'},()=>f.calls.fallback++);
   await new Promise(resolve=>setImmediate(resolve));cancel(f);finish();await sending;
   assert.equal(f.context.messages.length,0);assert.equal(f.calls.fallback,0);assert.equal(f.calls.fetch.length,1);assert.equal(f.context.busy,false);assert.equal(f.context.$('textarea').readOnly,false);
+ }
+});
+
+test('wrong-destination and repeated guide replies fall back once instead of appearing as another answer',async()=>{
+ const correct='Here we are at Coding Strategies! This essay discusses practicing problem solving and checking how each little exercise works.';
+ for(const bad of ['Here is Project Reap, a platformer built in Unity.',correct,correct+' '+correct]){
+  const f=fixture({network:async()=>new Response(JSON.stringify({...cue,text:bad}))});
+  f.context.knowledge=[{lang:'en',url:'/essays/coding.html',title:'Coding Strategies',text:'An essay about practicing problem solving.'},{lang:'en',url:'/projects/reap.html',title:'Project Reap',text:'A platformer.'}];
+  f.context.messages=[messageRecord('assistant',correct,'en')];
+  await f.send('Continue this tour',{kind:'arrive',url:'/essays/coding.html'},()=>f.calls.fallback++);
+  assert.equal(f.calls.fallback,1);assert.equal(f.context.messages.length,1);assert.equal(f.calls.fetch.length,1);assert.equal(f.context.busy,false);
  }
 });
 test('guide model failure keeps local directions, and invalid pass is cleared without automatic retries',async()=>{

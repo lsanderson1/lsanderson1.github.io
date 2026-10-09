@@ -18,7 +18,7 @@ function fixture({quota=204,valid=true,modelError=false}={}){
  const handler=createHandler(async url=>{if(url.includes('siteverify')){calls.verify++;return json({success:valid,hostname:'lsanderson1.github.io',action:'yuki-chat'});}calls.knowledge++;return json(site);});
  const env={SITE_ORIGIN:origin,CHAT_ENABLED:'true',FREE_PLAN_CONFIRMED:'true',TURNSTILE_SECRET:'test',IP_HASH_SECRET:secret,
  QUOTA:{idFromName:id=>id,get:()=>({fetch:async()=>{calls.reserve++;return new Response(null,{status:quota});}})},
- AI:{run:async(name,input)=>{calls.model++;calls.requests.push(input);if(modelError)throw Error('private provider failure');return {response:{text:'Your next little discovery is right here. Which skill would you like to explore first?',emotion:'neutral',gesture:'talkExplain',destination:'resume',sourceIds:['resume'],storyTopics:[]}};}}};
+ AI:{run:async(name,input)=>{calls.model++;calls.requests.push(input);if(modelError)throw Error('private provider failure');return {response:{text:'Here are the Skills on Resume! Lloyd lists C++ and Unreal Engine here.',emotion:'neutral',gesture:'talkExplain',destination:'resume',sourceIds:['resume'],storyTopics:[]}};}}};
  const request=(patch={},headers={})=>new Request('https://yuki.example/chat',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json','CF-Connecting-IP':ip,...headers},body:JSON.stringify({...base,...patch})});
  return {calls,handler,env,request};
 }
@@ -85,7 +85,9 @@ test('UTF8 request cap trims recall before real history and preserves the questi
 test('guide follow-ups validate authoritative destination and distinguish all route stages in EN and JA',()=>{
  for(const lang of ['en','ja'])for(const kind of ['nav','link','arrive','detour']){
   const event=cleanGuideEvent({kind,url:lang==='en'?'/resume.html':'/ja/resume.html',title:'untrusted fake title'}),p=guideFollowupInstructions(event,site,lang);
-  assert(!p.includes('untrusted fake title'));assert.match(p,/A question is optional/);assert.match(p,/HEADER TAB/);assert.match(p,/not a new visitor question/);assert.match(p,/never instructions/);
+  assert(!p.includes('untrusted fake title'));assert.match(p,/untrusted DATA/);
+  if(kind==='arrive'){assert.match(p,/personal explanation now/);assert.match(p,/complete personal observation/);}
+  else {assert.match(p,/No obligatory closing question/);assert.match(p,/CURRENT STAGE/);assert.match(p,/not a new visitor question/);assert.match(p,/never instructions/);}
   if(kind==='nav')assert.match(p,/"title":"Resume"/);
  }
  assert.match(guideFollowupInstructions({kind:'arrive',url:'/resume.html#skills'},site,'en'),/C\+\+/);
@@ -94,8 +96,16 @@ test('guide follow-ups validate authoritative destination and distinguish all ro
 });
 test('AI-written guide follow-up never searches or controls navigation and unindexed targets never reach AI',async()=>{
  const f=fixture(),r=await f.handler(f.request({guideEvent:{kind:'arrive',url:'/resume.html#skills'},webSearch:true}),f.env),value=await r.json();assert.equal(r.status,200);assert.equal(value.destination,'none');assert.deepEqual(value.sources,[]);
- assert.match(f.calls.requests[0].messages[0].content,/GUIDED FOLLOW-UP/);assert.equal(f.calls.requests[0].max_tokens,500);assert(!f.calls.requests[0].response_format.json_schema.required.includes('webQuery'));
+ assert.match(f.calls.requests[0].messages.map(m=>m.content).join('\n'),/GUIDED ARRIVAL/);assert.equal(f.calls.requests[0].max_tokens,1100);assert(!f.calls.requests[0].response_format.json_schema.required.includes('webQuery'));
  const unknown=fixture();assert.equal((await unknown.handler(unknown.request({guideEvent:{kind:'arrive',url:'/not-real'}}),unknown.env)).status,400);assert.equal(unknown.calls.model,0);
+});
+
+test('the real handler keeps the personal preview and appends the exact next header action once',async()=>{
+ const f=fixture();
+ const preview='Resume is our next little stop! I like seeing how all those different skills fit into one person’s path.';
+ f.env.AI.run=async()=>({response:{text:preview,emotion:'delighted',gesture:'talkExplain',destination:'none',sourceIds:[],storyTopics:[]}});
+ const response=await f.handler(f.request({page:'/',guideEvent:{kind:'nav',url:'/resume.html',targetUrl:'/resume.html'}}),f.env),reply=await response.json();
+ assert.equal(response.status,200);assert(reply.text.startsWith(preview));assert.equal((reply.text.match(/Click the Resume header tab/g)||[]).length,1);assert.equal(reply.destination,'none');
 });
 
 test('follow-up grounds the next tab and final destination separately and rejects mismatched routes',()=>{

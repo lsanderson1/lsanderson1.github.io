@@ -28,7 +28,8 @@ test('translation stays faithful and guide events do not answer their own follow
   assert(!translation.messages[0].content.includes(answerExplanationInstructions));
   assert.match(translation.messages[0].content,/NOT a new answer/);
   const guide=modelRequest({message:'Offer a follow-up',lang,history:[],guideEvent:{kind:'arrive'}},{pages:[]});
-  assert.match(guide.messages[0].content,/automatic guide events are not questions to expand/);
-  assert.equal(guide.max_tokens,500);
+  assert.match(guide.messages[0].content,/save the fuller explanation for arrival/);
+  assert.match(guide.messages[0].content,/No automatic closing question/);
+  assert.equal(guide.max_tokens,1100);
  }
 });

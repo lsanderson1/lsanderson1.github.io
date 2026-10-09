@@ -118,11 +118,11 @@ test('DOM targets select the real header/tab and project-title links, not duplic
  assert.equal(findGuideElement(doc,{kind:'arrive',url:'/projects/ProjectReap.html#development'}),title);
  assert.equal(findGuideElement(doc,{kind:'nav',url:'/essays/'}),null);
 });
-test('cute route copy remains factual, requires visitor clicks, and asks arrival follow-ups in both languages',()=>{
+test('cute route copy remains factual, requires visitor clicks, and avoids obligatory arrival questions',()=>{
  for(const lang of ['en','ja']){
   const nav=guideCopy({kind:'nav',title:'Projects'},{lang}),link=guideCopy({kind:'link',title:'Project Reap'},{lang}),arrival=guideCopy({kind:'arrive',title:'Project Reap'},{lang});
-  assert.match(nav,lang==='en'?/Click the tab/:/クリック/);assert.match(link,lang==='en'?/click the title/:/クリック/);
-  assert.match(arrival,lang==='en'?/Would you like/:/聞く？/);assert.match(guideCopy({title:'Project Reap'},{lang,detour:true}),lang==='en'?/detour/:/寄り道/);
+  assert.match(nav,lang==='en'?/click.*header tab/i:/クリック/);assert.match(link,lang==='en'?/click.*pointing/i:/クリック/);
+  assert.match(arrival,/Project Reap/);assert(!/[?？]$/.test(arrival));assert.match(guideCopy({title:'Project Reap'},{lang,detour:true}),lang==='en'?/detour/:/寄り道/);
  }
 });
 
@@ -132,7 +132,7 @@ test('tour endings vary across page reloads and language changes without inventi
   const lang=i%2?'ja':'en',copy=new GuideDialogue(storage,()=>0).copy({kind:'arrive',title:'Project Reap'},{lang});
   const variant=JSON.parse(storage.getItem('yuki-guide-lines-v1')).at(-1);
   assert(!recent.slice(-6).includes(variant));recent.push(variant);
-  assert(copy.includes('Project Reap'));assert.match(copy,lang==='ja'?/？$/:/\?$/);
+  assert(copy.includes('Project Reap'));assert(!/[?？]$/.test(copy));
   if(lang==='ja')assert(copy.includes('「Project Reap」'));
  }
 });

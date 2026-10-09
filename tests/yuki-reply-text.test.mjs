@@ -82,7 +82,7 @@ test('longer explanations retain personality, examples, evidence limits and shor
   const request=modelRequest({...input,lang},{pages:[]}),prompt=request.messages[0].content;
   assert.equal(request.max_tokens,1900);assert.equal(request.response_format.json_schema.properties.text.maxLength,2800);
   for(const part of ['6–8 clear sentences','concrete example','casual, curious voice','REPLY TEXT BOUNDARY','Never invent credentials'])assert(prompt.includes(part));
-  assert.equal(modelRequest({...input,lang,guideEvent:{kind:'arrive'}},{pages:[]}).max_tokens,500);
+  assert.equal(modelRequest({...input,lang,guideEvent:{kind:'arrive'}},{pages:[]}).max_tokens,1100);
  }
 });
 test('the actual message renderer protects both speech and saved history without touching user input',()=>{
