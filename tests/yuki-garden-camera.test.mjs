@@ -71,7 +71,7 @@ test('garden keeps shared header and no article panels or outside footer',()=>{
  const layout=readFileSync(new URL('../_layouts/yuki-garden.html',import.meta.url),'utf8');assert.match(layout,/include header.html/);assert.doesNotMatch(layout,/footer/);
  const css=readFileSync(new URL('../assets/yuki/home/garden.css',import.meta.url),'utf8');assert.doesNotMatch(css,/\.fp-nav\{[^}]*background/);assert.match(css,/height:100dvh/);assert.match(css,/\.yg-thought/);
  const template=readFileSync(new URL('../_includes/yuki-home.html',import.meta.url),'utf8');
- for(const title of ['Leaf Nest','Lily Pond','Sky Lookout','Reading Nook','Little Treasures','Talk With Yuki','A Little Flight','Float & Daydream','Chase Petals','Pause Garden','Another Little Thought'])assert(template.includes(title));
+ for(const title of ['Dragon Roost','Lily Pond','Sky Lookout','Reading Nook','Little Treasures','Talk With Yuki','A Little Flight','Float & Daydream','Chase Petals','Pause Garden','Another Little Thought'])assert(template.includes(title));
 });
 
 test('garden gives the unchanged shared glass header scenery underneath, not an opaque override',()=>{

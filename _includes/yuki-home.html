@@ -1,27 +1,27 @@
 {% include locale.html %}
 {% assign jp = false %}{% if page.lang == 'ja' %}{% assign jp = true %}{% endif %}
-<link rel="stylesheet" href="{{ '/assets/yuki/home/garden.css?v=12' | relative_url }}">
+<link rel="stylesheet" href="{{ '/assets/yuki/home/garden.css?v=13' | relative_url }}">
 <div class="yg-page">
  <h1 class="yg-sr-only">{% if jp %}ゆきの庭{% else %}Yuki’s Garden{% endif %}</h1>
  <section class="yg-world" tabindex="0" aria-describedby="garden-pan-hint" aria-label="{% if jp %}ゆきのインタラクティブな庭{% else %}Yuki’s interactive garden{% endif %}">
   <div class="yg-scene" data-yuki-garden>
-   <img class="yg-backdrop" src="{{ '/assets/yuki/home/petal-nook.png' | relative_url }}" width="1536" height="1024" fetchpriority="high" alt="{% if jp %}桜に囲まれた明るいお城の庭。葉っぱの巣、スイレンの池、本のあるベンチ、紙の鶴と小石、空を見渡すテラス。{% else %}A sunny castle garden with cherry blossoms, a leaf-lined nest, a lily pond, a reading bench, paper crane and pebble keepsakes, and a terrace overlooking floating islands.{% endif %}">
+   <img class="yg-backdrop" src="{{ '/assets/yuki/home/petal-nook-roost.png' | relative_url }}" width="1536" height="1024" fetchpriority="high" alt="{% if jp %}桜に囲まれた明るいお城の庭。ふかふかのドラゴンのねぐら、スイレンの池、本のあるベンチ、紙の鶴と水晶玉、空を見渡すテラス。{% else %}A sunny castle garden with cherry blossoms, a cushioned dragon roost with little treasures, a lily pond, a reading bench, a paper crane and a crystal orb, and a terrace overlooking floating islands.{% endif %}">
    <div class="yg-weather" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
    <div class="yg-scene-life" aria-hidden="true"><span class="yg-butterfly"></span><span class="yg-butterfly yg-butterfly-far"></span><span class="yg-butterfly yg-butterfly-near"></span><span class="yg-sky-wisp"></span></div>
    <span class="yg-chase-petal" hidden aria-hidden="true"></span>
    <div class="yg-hotspots">
-    <button id="garden-nest" data-yuki-description="{% if jp %}葉っぱを敷いた、ゆきがお昼寝する巣。巣を選ぶと、ゆきが飛んできて丸くなって眠る。{% else %}Yuki’s leaf-lined sleeping nest. Choosing it brings Yuki over to curl up and nap.{% endif %}" data-garden-spot="nest" style="--x:20%;--y:87%" aria-label="{% if jp %}葉っぱの巣でお昼寝{% else %}Nap in the leaf nest{% endif %}" title="{% if jp %}葉っぱの巣{% else %}Leaf Nest{% endif %}">☾</button>
+    <button id="garden-nest" data-yuki-description="{% if jp %}竜の翼の形をした縁と、うろこ模様のふかふかのクッションがあるねぐら。小さな宝石や金貨、真珠をそばに置き、ゆきが丸くなって眠る場所。選ぶと、ゆきが飛んできてお昼寝する。{% else %}Yuki’s cozy dragon roost has a wing-shaped rim, a soft scale-pattern cushion, and a little collection of gems, coins and a pearl. Choosing it brings Yuki over to curl up and nap.{% endif %}" data-garden-spot="nest" style="--x:20%;--y:87%" aria-label="{% if jp %}ドラゴンのねぐらでお昼寝{% else %}Nap in the dragon roost{% endif %}" title="{% if jp %}ドラゴンのねぐら{% else %}Dragon Roost{% endif %}">☾</button>
     <button id="garden-pond" data-yuki-description="{% if jp %}スイレンの池。水面をクリックしたりタップしたりすると波紋が広がり、ゆっくり消える。光のきらめきと水面の反射を楽しめる場所。{% else %}The lily pond. Clicking or tapping the water makes ripples spread and fade. This is a spot for watching the water’s reflections and glints.{% endif %}" data-garden-spot="pond" style="--x:17%;--y:54%" aria-label="{% if jp %}池を見に行く{% else %}Visit the lily pond{% endif %}" title="{% if jp %}スイレンの池{% else %}Lily Pond{% endif %}">≈</button>
     <button id="garden-lookout" data-yuki-description="{% if jp %}空を見渡すテラス。ゆきが空を眺めたり、いつか作りたい空飛ぶ図書館を夢見たりする場所。図書館はまだ夢で、この庭に完成しているわけではない。{% else %}The terrace overlooking the sky. Yuki likes to daydream here about a future flying library; that library is a dream, not a completed place in this garden.{% endif %}" data-garden-spot="lookout" style="--x:69%;--y:38%" aria-label="{% if jp %}空の見晴らし台へ{% else %}Fly to the sky lookout{% endif %}" title="{% if jp %}空の見晴らし台{% else %}Sky Lookout{% endif %}">✧</button>
     <button id="garden-books" data-yuki-description="{% if jp %}本のあるベンチ、読書のコーナー。ゆきにとって、よく見て、わからなければ聞くという灯りの番人の教えを思い出す場所。{% else %}The book-filled reading bench. In Yuki’s story it reminds her of the Lantern Keeper’s lesson: look carefully and ask when unsure.{% endif %}" data-garden-spot="books" style="--x:83%;--y:65%" aria-label="{% if jp %}読書のコーナーへ{% else %}Visit the reading nook{% endif %}" title="{% if jp %}読書のコーナー{% else %}Reading Nook{% endif %}">▤</button>
-    <button id="garden-treasures" data-yuki-description="{% if jp %}紙の鶴と小石を置いた、小さな宝物の場所。ゆきの物語では、小石は本のページを押さえるために役立ち、紙の鶴は初めての案内を思い出させる。{% else %}The paper-crane and pebble keepsakes. In Yuki’s story, a pebble can hold a book open and the crane recalls her first guiding adventure.{% endif %}" data-garden-spot="treasures" style="--x:58%;--y:83%" aria-label="{% if jp %}小さな宝物を見る{% else %}Explore Yuki’s keepsakes{% endif %}" title="{% if jp %}小さな宝物{% else %}Little Treasures{% endif %}">◇</button>
+    <button id="garden-treasures" data-yuki-description="{% if jp %}水晶玉、紙の鶴、緑色のノートを置いた小さな宝物の場所。水晶玉は想像をふくらませる飾りで、本当に未来が見えるわけではない。紙の鶴は、ゆきの物語で初めての案内を思い出させる。{% else %}A crystal orb on its stand, a paper crane, and a green notebook. The orb is a decorative focus for daydreams, not a real prediction tool. The crane recalls Yuki’s first guiding adventure in her story.{% endif %}" data-garden-spot="treasures" style="--x:58%;--y:83%" aria-label="{% if jp %}小さな宝物を見る{% else %}Explore Yuki’s keepsakes{% endif %}" title="{% if jp %}小さな宝物{% else %}Little Treasures{% endif %}">◇</button>
    </div>
   </div>
   <div class="yg-controls">
    <details class="yg-menu">
     <summary class="btn">{% if jp %}庭を探検{% else %}Explore{% endif %} <span aria-hidden="true">✧</span></summary>
     <div>
-     <button data-garden-spot="nest">{% if jp %}葉っぱの巣{% else %}Leaf Nest{% endif %}</button>
+     <button data-garden-spot="nest">{% if jp %}ドラゴンのねぐら{% else %}Dragon Roost{% endif %}</button>
      <button data-garden-spot="pond">{% if jp %}スイレンの池{% else %}Lily Pond{% endif %}</button>
      <button data-garden-spot="lookout">{% if jp %}空の見晴らし台{% else %}Sky Lookout{% endif %}</button>
      <button data-garden-spot="books">{% if jp %}読書のコーナー{% else %}Reading Nook{% endif %}</button>

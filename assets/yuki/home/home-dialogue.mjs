@@ -1,11 +1,11 @@
 // Authored at-home asides, separate from greetings, AI history and visitor memory.
-import {extraThoughts} from './extra-thoughts.mjs';
+import {extraThoughts} from './extra-thoughts.mjs?v=2';
 export const homeLines={
- nest:[['I saved the softest leaf for my cheek. Very important nest engineering.','ほっぺ用に、いちばん柔らかい葉っぱを取っておいた。巣づくりの大事な工夫！'],['My tail fits! Now I just need to fit one more tiny nap.','しっぽ、ちゃんと収まった！あとは小さなお昼寝を、もうひとつ。'],['If a petal lands on my nose, that counts as a blanket, right?','鼻に花びらが落ちてきたら、お布団ってことにしていいかな？'],['Little wings folded. Big dreams unfolding.','小さな羽はたたんで、大きな夢は広げよう。']],
+ nest:[['I saved the softest cushion for my cheek. Very important roost engineering.','ほっぺ用に、いちばん柔らかいクッションを取っておいた。ねぐらづくりの大事な工夫！'],['My tail fits! Now I just need to fit one more tiny nap.','しっぽ、ちゃんと収まった！あとは小さなお昼寝を、もうひとつ。'],['If a petal lands on my nose, that counts as a blanket, right?','鼻に花びらが落ちてきたら、お布団ってことにしていいかな？'],['Little wings folded. Big dreams unfolding.','小さな羽はたたんで、大きな夢は広げよう。']],
  pond:[['The dragon in the pond copied my face again. Excellent manners.','池のドラゴン、また同じ顔をした！息ぴったりだね。'],['One ripple, two ripples… oh, I lost count looking at the lilies.','波紋がひとつ、ふたつ……スイレンを見てたら、いくつか忘れちゃった。'],['I can sit quietly. Watch. …Was that a petal?','静かに座れるよ。見てて。……あれ、花びら？'],['No splashing the glasses today. That is the plan, anyway.','今日は眼鏡を濡らさない。それが目標！']],
  lookout:[['That cloud would make a lovely library roof. A slightly soggy one, maybe.','あの雲、図書館の屋根にぴったり。ちょっと湿っぽいかも。'],['A little practice flight counts as progress. Even the wobbly bit.','小さな練習飛行も、一歩前進。ふらふらしたところも含めてね。'],['Imagine a bookshelf with wings. Now imagine me trying to steer it.','羽のついた本棚を想像してみて。次は、それを操縦するわたし！'],['There is so much sky up here. I’ll learn it one flap at a time.','空って広いね。ひと羽ばたきずつ、覚えていこう。']],
  books:[['I brought a question. Then it made three more questions.','質問をひとつ持ってきたら、また三つ増えちゃった。'],['A petal bookmark is helpful. Eating the bookmark is less helpful.','花びらのしおりは便利。食べちゃったら、あんまり便利じゃない。'],['This corner is for reading, wondering, and occasionally losing my place.','ここは読む場所、考える場所、それから、たまにページを見失う場所。'],['You can bring your questions here too. There’s room beside mine.','あなたの疑問も持ってきて。わたしの疑問の隣、まだ空いてるよ。']],
- treasures:[['This pebble holds pages open. Treasure with a proper little job!','この小石、ページを押さえてくれる。ちゃんとお仕事のある宝物！'],['My notebook has questions and a few maps that are mostly squiggles.','ノートには疑問と地図がいっぱい。地図は、ほとんどぐにゃぐにゃだけど。'],['The crane is made of paper. The important part is remembering to ask the way.','鶴は紙でできているけど、大事なのは行き先を聞くこと。忘れないようにね。'],['Not every treasure sparkles. Some are just very good at being a pebble.','宝物は、きらきらしてなくてもいい。立派な小石なら、それで十分！']]
+ treasures:[['My crystal orb catches the sunshine. A tiny treasure with a very sparkly job!','水晶玉が日差しを集めてる。きらきらのお仕事をする、小さな宝物！'],['My notebook has questions and a few maps that are mostly squiggles.','ノートには疑問と地図がいっぱい。地図は、ほとんどぐにゃぐにゃだけど。'],['The crane is made of paper. The important part is remembering to ask the way.','鶴は紙でできているけど、大事なのは行き先を聞くこと。忘れないようにね。'],['Not every treasure sparkles. My paper crane is precious without a single gem.','宝物は、きらきらしてなくてもいい。紙の鶴も、宝石なしで大切な友だち！']]
 };
 const moreHomeLines={
  "nest": [
@@ -14,8 +14,8 @@ const moreHomeLines={
    "この巣は、しっぽ一本まで。よかった、わたしは大丈夫！"
   ],
   [
-   "A leaf slipped out. That’s not a mess; it’s the beginning of a bigger nest.",
-   "葉っぱが一枚はみ出した。散らかってるんじゃなくて、巣を広げる第一歩！"
+   "My cushion slipped out. That’s not a mess; it’s the beginning of a bigger roost.",
+   "クッションがはみ出した。散らかってるんじゃなくて、ねぐらを広げる第一歩！"
   ],
   [
    "I’m testing how comfortable the sunshine is. Very thorough testing.",
@@ -102,8 +102,8 @@ const moreHomeLines={
    "持ち運べるくらい小さくて、大切に思えるくらい、いっぱいの宝物。"
   ],
   [
-   "The pebble has no idea it has an important job.",
-   "この小石、大事なお仕事をしてるって気づいてないかも。"
+   "The orb has no idea how many little adventures I’ve imagined beside it.",
+   "水晶玉は知らないかも。そばで、いろんな冒険を想像してること。"
   ],
   [
    "A crooked map is a good excuse to ask for directions.",

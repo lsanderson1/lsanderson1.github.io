@@ -1,12 +1,13 @@
 import {waterGlisten,addGardenWaterSurfaces} from './water-light.mjs?v=3';
+import {GardenSkyDragons} from './sky-dragons.mjs';
 // Every interactive object uses the illustration's coordinates. These are
 // authored effects and story snippets, not generated art or extra AI calls.
 export const gardenDiscoveries={
  lantern:{box:[1266,215,89,150],at:[1310,304],kind:'mote',label:['Brighten the Lantern','ランタンを明るくする']},
  books:{box:[1228,468,125,76],at:[1288,502],kind:'page',label:['Read a Tiny Garden Story','庭の小さなお話を読む']},
  crane:{box:[777,645,82,70],at:[817,681],kind:'star',label:['Make a Wish With the Paper Crane','紙の鶴に願いをこめる']},
- pebble:{box:[729,688,73,48],at:[768,710],kind:'mote',label:['Discover the Wishing Pebble','願いの小石を調べる']},
- nest:{box:[143,693,288,144],at:[285,750],kind:'leaf',label:['Fluff Yuki’s Leaf Nest','ゆきの巣をふわふわにする']},
+ pebble:{box:[723,673,74,83],at:[760,707],kind:'star',label:['Admire the Crystal Orb','水晶玉を眺める']},
+ nest:{box:[153,656,376,193],at:[320,760],kind:'star',label:['Fluff Yuki’s Dragon Roost','ゆきのねぐらをふわふわにする']},
  sky:{box:[338,42,327,292],at:[520,165],kind:'comet',label:['Send a Little Sky Wish','空に小さな願いを届ける']},
  castle:{box:[806,0,355,326],at:[1000,150],kind:'star',label:['Wake the Castle’s Magic','お城の魔法を呼び起こす']},
  'blossoms-west':{box:[0,0,330,236],at:[195,123],kind:'petal',label:['Brush the Left Cherry Blossoms','左の桜にそっと触れる']},
@@ -18,8 +19,8 @@ const stories={
  lantern:[['A little brighter! That’s my “one more page before bed” light.','ちょっと明るくなった！『あと一ページだけ』の灯りだよ。'],['Soft and cosy again. Even a brave little dragon likes a night-light.','やさしい灯りに戻ったね。勇敢なドラゴンだって、夜の灯りは好きなんだ。']],
  books:[['Today’s tiny story: a dragon packed a library… and forgot to leave room for herself. A bigger basket next time!','今日の小さなお話。図書館をかごに詰めたドラゴン、自分の席を忘れちゃった！次は大きなかごにしよう。'],['This page says adventures begin with a question. Mine usually begin with “where’s my bookmark?”','冒険はひとつの質問から始まるんだって。わたしはだいたい「しおり、どこ？」から！'],['A cloud once borrowed a book. It brought it back a little misty, but right on time.','雲が本を借りたんだって。返ってきた本はちょっとしっとり。でも、ちゃんと約束の日だったよ。'],['One day, my flying library will have a shelf for every lovely question. And a very small snack shelf.','いつか空飛ぶ図書館に、すてきな質問を集めた棚を作りたいな。おやつの棚もちょこっとね。']],
  crane:[['A wish for my paper friend! Let’s give it something kind to carry.','紙のお友だちにお願い！やさしい願いを運んでもらおう。'],['The crane was my very first guiding adventure. I still ask where it wants to go.','初めて案内したのは、この鶴だったんだ。今でも、行き先をちゃんと聞くよ。'],['I wished for a smooth landing. The crane is being very patient with me.','上手に着地できますように。鶴は気長に見守ってくれてるよ。']],
- pebble:[['Not every treasure needs to glitter. This one keeps my book from flying away!','きらきらしてなくても宝物。この小石は、本が飛んでいくのを止めてくれるんだ！'],['A pocket-sized mountain. Well… a dragon-pocket-sized mountain.','ポケットに入る山だね。わたしのポケットだと、ちょっと大きいかな。'],['This is my thinking pebble. It’s very good at listening.','考えごとをするときの相棒だよ。聞き上手な小石なんだ。']],
- nest:[['A little fluff here, a leaf tucked there… perfect room for a sleepy tail.','ここをふわっと、あっちの葉っぱを少し。眠たいしっぽの場所もできた！'],['Nest inspection complete. Officially cosy. Extremely nap-worthy.','巣の点検、おしまい。ぽかぽか、ふわふわ。お昼寝にぴったり！'],['Thank you for tidying my leaves. I’ll try not to roll right out of them.','葉っぱを整えてくれてありがとう。ごろごろしすぎて、はみ出さないようにしなきゃ。']],
+ pebble:[['A tiny sky in a crystal orb! I wonder which adventure I’ll imagine in it today.','水晶玉の中に、小さな空みたいな光！今日はどんな冒険を想像しようかな。'],['No fortune-telling here. Just a very shiny excuse to daydream!','未来が見えるわけじゃないよ。きらきらを眺めて、空想を楽しむんだ！'],['I polished my orb. Now it reflects one extremely pleased little dragon.','水晶玉を磨いたよ。とっても満足そうな小さなドラゴンが映ってる！']],
+ nest:[['A little fluff here, a cushion tucked there… perfect room for a sleepy tail.','ここをふわっと、あっちのクッションを少し。眠たいしっぽの場所もできた！'],['Nest inspection complete. Officially cosy. Extremely nap-worthy.','巣の点検、おしまい。ぽかぽか、ふわふわ。お昼寝にぴったり！'],['Thank you for fluffing my cushion. I’ll try not to roll into my little treasure pile.','クッションを整えてくれてありがとう。ごろごろして宝物にぶつからないようにしなきゃ。']],
  sky:[['Off goes a little wish. Mine has books, warm lanterns, and plenty of wing room.','小さな願い、飛んでいけー。わたしの夢には、本と灯りと、羽を広げる場所がいっぱい。'],['That island looks just big enough for a reading picnic. Shall we dream up a route?','あの島、読書ピクニックによさそう。行き方を想像してみようか？'],['The sky has so much room for things we haven’t thought of yet.','まだ思いついてない夢も、あの空になら入りそうだね。']],
  castle:[['A little dragon magic for the towers! Nothing too loud—the clouds might be napping.','塔に、小さなドラゴンの魔法！静かにね。雲がお昼寝してるかもしれないから。'],['I imagine a library behind those windows. With stairs sized for very short legs.','あの窓の向こうが図書館だったらいいな。短い足でも登れる階段つきで！'],['The castle caught your sparkle. I think it likes having visitors.','お城にきらきらが届いたよ。お客さんが来て、うれしいのかも。']],
  blossoms:[['Petal shower! I caught… oh. That one caught my nose.','花びらのシャワー！つかまえた……あれ、鼻にくっついちゃった。'],['A tiny breeze, a whole little dance. The trees know how to celebrate.','そよ風ひとつで、みんな踊り出した！桜って、お祝い上手だね。'],['The blossoms are lending us confetti. We should say thank you.','桜が紙吹雪を貸してくれたみたい。ありがとう、って言っておこう。']],
@@ -92,8 +93,10 @@ export class GardenWorldLife{
   this.lamp=el(this.doc,'ellipse',{class:'yg-lamp-aura',cx:1310,cy:304,rx:58,ry:78,fill:'url(#yg-warm-light)'});this.svg.append(this.lamp);
   const rays=el(this.doc,'g',{class:'yg-sun-rays',fill:'#fff7c6'});for(const [end,width] of [[430,48],[610,60],[750,23]])rays.append(el(this.doc,'path',{d:`M175 73 L${end} 485 L${end+width} 490Z`}));this.svg.append(rays);
   for(const [i,p] of [[420,200,135,16],[730,98,118,15],[673,312,100,9]].entries())this.svg.append(el(this.doc,'ellipse',{class:'yg-cloud-drift',cx:p[0],cy:p[1],rx:p[2],ry:p[3],style:`--delay:${-i*11}s`}));
-  addWaterfalls(this.doc,this.svg,defs);
   addGardenWaterSurfaces(this.doc,this.svg,defs);
+  this.dragons=new GardenSkyDragons(this.doc,this.svg,defs);
+  addWaterfalls(this.doc,this.svg,defs);
+  this.svg.append(this.dragons.frontLayer);
   this.effects=el(this.doc,'g');this.svg.append(this.effects);scene.append(this.svg);
   this.targets=this.doc.createElement('div');this.targets.className='yg-discoveries';scene.append(this.targets);
   for(const [id,spec] of Object.entries(gardenDiscoveries)){
@@ -109,8 +112,8 @@ export class GardenWorldLife{
   }
   // A cropped-away landmark must not steal keyboard focus and scroll the scene.
   if(this.view.IntersectionObserver){this.observer=new this.view.IntersectionObserver(entries=>{for(const e of entries)e.target.tabIndex=e.intersectionRatio>=.35?0:-1;},{root:scene.parentElement,threshold:[0,.35]});for(const b of this.buttons.values())this.observer.observe(b);}
-  this.onReduced=()=>{if(this.media.matches){this.particles.clear();this.render();}};this.media.addEventListener('change',this.onReduced);
-  this.frame=now=>{const dt=this.last?now-this.last:0;this.last=now;if(this.active()){this.particles.update(dt);this.render();}this.raf=this.view.requestAnimationFrame(this.frame);};this.raf=this.view.requestAnimationFrame(this.frame);
+  this.onReduced=()=>{if(this.media.matches){this.particles.clear();this.dragons.clear();this.render();}};this.media.addEventListener('change',this.onReduced);
+  this.frame=now=>{const dt=this.last?now-this.last:0;this.last=now;if(this.active()){this.particles.update(dt);this.dragons.update(dt);this.render();}this.raf=this.view.requestAnimationFrame(this.frame);};this.raf=this.view.requestAnimationFrame(this.frame);
  }
  active(){return !this.media.matches&&!this.doc.hidden&&this.scene.dataset.paused!=='true'&&this.scene.dataset.offscreen!=='true'&&this.doc.body.dataset.gardenPaused!=='true';}
  activate(id){
@@ -131,5 +134,5 @@ export class GardenWorldLife{
    const v=particlePose(p);n.setAttribute('transform',`translate(${v.x.toFixed(2)} ${v.y.toFixed(2)}) rotate(${v.rotation.toFixed(1)}) scale(${(p.size/3).toFixed(2)})`);n.setAttribute('opacity',(v.opacity*(p.kind==='mist'?.3:.9)).toFixed(3));
   }
  }
- destroy(){this.view.cancelAnimationFrame(this.raf);this.media.removeEventListener('change',this.onReduced);this.observer?.disconnect();this.svg.remove();this.targets.remove();}
+ destroy(){this.view.cancelAnimationFrame(this.raf);this.media.removeEventListener('change',this.onReduced);this.observer?.disconnect();this.dragons.destroy();this.svg.remove();this.targets.remove();}
 }

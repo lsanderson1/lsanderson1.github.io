@@ -24,7 +24,7 @@ const details=[
 ];
 const homeDetails=[
  ['Home again! This is my little garden, and I’m happy you came to visit. Make yourself cozy while I tuck my wings in!', 'ただいま！ここがわたしのお庭だよ。遊びに来てくれてうれしいな。羽をたたむから、のんびりしていってね！'],
- ['Welcome to my little home! My leaf nest is lovely for naps, but having company is worth staying awake for.', 'わたしのおうちへようこそ！葉っぱの巣でお昼寝するのも好きだけど、一緒に過ごす時間も大好き。'],
+ ['Welcome to my little home! My cozy roost is lovely for naps, but having company is worth staying awake for.', 'わたしのおうちへようこそ！ふかふかのねぐらでお昼寝するのも好きだけど、一緒に過ごす時間も大好き。'],
  ['Back in my own garden! I love a little adventure, but coming home with a friend makes my wings extra happy.', 'わたしのお庭に帰ってきた！冒険も好きだけど、お友だちと一緒に帰ると羽までうれしくなっちゃう。'],
  ['You called me home! We can watch the pond, peek at my books, or simply have a cozy little chat here.', 'おうちに呼んでくれたんだね！池を眺めたり、本をのぞいたり、ここでのんびりお話ししたりしよう。'],
  ['Ahh, my little garden home! There’s room for big discoveries here—and very small dragon naps. I’m glad you’re here with me.', 'ああ、わたしのお庭だ！大きな発見も、小さなドラゴンのお昼寝もできるおうち。一緒にいられてうれしいな。'],

@@ -1,0 +1,24 @@
+{
+  "tool": "built-in image_gen",
+  "date": "2026-10-09",
+  "purpose": "Rear-facing wingbeat companions; original side and turn sheets preserved.",
+  "selectedAssets": [
+    {
+      "asset": "lavender-rear.png",
+      "reference": "lavender-turn.png",
+      "source": "exec-3c079be8-5fbf-41b6-9edf-db12aec01944.png"
+    },
+    {
+      "asset": "amber-rear.png",
+      "reference": "amber-turn.png",
+      "source": "exec-d515454c-3e1e-4263-bb0c-a582c3bd12ca.png"
+    },
+    {
+      "asset": "sage-rear.png",
+      "reference": "sage-turn.png",
+      "source": "exec-a6c7f110-5afe-4c8d-b635-40f58f9dfd40.png"
+    }
+  ],
+  "prompt": "Use case: identity-preserve. Asset type: transparent sprite atlas, eight-frame rear-view wingbeat.\nInput Image1 is the approved dragon design reference. Make a NEW companion animation sheet, not a redesign. Use ONLY the straight BACK VIEW shown in its last (bottom-right) frame. The dragon flies AWAY from the viewer in every cel; no face turn, no yaw, no side view. Preserve its slim anatomy, four tucked legs, horns, dorsal spines, long tapered tail, precise palette and softly painted shading.\nDraw 8 genuinely DIFFERENT stages of one complete symmetric wing FLAP, arranged left-to-right top row then bottom row, 4 columns x 2 rows on 1536x1024 transparent canvas. Frame1: wings extended level, matching reference last pose. Frame2: wings half raised. Frame3: wings high in a tall V. Frame4: wings halfway down from high. Frame5: wings sweeping through horizontal. Frame6: wings clearly lowered below shoulder line with membranes visible (NOT level!). Frame7: lowest downstroke, tips down and inward, elbows bent anatomically. Frame8: recovery halfway up toward Frame1. Both wings move together around fixed shoulder roots; no extra spike above leading edges, no extra wings.\nKeep the head, torso, hind legs, scale and position CONSISTENT across all 8 frames; only wings, subtle tail follow-through and tiny body response move. Every cell 384x512; torso center at local x192,y280, horns around y155 and curled tail ends around y455; maximum wingspan 340px, raised tips may reach y40. Keep ALL anatomy inside each cell with at least 16px transparent padding. No overlapping adjacent cells. No shrinking into distance in this sheet, no camera or angle changes. Wings must show a full readable UP and DOWN beat, not eight glide poses.\nTrue transparent alpha background, no backdrop, colored haze, glow, shadow disks, labels, borders, numbering, or text.",
+  "variationSuffix": "This sheet is specifically for the {kind} dragon in Image1. Preserve that reference’s colors exactly."
+}

@@ -1,18 +1,18 @@
 // All perches share the illustration's coordinates. The viewport crops the
 // picture and pans with Yuki; her feet and travel path are remapped together.
-import {HomeDialogue} from './home-dialogue.mjs';
+import {HomeDialogue} from './home-dialogue.mjs?v=2';
 import {attachAmbience} from './ambience.mjs';
 import {GardenCamera,attachGardenExplorer} from './camera.mjs?v=2';
 import {GardenPond} from './pond.mjs?v=3';
-import {GardenWorldLife} from './world-life.mjs?v=3';
+import {GardenWorldLife} from './world-life.mjs?v=5';
 export const gardenSpots={nest:{x:.20,y:.775},pond:{x:.35,y:.655},lookout:{x:.53,y:.48},books:{x:.745,y:.635},treasures:{x:.67,y:.80}};
 export function gardenPoint(id,rect,scroll=0){const p=gardenSpots[id]??gardenSpots.nest;return {x:rect.left+p.x*rect.width,y:rect.top+scroll+p.y*rect.height};}
 const tales={
- nest:{en:['THE LEAF NEST','An adventure needs a nap, too.','Soft leaves? Check. Room for my tail? Check. One tiny nap before a very important adventure… zzz. Tap me when you’re ready to explore!','Why do you curl up in your nest?'],ja:['葉っぱの巣','冒険にも、お昼寝にも。','ふわふわの葉っぱ、よし。しっぽの場所、よし。あとは……すやぁ。起きたら、一緒に庭を探検しようね！','巣ではどんなふうに過ごしているの？'],emotion:'neutral'},
+ nest:{en:['THE DRAGON ROOST','An adventure needs a nap, too.','Soft cushion? Check. Room for my tail? Check. One tiny nap before a very important adventure… zzz. Tap me when you’re ready to explore!','Why do you curl up in your nest?'],ja:['ドラゴンのねぐら','冒険にも、お昼寝にも。','ふわふわのクッション、よし。しっぽの場所、よし。あとは……すやぁ。起きたら、一緒に庭を探検しようね！','巣ではどんなふうに過ごしているの？'],emotion:'neutral'},
  pond:{en:['THE LILY POND','A very important reflection.','There’s a little dragon in the water! Oh. That’s me. I like watching the ripples here—much easier than trying to catch every falling petal. Shall we sit for a moment?','Tell me a little story about the pond in your garden.'],ja:['スイレンの池','水面に、小さなドラゴン。','あっ、池にもドラゴン！……わたしだった。花びらを全部追いかけるのは大変だけど、波紋を眺めるのは得意。ちょっと一緒に座ろうか。','庭の池にまつわるお話を聞かせて。'],emotion:'amused'},
  lookout:{en:['THE SKY LOOKOUT','Someday, a flying library.','See all that sky? Someday I’d love a tiny flying library, with warm lanterns and petal bookmarks. English signs, Japanese signs… and very gentle landings. That last bit still needs practice!','Tell me more about your dream of a flying library.'],ja:['空の見晴らし台','いつか、空飛ぶ図書館を。','あの広い空に、小さな図書館を飛ばしたいんだ。あたたかい灯りと、花びらのしおり。日本語と英語の案内も！着地はそーっと……そこはまだ練習中。','空飛ぶ図書館の夢について、もっと聞かせて。'],emotion:'delighted'},
  books:{en:['THE READING NOOK','A small corner for big questions.','The Lantern Keeper taught me to look carefully and ask when I’m not sure. These books remind me of that. I can help you explore this portfolio, too—one little question at a time. What are you curious about?','How did the Lantern Keeper help you become a guide?'],ja:['読書のコーナー','大きな疑問も、少しずつ。','よく見て、わからなかったら聞く。灯りの番人が教えてくれた、大切なこと。本を開くと、いつも思い出すんだ。このサイトの案内も任せてね。何が気になる？','灯りの番人には、案内役としてどんなことを教わったの？'],emotion:'thoughtful'},
- treasures:{en:['LITTLE TREASURES','Not all treasure has to sparkle.','A smooth pebble, a paper crane, and a notebook full of questions. A pebble can hold a page open! My first guiding adventure involved a paper crane; it taught me to ask where someone wants to go before flapping off.','Tell me about your paper-crane guiding adventure.'],ja:['小さな宝物','きらきらしてなくても、宝物。','つるつるの小石、紙の鶴、疑問を集めたノート。小石は本のページを押さえるのにぴったり！初めての案内は紙の鶴が相手だったんだ。飛び出す前に、行き先を聞くのが大事だってわかったよ。','紙の鶴を案内したときのお話を聞かせて。'],emotion:'proud'}
+ treasures:{en:['LITTLE TREASURES','Not all treasure has to sparkle.','A crystal orb, a paper crane, and a notebook full of questions. The orb catches the light—I like imagining little adventures in it, not predicting the future! My first guiding adventure involved a paper crane; it taught me to ask where someone wants to go before flapping off.','Tell me about your paper-crane guiding adventure.'],ja:['小さな宝物','きらきらしてなくても、宝物。','きらきらの水晶玉、紙の鶴、疑問を集めたノート。水晶玉を見て冒険を想像するのが好きなんだ。未来が見えるわけじゃないけどね！初めての案内は紙の鶴が相手だったんだ。飛び出す前に、行き先を聞くのが大事だってわかったよ。','紙の鶴を案内したときのお話を聞かせて。'],emotion:'proud'}
 };
 export class GardenHome{
  constructor(scene,api,{ja=false,reduced=false,storage}={}){
@@ -91,7 +91,7 @@ export class GardenHome{
   if(this.pending&&(settled||this.pending.hover&&hovering)&&!locked){const p=this.pending;this.pending=null;this.remark();
    if(p.splash)this.pond?.play();
    if(p.chase){this.chase=p.chase;this.doc.querySelector('.yg-chase-petal').hidden=true;const b=this.doc.querySelector('[data-garden-action="chase"]');b.disabled=false;if(this.chase===3){this.chase=0;b.textContent=this.ja?'もう一度、花びらを追う':'Chase Petals Again';this.say(this.ja?'3枚追いかけた！ふぅ、ちょっと休憩！':'Three petals followed! Phew. These little wings earned a rest.');}else this.say(this.ja?'追いついた！次の花びらはどこかな？':'Caught up! Where will the next petal go?');this.api.react({text:this.state.textContent,emotion:p.emotion,gesture:'none'});return;}
-   if(p.sleep&&!open){this.api.sleep();this.say(this.ja?'ふわふわの巣で、すやすや…。':'Curled up in my leaf nest… zzz.');}
+   if(p.sleep&&!open){this.api.sleep();this.say(this.ja?'ふわふわの巣で、すやすや…。':'Curled up in my cozy roost… zzz.');}
    else{const t=tales[p.id];if(p.id!=='nest'&&!p.hover)this.api.point(p.id==='books'?'pointRight':'pointLeft');this.api.react({text:t[this.ja?'ja':'en'][2],emotion:p.emotion??t.emotion,gesture:'talkOpen'});this.say(p.hover?(this.ja?'ぱたぱたしながら、夢の図書館を考え中。':'Little wingbeats, big library dreams. Choose “Land Softly” when you like.'):(this.ja?'着いたよ！気になることがあったら、わたしに聞いてね。':'Here we are! Tap me to ask about this little corner.'));}
   }
   if(!locked&&!open&&!busy&&!this.pending&&settled&&this.inactive>90000){this.inactive=0;void this.go('nest');}

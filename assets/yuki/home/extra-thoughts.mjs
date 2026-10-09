@@ -3,11 +3,11 @@ export const extraThoughts={
  nest:[
  ['My nest is round because my best sleeping shape is also round.','巣が丸いのは、わたしの寝る形も丸いから。'],
  ['I tucked a sunbeam beside my tail. I hope it stays for the nap.','しっぽの横に日なたを見つけた。お昼寝の間、ここにいてね。'],
- ['The breeze can visit, but it has to leave my blanket leaves alone.','風も遊びに来ていいよ。でも、お布団の葉っぱは持っていかないでね。'],
+ ['The breeze can visit, but it has to leave my cushion alone.','風も遊びに来ていいよ。でも、クッションは持っていかないでね。'],
  ['A tiny stretch, then a tiny curl. That was a very busy afternoon.','ちょっと伸びて、ちょっと丸まって。忙しい午後だったなあ。'],
- ['This leaf makes a lovely pillow. It is a terrible hat, though.','この葉っぱ、枕にはぴったり。帽子には向いてなかったけど。'],
+ ['This cushion makes a lovely pillow. It is a terrible hat, though.','このクッション、枕にはぴったり。帽子には向いてなかったけど。'],
  ['I dream in little adventures. The landings are much better in dreams.','夢の中でも小さな冒険。着地は、夢のほうが上手だよ。'],
- ['No treasure hoard here. Unless you count especially comfortable leaves.','ここに金銀の山はないよ。寝心地のいい葉っぱなら、たくさん！'],
+ ['A tiny treasure hoard and a very soft cushion. I know which one my tail prefers.','小さな宝の山と、ふかふかのクッション。しっぽのお気に入りは、どっちかな。'],
  ['I left a little gap for my wings. They had a long day being wings.','羽の場所も空けておいた。今日も一日、よく羽ばたいたもんね。'],
  ['Please wake me for a good question. Or a really interesting butterfly.','面白い質問があったら起こしてね。すごく気になる蝶でもいいよ。'],
  ['My tail tried to take the whole pillow. We reached a sleepy agreement.','しっぽが枕を独り占めしそうだった。半分ずつで落ち着いたよ。'],
@@ -53,16 +53,16 @@ export const extraThoughts={
  ['I am not stuck on this page. I am giving the idea a little room to land.','このページで止まってるんじゃないよ。考えが着地するのを待ってるんだ。']
  ],
  treasures:[
- ['I polished the pebble with my paw. It is now a slightly more official pebble.','小石を手で磨いたよ。ちょっと立派な小石になった。'],
+ ['I polished the crystal orb with my paw. Now it has a very official little sparkle.','水晶玉を手で磨いたよ。ちょっと立派なきらきらになった。'],
  ['The paper crane has travelled farther in my stories than in the breeze.','この紙の鶴、風よりも、お話の中で遠くへ旅してるね。'],
  ['I keep small things that remind me to notice small things.','小さなものに気づけるように、小さな宝物を大切にしてるんだ。'],
  ['This is my collection, not clutter. The distinction is very dragon-important.','これは散らかってるんじゃなくて、コレクション。ドラゴンには大事な違い！'],
  ['A question written down is harder for the breeze to carry away.','疑問を書いておけば、風にも持っていかれにくいよね。'],
  ['I might draw a tiny nest on my map so nobody mistakes home for a pond.','地図に小さな巣も描こうかな。おうちと池を間違えないように。'],
- ['Some dragons collect crowns. I have an exceptionally dependable page weight.','王冠を集めるドラゴンもいるけど、わたしには頼れる文鎮があるよ。'],
+ ['Some dragons collect crowns. I have a pearl, little gems, and a rather excellent notebook.','王冠を集めるドラゴンもいるけど、わたしには真珠と小さな宝石と、すてきなノートがあるよ。'],
  ['This little crane is excellent at reminding me to slow down and listen.','この小さな鶴を見ると、落ち着いて話を聞こうって思い出せるんだ。'],
  ['A treasure is sometimes just a good memory with something to hold.','宝物って、手に持てる思い出なのかもしれないね。'],
- ['I have room for one more pebble. My notebook may disagree.','小石をもうひとつ置けそう。ノートは反対するかもしれないけど。'],
+ ['I have room for one more little gem. My notebook may disagree.','小さな宝石をもうひとつ置けそう。ノートは反対するかもしれないけど。'],
  ['The best thing here is not shiny. It is having someone to show it to.','ここでいちばんうれしいのは、きらきらよりも、見せたい相手がいること。']
  ]
 };

@@ -100,7 +100,7 @@ test('English and Japanese prompts share canonical lore, contextual warmth and f
   const prompt=personalityInstructions(lang),body=modelRequest({...request,lang},{pages:[]});
   assert(body.messages[0].content.includes(prompt));
   for(const fact of Object.values(yukiStory))assert(prompt.includes(fact));
-  assert.match(prompt,/cherry tree/);assert.match(prompt,/falling petals/);assert.match(prompt,/rather than gold/);
+  assert.match(prompt,/cherry tree/);assert.match(prompt,/falling petals/);assert.match(prompt,/bright ideas still matter more to her than gold/);
   assert.match(prompt,/not facts about Lloyd/);assert.match(prompt,/Do not invent additional origin stories/);
   assert.match(prompt,/avoid repeating a recent joke/);assert.match(prompt,/Do not end every answer with a question/);
   assert.match(prompt,/not to force novelty in every answer/);assert.match(prompt,/recurring motifs are fine/);

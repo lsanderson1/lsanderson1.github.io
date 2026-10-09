@@ -1,0 +1,139 @@
+{
+  "tool": "built-in image_gen",
+  "skill": "imagegen",
+  "date": "2026-10-09",
+  "selectedAssets": [
+    {
+      "asset": "assets/yuki/home/dragons/lavender.png",
+      "source": "exec-03b80607-e2af-4687-bd1d-563645ce98c0.png"
+    },
+    {
+      "asset": "assets/yuki/home/dragons/amber.png",
+      "source": "exec-507666c8-598e-4f9b-8edf-6f2080ffeff7.png"
+    },
+    {
+      "asset": "assets/yuki/home/dragons/sage.png",
+      "source": "exec-f7eba835-6d39-45b7-b084-7708d878bd61.png"
+    },
+    {
+      "asset": "assets/yuki/home/dragons/jade.png",
+      "source": "exec-ca0e4d41-2e13-4698-9524-835e9a41fa81.png"
+    },
+    {
+      "asset": "assets/yuki/home/dragons/cloud.png",
+      "source": "exec-ca092f07-4807-4356-96fb-c8db0f3d1657.png"
+    },
+    {
+      "asset": "assets/yuki/home/dragons/lavender-turn.png",
+      "source": "exec-298eaf80-1e81-4570-aa3e-dfeb1eb5b199.png"
+    },
+    {
+      "asset": "assets/yuki/home/dragons/amber-turn.png",
+      "source": "exec-f23ff1b2-778e-4248-af4e-89aaf86d17f2.png"
+    },
+    {
+      "asset": "assets/yuki/home/dragons/sage-turn.png",
+      "source": "exec-3d6c82be-2c05-4809-8ae8-78b51ab39301.png"
+    },
+    {
+      "asset": "assets/yuki/home/dragons/jade-turn.png",
+      "source": "exec-1dbd58b4-4273-4df4-be51-befcd340eee0.png"
+    },
+    {
+      "asset": "assets/yuki/home/dragons/cloud-turn.png",
+      "source": "exec-52630856-8444-4258-a940-7c2a771d84de.png"
+    }
+  ],
+  "directions": "Both directions use the same original atlas art via horizontal runtime mirroring. No raster recoloring, silhouette edits, or background removal by code.",
+  "reverted": "Cloud turn keeps exec-52630856-8444-4258-a940-7c2a771d84de.png; the extra-hind-leg revision was rejected.",
+  "prompts": {
+    "wingCorrections": {
+      "prompt": "Use case: precise-object-edit. Image 1 is the original animation sheet to edit. Image 2 is the user's close-up showing the exact defect.\nDo a tiny surgical cleanup ONLY: remove the thin extra upward-pointing spur/prong that sticks ABOVE the curved leading edge of the LARGE foreground wing. In Image2 it is the narrow triangular projection starting near x108,y10 and descending diagonally to the large wing's wrist near x160,y84. It is NOT the smaller full wing to the right. Keep that smaller full far wing unchanged.\nIn Image1 the unwanted spur is visible in the first frame at approximately x153,y83 down to x213,y165, and repeats in several raised-wing frames in the bottom row. Remove this little spike and its tiny connecting web wherever it projects outside the proper smooth top edge of the large wing. Replace only the removed outside protrusion with transparent pixels, leaving ONE smooth graceful upper wing contour.\nDo NOT remove or reshape either main wing. Do NOT change wing attachment, body, legs, horns, head, tail, palette, shading, proportions, frame poses or frame layout. Preserve the ORIGINAL appearance of Image1, not a redesign. No added wings, no other embellishments. 1536x1024 transparent PNG, same 4x2 frames and original exact positions. Keep alpha genuinely transparent with no added backdrop, haze, text or grid.",
+      "inputs": [
+        {
+          "name": "lavender",
+          "path": "exec-471e48df-2a94-42db-8ae1-4f0f3e4a8dee.png"
+        },
+        {
+          "name": "amber",
+          "path": "exec-02d895fc-76f0-4dca-965d-77ecc8f47fb7.png"
+        },
+        {
+          "name": "sage",
+          "path": "exec-b69758e8-8858-4ae9-8a86-d5fb3941e22d.png"
+        }
+      ],
+      "reference": "C:/Users/llsan/OneDrive/Pictures/Screenshots/スクリーンショット 2026-10-09 192502.png"
+    },
+    "turns": [
+      {
+        "name": "lavender-turn",
+        "paths": [
+          "exec-31e1ec4d-b6f6-4ecc-ae9d-ceeb42ec32ed.png",
+          "exec-03b80607-e2af-4687-bd1d-563645ce98c0.png"
+        ],
+        "prompt": "Use case: precise-object-edit. Image1 is the existing eight-frame lavender dragon TURN-AWAY sheet. Image2 is its approved corrected side-view sheet for wing contour reference.\nKeep Image1's eight progressively rotating side-to-rear flight poses, exact body proportions, face, four legs, lavender color, pink membranes, cream belly and painterly shading. ONLY remove the unwanted thin pointed spur that pokes above the large wing's curved top leading edge wherever it occurs in Image1, including frames1,2,3 and the later rear-wing edges. The large wing must have the same clean smooth upper silhouette as Image2; no little extra spike branching up from its upper edge. Preserve both actual main wings and all poses; do NOT remove the far wing. This is a tiny contour cleanup, not a redesign. Eight frames4x2,1536x1024,true transparent background, no text, no labels or grid."
+      },
+      {
+        "name": "cloud-serpent-turn",
+        "paths": [
+          "C:/Development/GitHub/lsanderson1.github.io/.yuki-cache/artwork/cloud-serpent-natural-feet-preview.png",
+          "exec-1dbd58b4-4273-4df4-be51-befcd340eee0.png"
+        ],
+        "prompt": "Use case: identity-preserve. Image1 is the exact approved pearl-white/blue serpent design, preserve it. Image2 is a POSE AND TURNING reference only, not the color or creature design.\nDraw eight smooth progressive views of the serpent from Image1 turning away into the distance in flight: frame1 right-facing side profile matching Image1; frame2 slight turn away; frame3 rear three-quarter25degrees; frame4 rear three-quarter45degrees; frame5 rear three-quarter60degrees; frame6 almost rear; frame7 full rear with gentle left tail curl; frame8 full rear with gentle right tail curl. Do NOT turn the face toward camera. Preserve pearlescent WHITE scaled body, blue belly plates, blue-lilac translucent fins, two smooth silver swept-back horns, slim whiskers, and FOUR small scaled legs with relaxed traditional dragon feet (three forward toes and one smaller opposing toe, short ivory claws). NO fur, no vapor or clouds, no wings, no antlers. Long graceful physical serpentine body, flowing tail with little fins. The turn rotates the entire head, neck and body naturally; tail trails below/behind.\nSame soft painted bright-fantasy style as Image1. All figures the SAME physical size; perspective foreshortening changes width but do not shrink the drawings between frames. Use4equal columns2rows on1536x1024; each384x512cell. Fit each complete dragon strictly inside its cell with25px transparent margin on all sides and stable shoulder center. Eight separate frames, no overlap or cropping of horns/whiskers/tail. Genuine transparent alpha, no backdrop, haze, glow, text, labels or panel borders."
+      }
+    ],
+    "matchingTurns": [
+      {
+        "name": "amber-turn",
+        "palette": "golden amber scales, cream belly and peach wing membranes, gold swept-back horns, no new frills or ornaments",
+        "path": "exec-507666c8-598e-4f9b-8edf-6f2080ffeff7.png",
+        "prompt": "Use case: identity-preserve. Image1 is the eight-frame TURN-AWAY pose sheet. Image2 is the approved amber dragon identity and colors.\nKeep Image1's exact eight gradually turning side-to-rear poses and body proportions, frame positions, four legs and two wings. Replace the lavender identity with the SAME dragon seen in Image2: golden amber scales, cream belly and peach wing membranes, gold swept-back horns, no new frills or ornaments. All8 frames must consistently match Image2, no lavender patches left. Keep soft painterly shading.\nThe top leading edges of the large wings must stay clean and smoothly curved as in BOTH references; do not restore the thin extra upward spur we removed. Preserve both true wings. No stocky body, no new crests, no antlers, no accessories, no extra limbs.\nTrue transparent PNG1536x1024,4columns2rows,same8framepositions. No background/haze, text, grid or labels."
+      },
+      {
+        "name": "sage-turn",
+        "palette": "sage green scales, light cream-green belly and mint teal wing membranes, light ivory swept-back horns, small leaf-shaped green ear frills exactly as in Image2",
+        "path": "exec-f7eba835-6d39-45b7-b084-7708d878bd61.png",
+        "prompt": "Use case: identity-preserve. Image1 is the eight-frame TURN-AWAY pose sheet. Image2 is the approved sage dragon identity and colors.\nKeep Image1's exact eight gradually turning side-to-rear poses and body proportions, frame positions, four legs and two wings. Replace the lavender identity with the SAME dragon seen in Image2: sage green scales, light cream-green belly and mint teal wing membranes, light ivory swept-back horns, small leaf-shaped green ear frills exactly as in Image2. All8 frames must consistently match Image2, no lavender patches left. Keep soft painterly shading.\nThe top leading edges of the large wings must stay clean and smoothly curved as in BOTH references; do not restore the thin extra upward spur we removed. Preserve both true wings. No stocky body, no new crests, no antlers, no accessories, no extra limbs.\nTrue transparent PNG1536x1024,4columns2rows,same8framepositions. No background/haze, text, grid or labels."
+      }
+    ],
+    "originalSide": "Use case: stylized-concept.\nAsset type: transparent animated game sprite sheet for very small DISTANT dragons in a bright painterly fantasy castle garden.\nCreate exactly EIGHT animation cels in a precise regular FOUR COLUMNS by TWO ROWS grid on a transparent 1536x1024 canvas (each cell 384x512). No visible grid, no text, no numbers, no background or cast shadow. Each cell contains the SAME one small graceful friendly western dragon flying toward the RIGHT, in side/three-quarter view. Exactly two membranous bat-like wings, four small tucked legs, a rounded snout with two little horns, a slender curved tapered tail. Dusty lavender-blue body, muted rosy wing membranes, warm ivory underside, sunlight from upper left. Soft hand-painted storybook finish, delicate contour, readable compact silhouette, NOT a black silhouette, not a bird, not a baby dragon mascot, no glasses or accessories.\nKeep the body at precisely the SAME position, same size and same angle in every cell: torso centered at x=192,y=275 relative to each cell; nose at x=300,y=250; tail tip at x=70,y=310. Full silhouette including wings always INSIDE the cell with generous empty margin; no cell overlaps. The dragon occupies about 250px width and at most 300px height within each 384x512 cell.\nAnimation order left to right, first row then second: one smoothly cycling wingbeat. Frame 1 wings high raised; frame 2 mid downstroke; frame 3 nearly horizontal; frame 4 wings low fully down; frame 5 wings beginning recovery; frame 6 mid recovery; frame 7 nearly raised; frame 8 almost same raised pose as frame 1 for seamless looping. Body, head and feet remain aligned without jumping or changing size; tail gently follows through. Wings change pose naturally while preserving ribs and silhouette. No blurry transitions or multiple ghosts. Production-ready clean alpha outside each dragon; eight separate non-touching cels.",
+    "variants": [
+      {
+        "name": "amber",
+        "prompt": "Use case: precise-object-edit. Input image 1 is an animation sheet EDIT TARGET, 1536x1024, exactly 4 columns by 2 rows. Preserve its true transparent background, exact equal cell grid, torso/head registration and frame-by-frame wingbeat poses. Each cell must have generous alpha margins and no overlaps, no backdrop, no shadows behind characters, no labels or grid. Create a distinct friendly dragon SPECIES VARIANT in all 8 cells consistently. Full right-facing side/three-quarter dragon, same warm sunlit soft painterly storybook rendering. These will fly at small scale in the distant sky of a bright fantasy castle garden. Replace the lavender dragon with a compact amber-gold dragon: a slightly rounder chest, short rounded snout, two gently curved small ivory horns, warm apricot membranous wings with cream ribs, golden scales, cream belly, short chunky tucked legs and a tapered curling tail. Happy gentle appearance, no accessories. Maintain recognisable graceful flying silhouette, exactly two wings and four tucked legs. Preserve the torso anchor and nose positions and the same eight wingbeat phases. This must look like a different warm-colored dragon, not recoloring the background."
+      },
+      {
+        "name": "sage",
+        "prompt": "Use case: precise-object-edit. Input image 1 is an animation sheet EDIT TARGET, 1536x1024, exactly 4 columns by 2 rows. Preserve its true transparent background, exact equal cell grid, torso/head registration and frame-by-frame wingbeat poses. Each cell must have generous alpha margins and no overlaps, no backdrop, no shadows behind characters, no labels or grid. Create a distinct friendly dragon SPECIES VARIANT in all 8 cells consistently. Full right-facing side/three-quarter dragon, same warm sunlit soft painterly storybook rendering. These will fly at small scale in the distant sky of a bright fantasy castle garden. Replace the lavender dragon with a slender sage-green forest dragon: elegant longer neck, slim tapered tail, little leaf-shaped ear frills, small swept-back ivory horns, emerald-sage scales, pale mint belly, broad graceful moss-teal bat-like membrane wings with light jade ribs. Keep friendly, not frightening, with four small tucked legs. Preserve torso anchor and nose positions and same eight wingbeat phases. A clearly distinct slender dragon silhouette. No feathers, no accessories, no scenery."
+      }
+    ],
+    "additionalDesigns": [
+      {
+        "id": "stocky",
+        "prompt": "Use case: stylized-concept. Asset: precisely aligned EIGHT-FRAME animation sprite sheet on a genuinely transparent background, 1536x1024, FOUR equal columns and TWO equal rows, each cell384x512. Exactly one full right-facing flying dragon per cell, no overlaps, no grid, no text, no scene or props, no shadow outside the dragon. Consistent anatomy and scale between frames. Torso center at cell-relative x205,y285; nose near x320,y255. Keep every extremity inside its cell with at least20px margin. Soft polished painterly storybook illustration with warm sunny highlights, delicate contours, for the distant sky of a bright fantasy garden. Design a DISTINCT squat mountain dragon with a broad pear-shaped barrel chest, very SHORT neck, big square-rounded snout, curled ram-like horns, large ear fins, stubby tucked legs, a short thick spade-tipped tail, and two broad rounded leathery bat wings with deep scalloped edges. Honey-ochre body, pale gold belly, terracotta wing membranes. NOT a long-necked slender dragon. Show a complete gentle wingbeat across eight cels: wings high, descending, level, fully lowered, low recovery, level recovery, almost raised, raised. Strong slow powerful strokes, weighty body stays aligned, soft tail follow-through. All frames clearly the same compact stocky design, cuddly not intimidating."
+      },
+      {
+        "id": "serpent",
+        "prompt": "Use case: stylized-concept. Asset: precisely aligned EIGHT-FRAME animation sprite sheet on a genuinely transparent background, 1536x1024, FOUR equal columns and TWO equal rows, each cell384x512. Exactly one full right-facing flying dragon per cell, no overlaps, no grid, no text, no scene or props, no shadow outside the dragon. Consistent anatomy and scale between frames. Torso center at cell-relative x205,y285; nose near x320,y255. Keep every extremity inside its cell with at least20px margin. Soft polished painterly storybook illustration with warm sunny highlights, delicate contours, for the distant sky of a bright fantasy garden. Design a DISTINCT WINGLESS eastern sky dragon, a very long slender ribbon-like seafoam jade serpentine body, cream underside, small deer-like branching horns, flowing pale mane and long fine whiskers, four tiny legs close to the body, and long tapered finned tail. This is a friendly elegant sky serpent, NO WINGS, not the body shape of a western dragon. Arrange its elongated body in a readable sideways soft S-curve so it fits within each cell, head toward RIGHT, tail trailing LEFT. EIGHT successive gently undulating airborne swim poses: a smooth wave travels from shoulders along spine to tail over a seamless loop, with hair and whiskers flowing backward. Head stays registered at x310,y245 in all frames, body midpoint x205,y285. Clear changes of body curvature, not eight static copies. Dragon-shaped head and tiny paws make it a dragon rather than an ordinary snake. Muted jade with golden mane accents, lovely airy fairytale character."
+      }
+    ],
+    "additionalTurns": [
+      {
+        "id": "lavender-turn",
+        "reference": "exec-471e48df-2a94-42db-8ae1-4f0f3e4a8dee.png",
+        "prompt": "Use case: identity-preserve. Input image1 is the DESIGN REFERENCE and animation sheet to transform into a NEW TURNING animation. Output exactly EIGHT cels, 4 columns by2 rows, transparent1536x1024. Each cell384x512; full body inside with at least24px margin. Same dragon identity, colors, proportions and rendering as the reference. A smooth cinematic turn from flying RIGHT in side view to flying AWAY from viewer into the distance, viewpoint rotates around its body. Row-major frames: 1 right-facing side view, 2 angled15degrees away, 3 angled30degrees away, 4 rear-right45degree three-quarter view, 5 rear-right60degrees, 6 rear75degrees, 7 almost direct back, 8 direct rear view. Head becomes smaller and progressively hidden behind neck, back and tail come toward camera; no sudden face-direction flips. Keep center-of-mass at cell x220,y300 and body scale consistent; perspective foreshortening is natural but no deliberate zoom shrinking. Return no sky or backdrop, no shadows outside dragons, no text, no grid. The lavender-blue western dragon banks gracefully away with both rosy membrane wings extended in a relaxed GLIDE, slight roll consistent with the turn. Four little legs tucked in. Same long tapered tail, horns, head and body, soft fairytale illustration. Final rear view shows two equally coherent wings spreading left and right, dorsal spine center, long tail toward viewer. Keep at least32px safe horizontal margin even at full wingspan."
+      },
+      {
+        "id": "serpent-turn",
+        "reference": "exec-ca0e4d41-2e13-4698-9524-835e9a41fa81.png",
+        "prompt": "Use case: identity-preserve. Input image1 is the DESIGN REFERENCE and animation sheet to transform into a NEW TURNING animation. Output exactly EIGHT cels, 4 columns by2 rows, transparent1536x1024. Each cell384x512; full body inside with at least24px margin. Same dragon identity, colors, proportions and rendering as the reference. A smooth cinematic turn from flying RIGHT in side view to flying AWAY from viewer into the distance, viewpoint rotates around its body. Row-major frames: 1 right-facing side view, 2 angled15degrees away, 3 angled30degrees away, 4 rear-right45degree three-quarter view, 5 rear-right60degrees, 6 rear75degrees, 7 almost direct back, 8 direct rear view. Head becomes smaller and progressively hidden behind neck, back and tail come toward camera; no sudden face-direction flips. Keep center-of-mass at cell x220,y300 and body scale consistent; perspective foreshortening is natural but no deliberate zoom shrinking. Return no sky or backdrop, no shadows outside dragons, no text, no grid. The WINGLESS jade eastern sky serpent curves gracefully away like swimming through air. Preserve small antler horns, pale flowing mane, whiskers, tiny paws, long ribbon body and finned tapered tail. NO WINGS. While it turns, a gentle S-wave passes down body to tail. Side view starts as a longhorizontal soft S, rear-right three-quarter foreshortens the whole serpentine body, finalrear view long body and tail recede along depth axis with only little head visible in front. Not a western dragon, no legs added."
+      },
+      {
+        "id": "wyvern",
+        "prompt": "Use case: stylized-concept. Create an EIGHT-CEL seamless wingbeat sheet, 4columns x2rows transparent1536x1024, eachcell384x512. New distinctive friendly SLENDER SKY WYVERN design for a sunny storybook fantasy garden: exactly TWO hind legs, two extremely long swept-back angular bat wings that serve as forelimbs, elegant narrow beak-like dragon muzzle (not a bird beak), two long curved backward horns, streamlined body, long ribbon tail with a SMALL diamond fin. Icy pearl-white body with soft blue-grey shading and deep dusty-indigo wing membranes with pale silver ribs. Clearly a different silhouette from a stocky four-legged dragon: lean aerodynamic long triangular wings, small slim head, elegant. Soft painterly polish, warm sunlight, no black heavy outline. Allright-facing side/three-quarter view. Eight wingbeatposes high->mid-down->level->low->low-recovery->mid-recovery->nearly-high->high. Body center cellx220,y300, nose nearx325,y270, stable fullbody scale; clean generous24px transparentmargin eachcell, nooverlappingextremities, no celllabels, nogrid, no shadow/backdrop, no extra props. Wing geometry changes naturally, not copies ofthe same pose."
+      }
+    ],
+    "cloudFeetFinal": "Use case: precise-object-edit.\nImage1 is the ORIGINAL artwork and the edit target. Image2 shows the desired slightly more curled foot pose ONLY. Ignore Image2's much brighter colors and other changes.\nMake a minimal edit to ONLY the toes/ankles of Image1: naturally relax and gently curl the small scaled dragon toes, instead of the stiff evenly spread pose. Four digits: THREE slender forward toes plus ONE smaller opposing toe. Three front toes should remain individually recognizable on the near front foot; lightly stagger their curls, with natural overlap of the back toe. Do not collapse them into a two-pronged pincer.\nKeep the ivory claws SHORT just as in Image1, slightly hooked tips at the end of each toe, NOT large crescent/sickle shapes, not longer than a third of its toe. Keep the slim scaled ankle and proportional foot size. These are traditional East Asian dragon feet loosely curled during flight.\nPreserve Image1's exact soft pearl white and pale blue palette, muted blue-lilac fins, head shape, expression, eye color, horns, body, scales, tail, painterly softness, all eight poses and their positions. Do not boost blue saturation, contrast, brightness, sharpness or glow. Preserve every non-foot area as closely as possible.\nSame transparent1536x1024 eight-frame4x2 sprite sheet. No background, text or other additions."
+  }
+}
