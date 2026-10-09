@@ -117,7 +117,7 @@ test('greeting suppression also applies to empty history and focused explanation
   assert.match(body.messages[0].content,/Do not add another greeting/);
   assert.match(body.messages[0].content,/even when history is empty or a page changes/);
   assert.match(body.messages[0].content,/visitor explicitly says hello/);
-  assert.equal(body.messages.length,2);
+  assert.equal(body.messages.length,3);assert.match(body.messages.at(-2).content,/CURRENT REPLY CONTRACT/);
  }
 });
 

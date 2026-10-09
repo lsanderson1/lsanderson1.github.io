@@ -203,7 +203,7 @@ test('guide Explain resets the topic to the selected picture rather than old con
  const japanese=retrieveKnowledge(knowledge,{...request,message:'さっき案内してくれたところを、もう少し詳しく説明して。この作品とどう関係しているの？'});
  assert.equal(japanese.view.focus.sourceId,'/museum.html::i0');
  const explicit=retrieveKnowledge(knowledge,{...request,message:'Explain controller design patterns instead'});
- assert.equal(explicit.view.focus,null);assert.equal(modelRequest({...request,message:'Explain controller design patterns instead'},explicit).messages.length,4);
+ assert.equal(explicit.view.focus,null);assert.equal(modelRequest({...request,message:'Explain controller design patterns instead'},explicit).messages.length,5);
 });
 test('context travels with a message or a requested route follow-up, never passive scrolling',()=>{
  const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');

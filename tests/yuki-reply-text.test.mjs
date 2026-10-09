@@ -26,6 +26,14 @@ test('Japanese duplicate wrappers are cleaned without replacing particles or quo
  const ja='「羽ばたき」の仕組みは、小さな絵を順番に見せること。絵ごとに表示時間が決まっているから、動きの速さも調整できるよ。';
  assert.equal(cleanAssistantText(`${ja}','text':'${ja}'},`),ja);
 });
+
+test('Japanese corner-quote response field tails are rejected without changing ordinary quotations',()=>{
+ const text='小さな本でも、知らない世界へ連れていってくれるんだ。ゆっくりページをめくって、次に何が見つかるか想像するとわくわくする！';
+ assert.throws(()=>cleanAssistantText(text+'」「beats\':[{'));
+ assert.throws(()=>cleanAssistantText(text+'」「beats [{'));
+ assert.throws(()=>cleanAssistantText(text+'」、\'text\':\'別の返事'));
+ assert.equal(cleanAssistantText('「text」という名前の項目には、返事の文章が入るよ。'),'「text」という名前の項目には、返事の文章が入るよ。');
+});
 test('ambiguous, partial and mismatched nested responses fail closed instead of guessing',()=>{
  for(const text of [`${octopus}','text':'A different answer.'},`,`${octopus}','text':'unfinished`,`${octopus}','emotion':'neutral'}`,`{'text':'hello','emotion':'neutral','gesture':'none'}`,JSON.stringify({...cue(octopus),unexpected:'field'})]){
   assert.throws(()=>cleanAssistantText(text));assert.throws(()=>parseModel(output(text),{pages:[]}));
@@ -84,6 +92,7 @@ test('the actual message renderer protects both speech and saved history without
  const elements=new Map(),$=key=>{if(!elements.has(key))elements.set(key,make());return elements.get(key);};
  const document={createElement:()=>make(),createTextNode:t=>t};
  const add=new Function('cleanAssistantText','unfinishedReply','unfinishedNotice','document','$','tr','online','ja',`return (${fn.trim()});`)(cleanAssistantText,unfinishedReply,unfinishedNotice,document,$,(en)=>en,false,false);
+ add('assistant',null,false);assert.equal($('.yuki-log').children.length,0);assert.equal($('.yuki-speech').children.length,0,'preview translations stay silent, not fake assistant messages');
  add('assistant',broken,false);assert.equal($('.yuki-speech').children[0].children[1],octopus);assert.equal($('.yuki-log').children[0].children[1],octopus);
  add('user',broken,false);assert.equal($('.yuki-log').children[1].children[1],broken);
  add('assistant',`${octopus}','text':'broken'}`,false);assert.match($('.yuki-speech').children[0].children[1],/got tangled/);

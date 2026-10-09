@@ -119,6 +119,17 @@ test('ordinary story or portfolio reply needs only one call and zero search cred
  const f=fixture({models:[{...answer,sourceIds:['home'],webQuery:''}]});const response=await f.handler(f.request({message:'What is your dream?'}),f.env);
  assert.equal(response.status,200);assert.equal(f.ai.length,1);assert.equal(f.reservations.length,1);assert.equal(f.calls.length,2);
 });
+
+test('fun facts require actual checked evidence, not a plausible unsupported model answer',async()=>{
+ for(const options of [{models:[{...answer,webQuery:''}]},{budget:429},{webData:{results:[]}}]){
+  const f=fixture(options),response=await f.handler(f.request({message:'Tell me a fun fact'}),f.env),value=await response.json();
+  assert.equal(response.status,200);assert.match(value.text,/couldn't check a source/);assert.deepEqual(value.sources,[]);
+ }
+ const off=fixture();const notice=await (await off.handler(off.request({message:'Tell me a fun fact',webSearch:false}),off.env)).json();
+ assert.match(notice.text,/couldn't check a source/);assert.equal(off.ai.length,0);
+ const good=fixture(),value=await (await good.handler(good.request({message:'Tell me a fun fact'}),good.env)).json();
+ assert.equal(value.text,answer.text);assert.equal(value.searchStatus,'used');assert.equal(value.sources[0].url,results.results[0].url);
+});
 test('search cap refuses provider call; AI can still explain without claiming live evidence',async()=>{
  const f=fixture({budget:429,models:[draft,{...answer,text:'I could not check that just now.',sourceIds:[]}]});const value=await(await f.handler(f.request(),f.env)).json();
  assert.equal(value.searchStatus,'limit');assert.equal(f.calls.length,2);assert.equal(f.ai.length,2);assert.equal(value.sources.length,0);assert.match(f.ai[1].body.messages[0].content,/WEB LOOKUP UNAVAILABLE/);
@@ -133,7 +144,7 @@ test('extra AI budget denial does not spend search credits or break normal chat'
  const f=fixture({extra:429});const response=await f.handler(f.request(),f.env),value=await response.json();assert.equal(response.status,200);assert.equal(f.calls.length,2);assert.equal(f.ai.length,1);assert.equal(f.reservations.length,2);assert.equal(value.searchStatus,'unavailable');assert.match(value.text,/couldn't check web/);
 });
 test('final model failure returns honest fallback, not an unfinished or invented lookup',async()=>{
- for(const model of [new Error('secret error'),{}]){const f=fixture({models:[draft,model]});const value=await(await f.handler(f.request({lang:'ja'}),f.env)).json();assert.equal(value.searchStatus,'unavailable');assert.match(value.text,/確認できなかった/);assert.equal(value.sources.length,0);assert.equal(f.ai.length,2);}
+ for(const model of [new Error('secret error'),{}]){const f=fixture({models:[draft,model]});const value=await(await f.handler(f.request({lang:'ja',message:'公式の情報を調べて教えて'}),f.env)).json();assert.equal(value.searchStatus,'unavailable');assert.match(value.text,/確認できなかった/);assert.equal(value.sources.length,0);assert.equal(f.ai.length,2);}
 });
 test('cancellation never starts a lookup after first inference',async()=>{
  const controller=new AbortController(),f=fixture({signal:controller.signal});const run=f.env.AI.run;f.env.AI.run=async(...args)=>{const result=await run(...args);controller.abort();return result;};

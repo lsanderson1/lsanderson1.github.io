@@ -8,7 +8,8 @@ import {VisitorInterests} from '../assets/yuki/runtime/visitor-interests.mjs';
 import {ConversationMoments} from '../assets/yuki/runtime/conversation-moments.mjs';
 import {packChatRequest,rememberReply} from '../assets/yuki/runtime/reply-variety.mjs';
 import {validReply,chatUnavailable,readSession} from '../assets/yuki/protocol.mjs';
-import {messageRecord,translationBatch,checkedTranslations,applyTranslations} from '../assets/yuki/runtime/conversation-language.mjs';
+import {messageRecord,translationBatch,checkedTranslations,applyTranslations,conversationHistory} from '../assets/yuki/runtime/conversation-language.mjs';
+import {replyLanguage,replyQualityIssues} from '../assets/yuki/runtime/reply-quality.mjs';
 // Execute the actual front-end request function with injected DOM/network
 // dependencies. No browser, credentials or live model requests are involved.
 const source=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
@@ -24,11 +25,12 @@ function fixture({network}={}){
   chatSession:new ChatSession(storage),conversationMemory:new ConversationMemory(storage,'en'),interests:new VisitorInterests(storage),searchPermission:{allowed:true},
   verification:{takeToken:async()=>{calls.verify++;return 'single-use-test-token';},stop:()=>{calls.stop++;}},
   tr:(en,jp)=>context.ja?jp:en,$:selector=>{if(!elements.has(selector))elements.set(selector,{value:'Draft to preserve',disabled:false,readOnly:false,hidden:true,setAttribute:()=>{},focus:()=>{}});return elements.get(selector);},
+  conversationLanguage:'en',replyLanguage,replyQualityIssues,conversationHistory,
   readingContext:()=>({}),updateReading:()=>{},translationUI:()=>{},drawMessages:()=>{},translationBatch,checkedTranslations,applyTranslations,wake:async()=>{},status:s=>calls.status.push(s),react:async()=>{},
   stopJourney:()=>{context.journeySerial++;},
   save:()=>storage.setItem('yuki-session-v1',JSON.stringify({savedAt:Date.now(),language:context.ja?'ja':'en',messages:context.messages,variety:context.variety})),
   readingMemory:{set:()=>{},clear:()=>{}},followUpReference:()=>null,packChatRequest,validReply,chatUnavailable,isGuideRequest:()=>false,
-  addMessage:(role,text)=>context.messages.push({role,text}),beginJourney:async()=>{},
+  addMessage:(role,text,_remember,_sources,_topics,_greeting,language=context.ja?'ja':'en')=>context.messages.push(messageRecord(role,text,language)),beginJourney:async()=>{},
   fetch:async(url,options)=>{calls.fetch.push(JSON.parse(options.body));return network?network(url,options):new Response(JSON.stringify(cue));},
  };
  vm.createContext(context);vm.runInContext(momentFunctions+run+clear+'\nthis.send=runChat;this.translate=translateConversation;this.clear=clearConversation;',context);
@@ -39,6 +41,22 @@ test('ordinary send uses verification once, stores pass, then continues without 
  const f=fixture({network:async()=>new Response(JSON.stringify({...cue,chatSession:pass}))});
  await f.send('Tell me about your library');assert.equal(f.calls.verify,1);assert.equal(f.calls.fetch[0].token,'single-use-test-token');assert.equal(f.context.messages.length,2);
  await f.send('Why is that your dream?');assert.equal(f.calls.verify,1);assert.equal(f.calls.fetch[1].pass,pass.pass);assert.equal(f.calls.fetch[1].token,undefined);assert.equal(f.context.conversationMemory.turns.length,2);assert.equal(f.context.busy,false);
+});
+
+test('language switches use translated history, while deliberate Japanese on English remains Japanese',async()=>{
+ const japanese='小さな図書館が夢なんだ。本を開くと知らない世界が広がるところが好き！';
+ const f=fixture({network:async(_url,options)=>{const req=JSON.parse(options.body);return new Response(JSON.stringify({...cue,text:replyLanguage(req.message,req.lang)==='ja'?japanese:cue.text}));}});
+ const earlier=messageRecord('assistant',japanese,'ja');applyTranslations([earlier],[{id:earlier.id,text:cue.text}],'en');f.context.messages=[earlier];
+ await f.send('What is your dream?');assert.equal(f.calls.fetch[0].history[0].content,cue.text);assert.equal(f.context.messages.at(-1).language,'en');
+ await f.send('図書館についてもっと教えて');assert.equal(f.calls.fetch[1].lang,'en','site stays English');assert.equal(f.context.conversationLanguage,'ja');assert.equal(f.context.messages.at(-1).language,'ja');
+ await f.translate();assert.equal(f.calls.fetch.length,3,'only older English messages need translating, not the fresh Japanese reply');
+ assert.equal(f.calls.fetch[2].translation.some(m=>m.text===japanese),false);
+ await f.send('Tell me a little more in English.');assert.equal(f.context.conversationLanguage,'en');assert.equal(f.context.messages.at(-1).language,'en');
+});
+
+test('a wrong-language network reply cannot be displayed or saved as a new memory',async()=>{
+ const f=fixture({network:async()=>new Response(JSON.stringify({...cue,text:'わたしは小さなドラゴンだよ。本を読んで知らないことを学ぶのが好き！'}))});
+ await f.send('What is your dream?');assert.equal(f.context.messages.length,1);assert.equal(f.context.messages[0].role,'user');assert.equal(f.context.conversationMemory.turns.length,0);assert.equal(f.calls.fetch.length,1);
 });
 
 test('explicit interests accompany sends and survive Clear chat; corrections win',async()=>{
@@ -77,22 +95,22 @@ test('on/off and local-preview checks prevent any AI request or memory mutation'
 
 test('actual translation flow preserves turns/draft, caches every result, and switching back needs no request',async()=>{
  const f=fixture({network:async(_url,options)=>{const req=JSON.parse(options.body),expires=Date.now()+7200000;return new Response(JSON.stringify({translations:req.translation.map(m=>({id:m.id,text:'翻訳：'+m.text})),chatSession:{expires,pass:`${expires}.${'a'.repeat(64)}`}}));}});
- f.context.messages=[messageRecord('user','What is your dream?','en'),messageRecord('assistant',cue.text,'en')];f.context.ja=true;
+ f.context.messages=[messageRecord('user','What is your dream?','en'),messageRecord('assistant',cue.text,'en')];f.context.ja=true;f.context.conversationLanguage='ja';
  const originals=f.context.messages.map(m=>m.text);await f.translate();
  assert.equal(f.calls.verify,1);assert.equal(f.calls.fetch.length,1);assert.deepEqual(f.context.messages.map(m=>m.text),originals);assert.equal(f.context.messages.length,2);assert(f.context.messages.every(m=>m.translations.ja));assert.equal(f.context.conversationMemory.turns.length,0);assert.equal(f.context.$('textarea').value,'Draft to preserve');assert.deepEqual(f.calls.fetch[0].history,[]);assert.equal(f.calls.fetch[0].webSearch,false);
- f.context.ja=false;await f.translate();f.context.ja=true;await f.translate();assert.equal(f.calls.fetch.length,1);assert.equal(f.context.busy,false);
+ f.context.ja=false;f.context.conversationLanguage='en';await f.translate();f.context.ja=true;f.context.conversationLanguage='ja';await f.translate();assert.equal(f.calls.fetch.length,1);assert.equal(f.context.busy,false);
 });
 
 test('failed/partial translation retains all originals, re-enables chat and never retries automatically',async()=>{
  for(const status of [200,429,403,503]){
-  const f=fixture({network:async()=>new Response(JSON.stringify({translations:[]}),{status})});f.context.messages=[messageRecord('assistant',cue.text,'en')];f.context.ja=true;await f.translate();
+  const f=fixture({network:async()=>new Response(JSON.stringify({translations:[]}),{status})});f.context.messages=[messageRecord('assistant',cue.text,'en')];f.context.ja=true;f.context.conversationLanguage='ja';await f.translate();
   assert.equal(f.calls.fetch.length,1);assert.equal(f.context.messages[0].text,cue.text);assert.equal(f.context.messages[0].translations.ja,undefined);assert.equal(f.context.busy,false);assert.equal(f.context.$('textarea').readOnly,false);assert.equal(f.context.$('textarea').value,'Draft to preserve');
  }
 });
 
 test('clearing chat while translating discards late results and duplicate clicks cannot queue work',async()=>{
  let finish;const f=fixture({network:(_url,options)=>new Promise(resolve=>{finish=()=>resolve(new Response(JSON.stringify({translations:JSON.parse(options.body).translation.map(m=>({id:m.id,text:'翻訳済み'}))})));})});
- f.context.messages=[messageRecord('assistant',cue.text,'en')];f.context.conversationMemory.remember('Dream?',cue.text);const memory=f.storage.getItem(memoryKey);f.context.ja=true;const pending=f.translate();await new Promise(resolve=>setImmediate(resolve));await f.translate();assert.equal(f.calls.fetch.length,1);f.clear();finish();await pending;assert.equal(f.context.messages.length,0);assert.equal(f.context.busy,false);assert.equal(f.storage.getItem(memoryKey),memory);
+ f.context.messages=[messageRecord('assistant',cue.text,'en')];f.context.conversationMemory.remember('Dream?',cue.text);const memory=f.storage.getItem(memoryKey);f.context.ja=true;f.context.conversationLanguage='ja';const pending=f.translate();await new Promise(resolve=>setImmediate(resolve));await f.translate();assert.equal(f.calls.fetch.length,1);f.clear();finish();await pending;assert.equal(f.context.messages.length,0);assert.equal(f.context.busy,false);assert.equal(f.storage.getItem(memoryKey),memory);
 });
 
 test('Clear chat persists an empty transcript but preserves recall, repetition memory and verification on EN/JA reload',async()=>{

@@ -183,7 +183,7 @@
       "symbol": "GuideJourney",
       "firstLine": 92,
       "lastLine": 118,
-      "sha256": "73efc21c7bda4caf86ce1fe89eb33d0ffadfbd11c00fbe83cad353072b8df331"
+      "sha256": "2c6063f736631bdac1deb6f823ff38dda7fe548a390f42783f3bbeb565b28620"
     }
   },
   {
@@ -215,9 +215,9 @@
     "source": {
       "file": "assets/yuki/runtime/conversation-language.mjs",
       "symbol": "translatedText / translationBatch / applyTranslations",
-      "firstLine": 21,
-      "lastLine": 45,
-      "sha256": "afdf902fec80bd68b119ab9cee76c61292235415f86c1c4a75480ef540c9a399"
+      "firstLine": 25,
+      "lastLine": 53,
+      "sha256": "8ddc580b680f57497cd6fba21c881c3e6ba70054c2380e341603d9b09c5bd905"
     }
   },
   {
@@ -249,8 +249,8 @@
     "source": {
       "file": "services/yuki-api/worker.mjs",
       "symbol": "parseModel",
-      "firstLine": 85,
-      "lastLine": 146,
+      "firstLine": 89,
+      "lastLine": 150,
       "sha256": "72003b5cda4ebbd4f845074406de93543796701ce619e64cf4e1d490f5cc2c67"
     }
   },
@@ -267,8 +267,8 @@
       "file": "services/yuki-api/reply-completion.mjs",
       "symbol": "completionRequest / parseCompletion",
       "firstLine": 6,
-      "lastLine": 43,
-      "sha256": "56f39218cbb7869e3c044214d8ced15df2bfe97a7f3656e4174795c69a700e3f"
+      "lastLine": 53,
+      "sha256": "5e7917052ae11635600040d32a3f6e9158f0483c2ce833065b91391b0dca58e3"
     }
   },
   {

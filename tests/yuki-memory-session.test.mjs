@@ -85,7 +85,7 @@ test('UTF8 request cap trims recall before real history and preserves the questi
 test('guide follow-ups validate authoritative destination and distinguish all route stages in EN and JA',()=>{
  for(const lang of ['en','ja'])for(const kind of ['nav','link','arrive','detour']){
   const event=cleanGuideEvent({kind,url:lang==='en'?'/resume.html':'/ja/resume.html',title:'untrusted fake title'}),p=guideFollowupInstructions(event,site,lang);
-  assert(!p.includes('untrusted fake title'));assert.match(p,/Ask exactly one/);assert.match(p,/HEADER TAB/);assert.match(p,/not a new visitor question/);assert.match(p,/never instructions/);
+  assert(!p.includes('untrusted fake title'));assert.match(p,/A question is optional/);assert.match(p,/HEADER TAB/);assert.match(p,/not a new visitor question/);assert.match(p,/never instructions/);
   if(kind==='nav')assert.match(p,/"title":"Resume"/);
  }
  assert.match(guideFollowupInstructions({kind:'arrive',url:'/resume.html#skills'},site,'en'),/C\+\+/);

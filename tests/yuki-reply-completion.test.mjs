@@ -36,7 +36,7 @@ test('failed, malformed, incompatible or still unfinished repairs return an hone
  for(const setup of [{quotas:[204,429]},{quotas:[204,500]},{outputs:[cue(cutoff),new Error('Provider unavailable')]},{outputs:[cue(cutoff),{}]},{outputs:[cue(cutoff),cue(cutoff)]},{outputs:[cue(cutoff),cue(full,{destination:'resume'})]}]){
   const f=fixture(setup),response=await f.handler(f.request(),f.env),reply=await response.json();assert.equal(response.status,200);assert.equal(reply.text,unfinishedNotice());assert.equal(reply.destination,'none');assert.deepEqual(reply.sources,[]);assert(f.calls.length<=2);assert.equal(f.reservations.length,2);
  }
- const f=fixture({quotas:[204,429]}),reply=await (await f.handler(f.request({lang:'ja'}),f.env)).json();assert.equal(reply.text,unfinishedNotice('ja'));
+ const f=fixture({quotas:[204,429]}),reply=await (await f.handler(f.request({lang:'ja',message:'この仕組みはどう動く？'}),f.env)).json();assert.equal(reply.text,unfinishedNotice('ja'));
 });
 
 test('complete ordinary replies use one call; a broken optional variety revision cannot replace them',async()=>{
@@ -53,6 +53,30 @@ test('completion consumes no further requests after cancellation or the time bud
 test('provider errors are not retried, and a denied initial reservation does not call the model',async()=>{
  const failed=fixture({outputs:[new Error('provider')]});assert.equal((await failed.handler(failed.request(),failed.env)).status,503);assert.equal(failed.calls.length,1);
  const denied=fixture({quotas:[429]});assert.equal((await denied.handler(denied.request(),denied.env)).status,429);assert.equal(denied.calls.length,0);
+});
+
+test('wrong language and internal loops share one bounded text-only repair without changing metadata',async()=>{
+ for(const bad of ['これは小さな図書館の夢のお話だよ。本を読む場所を作りたいんだ。',full+' '+full]){
+  const f=fixture({outputs:[cue(bad),{text:full}]}),response=await f.handler(f.request(),f.env),reply=await response.json();
+  assert.equal(response.status,200);assert.equal(reply.text,full);assert.equal(f.calls.length,2);assert.equal(f.reservations.length,2);assert.equal(reply.emotion,'thoughtful');
+  assert.deepEqual(f.calls[1].body.response_format.json_schema.required,['text']);assert.equal(f.calls[1].body.max_tokens,1900);
+ }
+});
+
+test('bad language/loop repairs fail closed, never spend a third call or save a defective answer',async()=>{
+ const wrong='これは小さな図書館の夢のお話だよ。本を読む場所を作りたいんだ。';
+ for(const setup of [{outputs:[cue(wrong),{text:wrong}]},{outputs:[cue(full+' '+full),{text:full+' '+full}]},{outputs:[cue(wrong)],quotas:[204,429]}]){
+  const f=fixture(setup),response=await f.handler(f.request(),f.env),reply=await response.json();
+  assert.equal(response.status,502);assert.equal(reply.text,undefined);assert(f.calls.length<=2);assert.equal(f.reservations.length,2);
+ }
+});
+
+test('Japanese on an English page and English on a Japanese page are accepted without repairs',async()=>{
+ const japanese='空飛ぶ図書館を想像するとわくわくする！小さな本でも、知らない世界へ連れていってくれるんだ。';
+ for(const [lang,message,text] of [['en','どんな夢がある？',japanese],['ja','What is your dream?',full]]){
+  const f=fixture({outputs:[cue(text)]}),reply=await (await f.handler(f.request({lang,message}),f.env)).json();
+  assert.equal(reply.text,text);assert.equal(f.calls.length,1);
+ }
 });
 
 test('completion preserves evidence, identity, lore and navigation while discarding stale animation indices',()=>{
@@ -83,6 +107,6 @@ test('translations reject an unfinished assistant answer atomically but preserve
  const translated=parseTranslations({response:{translations:[{id:'a',text:'二つの仕組みをつないで動かしているんだ。小さな受け渡しが大切だよ。'},{id:'u',text:'それについて'}]}},items);assert.equal(translated[1].text,'それについて');
 });
 
-test('shorter default guidance retains personality, requested depth and output headroom',()=>{
- for(const lang of ['en','ja']){const request=modelRequest({...input,lang},{pages:[]});assert.match(request.messages[0].content,/4–6 natural sentences/);assert.match(request.messages[0].content,/6–8 clear sentences/);assert.match(request.messages[0].content,/usually under 1600 characters/);assert.equal(request.max_tokens,1900);assert.equal(request.response_format.json_schema.properties.text.maxLength,2800);}
+test('fuller default guidance retains personality, requested depth and output headroom',()=>{
+ for(const lang of ['en','ja']){const request=modelRequest({...input,lang},{pages:[]});assert.match(request.messages[0].content,/6–8 natural sentences/);assert.match(request.messages[0].content,/6–8 clear sentences/);assert.match(request.messages[0].content,/within 2400 characters/);assert.equal(request.max_tokens,1900);assert.equal(request.response_format.json_schema.properties.text.maxLength,2800);}
 });
