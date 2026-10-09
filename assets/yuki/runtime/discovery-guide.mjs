@@ -30,8 +30,17 @@ export class DiscoveryGuide{
    }
   }
   const unique=[...new Map(candidates.map(c=>[c.target.url,c])).values()];
-  const fresh=unique.filter(c=>!this.recent.includes(c.target.url)),pool=fresh.length?fresh:unique;
+  // Choose a page first: a project with many screenshots must not outweigh
+  // the garden, résumé or an essay. Remember whole pages across EN/JA too.
+  const recentPages=this.recent.map(url=>guidePath(url,base));
+  const fresh=unique.filter(c=>!recentPages.includes(guidePath(c.target.url,base)));
+  let pool=fresh.length?fresh:unique;
+  const unused=pool.filter(c=>!this.recent.includes(c.target.url));if(unused.length)pool=unused;
+  if(!fresh.length&&recentPages.length){const different=pool.filter(c=>guidePath(c.target.url,base)!==recentPages.at(-1));if(different.length)pool=different;}
   if(!pool.length)return null;
+  const groups=[...new Set(pool.map(c=>guidePath(c.target.url,base)))];
+  const page=groups[Math.floor(Math.min(.999999,Math.max(0,this.random()))*groups.length)];
+  pool=pool.filter(c=>guidePath(c.target.url,base)===page);
   let ticket=Math.min(.999999,Math.max(0,this.random()))*pool.reduce((n,c)=>n+c.weight,0),chosen=pool.at(-1);
   for(const candidate of pool){ticket-=candidate.weight;if(ticket<0){chosen=candidate;break;}}
   this.recent=[...this.recent,chosen.target.url].slice(-8);try{this.storage?.setItem('yuki-discovery-v1',JSON.stringify(this.recent));}catch{}

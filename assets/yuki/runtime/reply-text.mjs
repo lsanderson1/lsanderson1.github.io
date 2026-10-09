@@ -5,6 +5,10 @@ const envelopeKeys=new Set(['text','emotion','gesture','destination','sourceIds'
 export function cleanAssistantText(value){
  if(typeof value!=='string'||!value.trim()||value.length>8000)throw Error('Invalid reply text');
  let text=value.trim();
+ // Recover only exact long transcript duplicates with a leaked speaker label.
+ // Never remove ordinary quotations, short emphasis or a second distinct answer.
+ const parts=text.split(/\*\*(?:ゆき|ユキ|Yuki)\*\*\s*:?[\s]*/iu);
+ if(parts.length>1&&parts[0].length>=100&&parts.every(part=>sameText(parts[0],part)))text=parts[0].trim();
  for(let pass=0;pass<3;pass++){
   const json=text.replace(/^```(?:json)?\s*\n([\s\S]*?)\n```$/u,'$1');
   if(json.startsWith('{')){

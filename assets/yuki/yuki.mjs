@@ -9,7 +9,7 @@ import {SiteGuide} from './runtime/site-guide.mjs?v=6';
 import {pageLayout,bubblePlacement,bubbleHeightLimit,pointerTarget} from './runtime/page-layout.mjs?v=9';
 import {localizedPages,localizePath,findPageTarget,pendingGuide,targetRect,curateDestinations} from './runtime/page-targets.mjs?v=9';
 import {PageObstacles,visibleSpot,guideSpot,clampFoot,fits,atFoot} from './runtime/clear-space.mjs?v=5';
-import {GuideJourney,GuideDialogue,guideTarget as checkedGuideTarget,isGuideRequest,resolveGuideRequest,guideChoice,planGuideStep,findGuideElement} from './runtime/guide-journey.mjs?v=4';
+import {GuideJourney,GuideDialogue,guideReplyMatches,guideTarget as checkedGuideTarget,isGuideRequest,resolveGuideRequest,guideChoice,planGuideStep,findGuideElement} from './runtime/guide-journey.mjs?v=5';
 import {PageMotion,pageProjection,inViewport,containPageRover,prepareCall} from './runtime/page-motion.mjs?v=8';
 import {CallPerches} from './runtime/call-perches.mjs?v=7';
 import {VisitorPersonality,conversationOpening,localizeGreetingMessages,replySequence,cueArtwork} from './runtime/visitor-personality.mjs?v=9';
@@ -23,12 +23,12 @@ import {summonTiming,summonPhase,callFlightDuration,catchInFlight} from './home/
 import {ConversationMoments,shouldWelcomeOnRefresh,isLeavingLink} from './runtime/conversation-moments.mjs?v=1';
 import {messageRecord,translatedText,translationBatch,checkedTranslations,applyTranslations,conversationHistory} from './runtime/conversation-language.mjs?v=5';
 import {replyLanguage,replyQualityIssues} from './runtime/reply-quality.mjs';
-import {DiscoveryGuide,isDiscoveryRequest,discoveryExcerpt} from './runtime/discovery-guide.mjs';
+import {DiscoveryGuide,isDiscoveryRequest} from './runtime/discovery-guide.mjs?v=2';
 import {CallDialogue} from './runtime/call-dialogue.mjs';
 import {ReadingMemory,readPageTitle,readingDetail,readPageDisplaySection,readPageSection,readPageImages,readGardenSpot,guideReference,followUpReference} from './runtime/reading-context.mjs?v=5';
-import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=16';
+import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=17';
 import {safeWebURL} from './runtime/web-sources.mjs?v=1';
-import {cleanVariety,rememberReply,packChatRequest} from './runtime/reply-variety.mjs?v=3';
+import {cleanVariety,rememberReply,packChatRequest,repetitionScore} from './runtime/reply-variety.mjs?v=3';
 
 const root=document.querySelector('#yuki-companion');
 if(root)start().catch(()=>{root.textContent='';}); // Portfolio remains usable on failure.
@@ -425,6 +425,7 @@ async function start(){
   const step=planGuideStep(target,location.pathname,knowledge,{lang:ja?'ja':'en',base});
   if(!step){stopJourney();return;}
   const el=findGuideElement(document,step);
+  if(el&&step.kind==='link')step.linkLabel=(el.getAttribute('aria-label')||el.textContent||'').replace(/\s+/g,' ').trim().slice(0,140);
   if(!el){panel(true);addMessage('assistant',tr('I found the page in my map, but not its clickable link here. I won’t point at the wrong thing. You can open the exact page below.','地図にはあるけれど、このページに案内できるリンクが見つからないの。違うところは指さないよ。下のリンクから正しいページを開けるよ。'));
    const a=document.createElement('a');a.href=target.url;a.textContent=target.title;$('.yuki-speech').lastElementChild.append(a);return;}
   if(garden&&gardenScene.contains(el)){
@@ -437,6 +438,7 @@ async function start(){
  function journeyArrived(d){
   if(!journey.active||d.journeySerial!==journeySerial||!journeyStep)return;
   const step=journeyStep;
+  if(!journey.claimStep(step))return;
   panel(true);void speakGuideFollowup(step);
   status(tr('Guided route · click the highlighted link yourself.','道案内中・光っているリンクをクリックしてね。'));
   highlightUntil=Infinity;
@@ -460,14 +462,11 @@ async function start(){
   const discovery=journey.state?.discovery===true;
   const fallback=()=>{
    addMessage('assistant',guideDialogue.copy(step,{lang:ja?'ja':'en',detour:step.kind==='detour'}));
-   if(discovery&&step.kind==='arrive'){
-    const [path,anchor]=step.url.split('#'),page=knowledge.find(p=>p.url===path),entry=anchor?page?.sections?.find(s=>s.anchor===anchor):page;
-    const description=discoveryExcerpt(entry?.summary||entry?.text);
-    if(description)addMessage('assistant',tr(`My pick is ${step.title}! Here’s how the site describes it: `,`わたしが選んだのは「${step.title}」！サイトでは、こんなふうに紹介されているよ：`)+description);
-   }
   };
+  // Every stop gets Yuki's own explanation and reaction when AI is available.
+  // Offline/error directions stay useful without copying the site's prose.
   if(!online||!permission.allowed||busy){fallback();return;}
-  return runChat(tr('Respond naturally for this guided stop.','この案内地点に合う自然なひとことを。'),{kind:step.kind,url:step.url,targetUrl:step.target?.url??step.url,...(discovery?{discovery:true}:{})},fallback);
+  return runChat(tr('Respond naturally for this guided stop.','この案内地点に合う自然なひとことを。'),{kind:step.kind,url:step.url,targetUrl:step.target?.url??step.url,...(step.linkLabel?{linkLabel:step.linkLabel}:{}),...(discovery?{discovery:true}:{})},fallback);
  }
  let reactionVersion=0;
  let talkTurn=0;
@@ -545,6 +544,7 @@ async function start(){
    if(!response.ok){if(response.status===403)chatSession.clear();throw Object.assign(Error(response.status===429?'limit':response.status===403?'verification':'request'),{reference:result.reference,limit:result.limit});}
    const cue=validReply(result);
    if(replyQualityIssues(cue.text,conversationLanguage).includes('language'))throw Error('request');
+   if(guideEvent&&(replyQualityIssues(cue.text,conversationLanguage).length||repetitionScore(cue.text,variety,history)>=.75||!guideReplyMatches(cue.text,guideEvent,knowledge,ja?'ja':'en',base)))throw Error('request');
    if(!guideEvent){const followUp=followUpReference(cue,context.lastGuide,knowledge);if(followUp)readingMemory.set(followUp);else readingMemory.clear();conversationMemory.remember(text,cue.text);}
    addMessage('assistant',cue.text,true,cue.sources,cue.storyTopics,undefined,conversationLanguage);
    if(!guideEvent&&isGuideRequest(text)){

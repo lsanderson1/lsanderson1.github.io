@@ -1,8 +1,8 @@
 import {cleanVariety,cleanStoryTopics} from './runtime/reply-variety.mjs?v=3';
 import {cleanMessages} from './runtime/conversation-language.mjs?v=5';
 import {cleanReplyBeats} from './runtime/reply-beats.mjs';
-import {cleanAssistantText} from './runtime/reply-text.mjs';
-export {cleanAssistantText} from './runtime/reply-text.mjs';
+import {cleanAssistantText} from './runtime/reply-text.mjs?v=2';
+export {cleanAssistantText} from './runtime/reply-text.mjs?v=2';
 export const emotions=['neutral','confused','delighted','thoughtful','surprised','shy','proud','reassuring','amused'];
 export const destinations=['none','projects','essays','unreal','resume','garden'];
 export function chatUnavailable(reason,lang='en',reference='',limit=''){
