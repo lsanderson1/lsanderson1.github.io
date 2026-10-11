@@ -17,7 +17,7 @@ export function wrongReplyLanguage(text,language){
  const japanese=(prose.match(/[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/gu)||[]).length;
  const latin=(prose.match(/[A-Za-z]/g)||[]).length;
  if(language==='en')return japanese>=8&&japanese>latin*.15;
- if(language==='ja')return latin>=65&&japanese<4;
+ if(language==='ja')return japanese<4&&(latin>=65||((prose.match(/\b[a-z]+\b/giu)||[]).length>=4&&/\b(?:could|would|can|do|what|where|why|how|tell|please|I|you)\b/iu.test(prose)));
  return false;
 }
 
@@ -44,9 +44,10 @@ export function repeatedPassage(text){
 
 export function formalJapaneseVoice(text){
  const prose=String(text).replace(/```[\s\S]*?```|`[^`\n]*`|「[^」]*」|『[^』]*』|“[^”]*”|"[^"\n]*"/gu,' ');
+ // Even one formal ending breaks her voice. Include short replies, line ends,
+ // emoji and connecting clauses; quoted examples/code above remain untouched.
+ if(/(?:です|ます|でした|ました|ません(?:でした)?|でしょう|ましょう|ございます|ございません)(?:よね|よ|ね|か|し|が|けど|けれど(?:も)?|から|ので)?(?=[\s。！？!?、,……\p{Extended_Pictographic}]|$)/u.test(prose))return true;
  const sentences=prose.match(/[^。！？!?]+[。！？!?]+/gu)||[];
- const formal=sentences.filter(s=>/(?:です|ます|でした|ました|ません|でしょう)(?:よ|ね|か|よね)?[。！？!?]+$/u.test(s.trim())).length;
- if(formal>=2&&formal>=sentences.length*.5)return true;
  const endings=new Map();
  for(const sentence of sentences){let ending=/(なの|んだ|だよ|の|ね)[。！？!?]+$/u.exec(sentence.trim())?.[1];if(ending==='なの')ending='の';if(ending)endings.set(ending,(endings.get(ending)||0)+1);}
  return [...endings.values()].some(n=>n>=3&&n>=sentences.length*.5);

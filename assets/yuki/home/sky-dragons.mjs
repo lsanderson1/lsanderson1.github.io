@@ -27,11 +27,25 @@ export const skyRoutes = [
  {id:'side-east-distant',points:[[190,139],[450,120],[740,146],[1010,137]],size:[.07,.07],depth:[.81,.81],motion:'glide',direction:1},
  {id:'side-west-distant',points:[[1010,137],[740,146],[450,120],[190,139]],size:[.07,.07],depth:[.81,.81],motion:'glide',direction:-1},
  {id:'side-east-water',points:[[190,223],[420,237],[700,237],[1010,221]],size:[.085,.085],depth:[.80,.80],motion:'glide',direction:1},
- {id:'side-west-near',points:[[1010,221],[700,237],[420,237],[190,223]],size:[.13,.13],depth:[.30,.30],motion:'steady',direction:-1}
+ {id:'side-west-near',points:[[1010,221],[700,237],[420,237],[190,223]],size:[.13,.13],depth:[.30,.30],motion:'steady',direction:-1},
+ {id:'side-east-far-islets',points:[[190,157],[430,154],[750,158],[1010,157]],size:[.016,.016],depth:[.96,.96],motion:'steady',direction:1},
+ {id:'side-west-far-islets',points:[[1010,157],[750,158],[430,154],[190,157]],size:[.016,.016],depth:[.96,.96],motion:'steady',direction:-1},
+ {id:'side-east-horizon',points:[[190,225],[430,223],[750,225],[1010,225]],size:[.010,.010],depth:[.98,.98],motion:'steady',direction:1},
+ {id:'side-west-horizon',points:[[1010,225],[750,225],[430,223],[190,225]],size:[.010,.010],depth:[.98,.98],motion:'steady',direction:-1}
 ];
 // Authored scene depth, near=0 / far=1. Each fall follows its parent island.
-// Depth is independent of species/body size, but follows the same route progress as scale.
+// The route plane AND apparent size must agree before a landmark may hide a
+// visitor. Sizes are in the artwork's 1536x1024 coordinates, not viewport pixels.
 export const islandDepths=[.46,.77,.86,.69];
+// Roughly a fifth of each traced island's width (152.5 / 105.5 / 41.5 / 27.5).
+// The tiny low island must not hide a dragon nearly as large as itself.
+export const islandMaxSpans=[32,20,8,5];
+export const terrainMaxSpans={'left-ridge':65,castle:128};
+const cloudMaxSpans=[30,26,7];
+// A stable, full side silhouette including glides. Never use the current cel's
+// changing wing bounds: flapping must not toggle the foreground/background mask.
+export const dragonReferenceSpans=Object.fromEntries(dragonKinds.map(kind=>[kind,Math.max(...flightSheets(kind).flatMap(sheet=>dragonFrames[sheet].map(f=>f.bounds[2]*f.scale)))]));
+export const apparentDragonSpan=(kind,scale)=>dragonReferenceSpans[kind]*scale;
 // The centre of Lloyd's stroke is the edge: no outline dilation/inset halo.
 export const islandEdgeInset=0;
 // Only a broad canopy/ground safety window. Actual rock/tower boundaries now
@@ -55,11 +69,14 @@ export const skyWater=[
 const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
 const mix=(a,b,t)=>a+(b-a)*t;
 const smooth=t=>{t=clamp(t);return t*t*(3-2*t);};
-export function depthOcclusion(depth){
- const islands=islandDepths.map(plane=>smooth((depth-plane+.008)/.016));
+export function depthOcclusion(depth,span=0){
+ // Missing span is used only by contour/depth inspection tools. Runtime always
+ // supplies the actual stable silhouette span, with a hard upper size boundary.
+ const behind=(plane,maxSpan)=>span<=maxSpan?smooth((depth-plane+.008)/.016):0;
+ const islands=islandDepths.map((plane,i)=>behind(plane,islandMaxSpans[i]));
  return {islands,water:skyWater.map(w=>1-islands[w.island]*(1-w.transmission)),
-  terrain:skyTerrain.map(s=>smooth((depth-s.depth+.008)/.016)),
-  clouds:skyClouds.map(c=>smooth((depth-c.depth)/.08)*c.density)};
+  terrain:skyTerrain.map(s=>behind(s.depth,terrainMaxSpans[s.id])),
+  clouds:skyClouds.map((c,i)=>span<=cloudMaxSpans[i]?smooth((depth-c.depth)/.08)*c.density:0)};
 }
 export function curvePoint(points,t){
  const u=1-t;
@@ -221,17 +238,18 @@ export class GardenSkyDragons{
     for(let i=0;i<4;i++){const use=element(this.doc,'use',{style:'mix-blend-mode:plus-lighter',opacity:0});blend.append(use);uses.push(use);}
     group.append(blend);outer.append(group);node={group,outer,uses,mask,water,islands,terrain,clouds};this.nodes.set(dragon.id,node);
    }
-   const occlusion=depthOcclusion(p.depth);
+   const span=apparentDragonSpan(dragon.kind,p.scale),occlusion=depthOcclusion(p.depth,span);
    node.water.forEach((shape,i)=>{shape.setAttribute('fill','black');shape.setAttribute('opacity',1-occlusion.water[i]);});
    node.islands.forEach((shape,i)=>shape.setAttribute('opacity',occlusion.islands[i]));
    node.terrain.forEach((shape,i)=>shape.setAttribute('opacity',occlusion.terrain[i]));
    node.clouds.forEach((shape,i)=>shape.setAttribute('opacity',occlusion.clouds[i]));
    // The near pass also paints above the animated falling-water threads.
-   (p.depth<islandDepths[0]?this.frontLayer:this.layer).append(node.outer);
+   (occlusion.islands[0]===0?this.frontLayer:this.layer).append(node.outer);
    node.group.setAttribute('transform',`translate(${p.x.toFixed(2)} ${p.y.toFixed(2)}) rotate(${p.angle.toFixed(2)}) scale(${(p.scale*p.direction).toFixed(4)} ${p.scale.toFixed(4)})`);
    node.group.setAttribute('opacity',p.opacity.toFixed(3));node.group.setAttribute('data-turn',p.turn.toFixed(2));
    node.group.setAttribute('data-gliding',String(p.gliding));
    node.group.setAttribute('data-depth',p.depth.toFixed(4));
+   node.group.setAttribute('data-apparent-span',span.toFixed(3));
    node.uses.forEach((use,i)=>{const layer=p.layers[i];use.setAttribute('opacity',layer?layer.weight.toFixed(4):0);if(layer)use.setAttribute('href','#'+this.defineFrame(layer.sheet,layer.frame));});
   }
  }

@@ -3,7 +3,9 @@ html:has(.yg-page),body:has(.yg-page){height:100%;overflow:hidden;overscroll-beh
 /* One moving scene extends beneath the shared glass header. No second image
    that can drift out of alignment when the visitor pans the garden. */
 body:has(.yg-page){display:flex;flex-direction:column;height:100dvh}
-body:has(.yg-page)>.fp-nav{flex-shrink:0}
+/* Keep the shared glass tint/blur. Visitors remain visible through it, not
+   clipped at its lower edge or painted over the navigation labels. */
+body:has(.yg-page)>.fp-nav{flex-shrink:0;z-index:50}
 .yg-main{position:relative;flex:1;min-height:0;isolation:auto}
 .yg-page,.yg-world{position:absolute;inset:0;margin:0;padding:0;overflow:clip}
 .yg-page{overflow:visible}
@@ -14,6 +16,7 @@ body:has(.yg-page)>.fp-nav{flex-shrink:0}
 .yg-hotspots button:hover,.yg-hotspots button[aria-pressed=true]{background:#5c4435;box-shadow:0 0 0 3px #ffe5a470,0 0 22px #fff2bd88}
 .yg-page button:focus-visible,.yg-menu summary:focus-visible{outline:3px solid var(--primary);outline-offset:3px}
 .yg-controls{position:absolute;left:max(16px,env(safe-area-inset-left));top:calc(var(--yg-header-height,64px) + 14px);z-index:4}
+.yg-controls[hidden]{display:none}
 .yg-world{touch-action:none}
 .yg-world:focus-visible{outline:2px solid #fff5ab;outline-offset:-3px}
 .yg-pan-edge{position:absolute;top:46%;z-index:3;display:grid;place-items:center;width:32px;height:58px;padding:0;border:1px solid #fff8;border-radius:18px;background:#234b3bb3;color:#fffef1;font:30px/1 Georgia,serif;cursor:pointer;box-shadow:0 2px 8px #10251933}
@@ -54,6 +57,9 @@ body:has(.yg-page)>.fp-nav{flex-shrink:0}
 @keyframes yg-water-flow{to{stroke-dashoffset:-48}}
 .yg-world-magic,.yg-discoveries{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:hidden;z-index:1}
 .yg-sky-dragons{pointer-events:none}
+/* Contain the sprite cross-fade blend inside the world overlay so highlights
+   cannot blend directly with the header. The whole overlay stays below glass. */
+.yg-world-magic{z-index:1;isolation:isolate}
 /* Share the viewport stack: artwork < Yuki < petals < garden text < chat < header.
    The garden pans its picture, not the document, so the absolute root still
    uses viewport coordinates without trapping every chat child at one depth. */

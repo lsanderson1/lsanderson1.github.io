@@ -33,10 +33,38 @@ export function replySimilarity(a,b){
  const left=new Set(a.grams),right=new Set(b.grams),sample=[...new Set([...left,...right])].sort().slice(0,sampleSize);
  return sample.length?sample.filter(g=>left.has(g)&&right.has(g)).length/sample.length:0;
 }
-export function repetitionScore(text,variety,history=[]){
+// Short facts and punchlines need a stricter check than a necessary name or
+// navigation label. This is lexical detection, not a semantic guarantee.
+export function discoveryKind(message){
+ if(/\b(?:joke|pun|riddle)\b|冗談|ジョーク|なぞなぞ|ダジャレ/iu.test(message))return 'joke';
+ if(/\b(?:(?:fun|interesting|random|surprising|another) fact|trivia)\b|豆知識|雑学/iu.test(message))return 'fact';
+ return '';
+}
+function sharedPassage(text,previous,discovery){
+ const parts=value=>(String(value).match(/[^.!?。！？\n]+[.!?。！？\n]*|[^.!?。！？\n]+$/gu)||[]).map(normalized);
+ const before=normalized(previous),after=normalized(text);
+ // Recall can be a bounded excerpt of a longer reply. Catch that copied
+ // excerpt even when the two full replies have quite different lengths.
+ const shorter=before.length<after.length?before:after,longer=before.length<after.length?after:before;
+ if(shorter.length>=48&&longer.includes(shorter))return 1;
+ for(const part of parts(previous)){
+  const minimum=discovery?18:48;
+  if(part.length>=minimum&&after.includes(part))return .9;
+ }
+ return 0;
+}
+export function repetitionScore(text,variety,history=[],memory=[],{discovery=false}={}){
  const fingerprint=replyFingerprint(text),recent=cleanVariety(variety).recent;
- for(const item of history)if(item.role==='assistant')recent.push(replyFingerprint(item.content));
- return recent.reduce((score,item)=>Math.max(score,replySimilarity(fingerprint,item)),0);
+ const previous=[...history.filter(item=>item.role==='assistant').map(item=>item.content),...memory.filter(item=>typeof item?.answer==='string').map(item=>item.answer)];
+ for(const content of previous)recent.push(replyFingerprint(content));
+ const score=recent.reduce((score,item)=>Math.max(score,discovery&&fingerprint.length>=8&&fingerprint.digest===item.digest?1:replySimilarity(fingerprint,item)),0);
+ return previous.reduce((score,content)=>Math.max(score,sharedPassage(text,content,discovery)),score);
+}
+export const repeatThreshold=.8;
+export function needsFreshText(text,input){
+ if(wantsExactRepeat(input.message))return false;
+ const discovery=Boolean(discoveryKind(input.message));
+ return repetitionScore(text,input.variety,input.history??[],input.memory??[],{discovery})>=(input.guideEvent?0.75:discovery?0.72:repeatThreshold);
 }
 export function wantsExactRepeat(text){
  if(/\b(?:don't|do not|stop|avoid)\s+(?:repeat|say that again)|\bnot (?:verbatim|word for word)|繰り返さない|繰り返さず|同じ.*(?:言わない|ではなく)/i.test(text))return false;

@@ -50,7 +50,8 @@ export function guideReplyMatches(text,event,pages,lang='en',base=''){
  const target=guideTarget(event.targetUrl||event.url,pages,lang,base);if(!target)return false;
  const prose=words(text),title=words(target.title),path=guidePath(target.url,base);
  const includes=value=>/[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(value)?prose.includes(words(value)):(' '+prose+' ').includes(' '+words(value)+' ');
- if(!includes(title))return false;
+ const ownHome=path==='/yuki'&&!target.section&&['my garden','my home','わたしの庭','私の庭','わたしの家','私の家'].some(includes);
+ if(!includes(title)&&!ownHome)return false;
  const stop=guideTarget(event.url,pages,lang,base);
  if(event.kind==='nav'&&stop&&!includes(stop.title)&&!(guidePath(stop.url,base)==='/yuki'&&includes('Yuki')))return false;
  if(event.kind==='link'&&['Read essay','記事を読む'].includes(event.linkLabel)&&!includes(event.linkLabel))return false;

@@ -1,6 +1,6 @@
 // Uniform cover scale: the scene is cropped, never stretched. The camera follows
 // the current foot position rather than jumping ahead to a travel destination.
-import {roostPerch} from './perches.mjs';
+import {roostPerch} from './perches.mjs?v=2';
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 export function gardenCamera(width,height,focus=roostPerch){
  // Leave a little vertical exploration room even on tall phones; plain cover

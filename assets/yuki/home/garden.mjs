@@ -2,11 +2,11 @@
 // picture and pans with Yuki; her feet and travel path are remapped together.
 import {HomeDialogue} from './home-dialogue.mjs?v=2';
 import {attachAmbience} from './ambience.mjs';
-import {GardenCamera,attachGardenExplorer} from './camera.mjs?v=3';
+import {GardenCamera,attachGardenExplorer} from './camera.mjs?v=4';
 import {GardenPond} from './pond.mjs?v=3';
-import {GardenWorldLife} from './world-life.mjs?v=7';
-import {gardenSpots,gardenPoint} from './perches.mjs';
-export {gardenSpots,gardenPoint} from './perches.mjs';
+import {GardenWorldLife} from './world-life.mjs?v=8';
+import {gardenSpots,gardenPoint} from './perches.mjs?v=2';
+export {gardenSpots,gardenPoint} from './perches.mjs?v=2';
 const tales={
  nest:{en:['THE DRAGON ROOST','An adventure needs a nap, too.','Soft cushion? Check. Room for my tail? Check. One tiny nap before a very important adventure… zzz. Tap me when you’re ready to explore!','Why do you curl up in your nest?'],ja:['ドラゴンのねぐら','冒険にも、お昼寝にも。','ふわふわのクッション、よし。しっぽの場所、よし。あとは……すやぁ。起きたら、一緒に庭を探検しようね！','巣ではどんなふうに過ごしているの？'],emotion:'neutral'},
  pond:{en:['THE LILY POND','A very important reflection.','There’s a little dragon in the water! Oh. That’s me. I like watching the ripples here—much easier than trying to catch every falling petal. Shall we sit for a moment?','Tell me a little story about the pond in your garden.'],ja:['スイレンの池','水面に、小さなドラゴン。','あっ、池にもドラゴン！……わたしだった。花びらを全部追いかけるのは大変だけど、波紋を眺めるのは得意。ちょっと一緒に座ろうか。','庭の池にまつわるお話を聞かせて。'],emotion:'amused'},
