@@ -13,7 +13,15 @@ const categoryAliases={'/resume.html':['resume','cv','履歴','経歴','履歴�
 export function isGuideRequest(text){
  const q=clean(text);
  if(/\b(?:do not|don['’]t|stop|no need to)\s+(?:guide|lead|show|take|navigate|point)\b/i.test(q)||/(?:案内|誘導)(?:しない|しなくて|をやめ)/.test(q))return false;
- return /\b(?:lead|guide|take|direct)\s+(?:me|us)\b|\b(?:point|navigate|go)\s+(?:me\s+)?(?:to|towards|at)\b|\bgo\s+home\b|\bshow\s+me\b|\b(?:where|find|locate|open|visit)\b/i.test(q)||/(?:案内|連れて|誘導|どこ|何処|見せて|開いて|探して|に行き|へ行き)/.test(q);
+ return isHomeVisitRequest(q)||/\b(?:lead|guide|take|direct)\s+(?:me|us)\b|\b(?:point|navigate|go)\s+(?:me\s+)?(?:to|towards|at)\b|\bgo\s+home\b|\bshow\s+me\b|\b(?:where|find|locate|open|visit)\b/i.test(q)||/(?:案内|連れて|誘導|どこ|何処|見せて|開いて|探して|に行き|へ行き)/.test(q);
+}
+export function isHomeVisitRequest(text){
+ const q=clean(text).normalize('NFKC');
+ if(/\b(?:don't|don’t|do not|not now|no need|don't want|do not want)\b|行きたくない|行かない|見せない|案内しない|案内は不要/iu.test(q))return false;
+ if(/\b(?:home\s*page|landing page|portfolio home|my home)\b|トップページ|ホームページ/iu.test(q))return false;
+ const home=/\b(?:(?:your|her|yuki['’]?s?)\s+(?:little\s+)?(?:home|house|garden|place|roost|nest)|where (?:you|yuki) (?:live|stay|sleep)|garden|petal nook)\b|\b(?:go|back|head|take me|take us)\s+(?:to\s+)?home\b|(?:ゆき|ユキ|君|あなた)の(?:家|庭|すみか)|おうち|お家|庭|住んで(?:いる|る)(?:ところ|場所)/iu.test(q);
+ const visit=/\b(?:show|visit|explore|take|lead|guide|go|head|bring|return|find|open)\b|\b(?:can|could|may|shall)\s+(?:i|we)\b|\b(?:want|love|like)\s+to\s+(?:see|look|visit)|\blet['’]?s\b|\b(?:look around|check out|drop by|hang out)\b|見せて|見てみたい|見たい|案内|連れて|行きたい|行こう|遊びに|帰ろう|訪れたい/iu.test(q);
+ return home&&visit;
 }
 const stop=new Set('a an the i me us you her she it to of on in and or for about please can could would will want like website section page project projects show find lead guide take point go open where is are my looking at'.split(' '));
 function nameScore(query,title){
@@ -54,6 +62,10 @@ export function guideReplyMatches(text,event,pages,lang='en',base=''){
 export function resolveGuideRequest(text,pages,currentPath,{lang='en',base=''}={}){
  if(!isGuideRequest(text))return null;
  const query=words(text),localized=pages.filter(p=>p.lang===lang&&safeSitePath(p.url,base));
+ if(isHomeVisitRequest(text)){
+  const home=localized.find(p=>guidePath(p.url,base)==='/yuki');
+  if(home)return {target:guideTarget(home.url,pages,lang,base)};
+ }
  // In conversation with Yuki, an unqualified "home" means her home. Explicit
  // "home page"/"landing page" still means the portfolio, not the garden.
  const homeOnly=/\bhome\b/.test(query)&&!/(?:home page|landing page|portfolio home)/.test(query);

@@ -1,10 +1,11 @@
-import {guidePath,guideTarget} from './guide-journey.mjs';
+import {guidePath,guideTarget,isHomeVisitRequest} from './guide-journey.mjs';
 import {safeSitePath} from '../protocol.mjs';
 
 // Intent families, not one magic phrase. Facts/jokes and explicit opt-outs stay
 // chat; only an invitation to choose something on the site starts a tour.
 export function isDiscoveryRequest(value){
  const q=String(value).normalize('NFKC').trim();
+ if(isHomeVisitRequest(q))return false;
  if(/\b(?:don't|do not|stop|no need|not now)\b|案内しない|案内は(?:いらない|不要)|選ばない|見せない/iu.test(q))return false;
  if(/\b(?:fact|trivia|joke|riddle|story|number|recipe)\b|豆知識|冗談|ジョーク|なぞなぞ|物語/iu.test(q))return false;
  const site=/\b(?:site|website|portfolio|project|essay|page|section|picture|image|look|see|explore|visit|go|show|lead|guide|take)\b|サイト|作品|記事|ページ|写真|画像|見せ|見たい|案内|連れて|行こ|行き|探検/u.test(q.toLowerCase());
