@@ -22,7 +22,7 @@ test('camera eases to the current foot and snaps only on resize/reduced motion',
  const p=gardenSpots.books;let previous=a.left;
  for(let t=16;t<=800;t+=16){const r=scene.getBoundingClientRect(),c=camera.update({x:r.left+p.x*r.width,y:r.top+p.y*r.height},{now:t});assert(c.left<=previous&&c.left>=gardenCamera(390,745,p).left);previous=c.left;}
  assert(Math.abs(camera.box.left-gardenCamera(390,745,p).left)<3);
- const r=scene.getBoundingClientRect(),snap=camera.update({x:r.left+.2*r.width,y:r.top+.775*r.height},{now:900,reduced:true});assert.deepEqual(snap,gardenCamera(390,745));
+ const r=scene.getBoundingClientRect(),snap=camera.update({x:r.left+gardenSpots.nest.x*r.width,y:r.top+gardenSpots.nest.y*r.height},{now:900,reduced:true});assert.deepEqual(snap,gardenCamera(390,745));
  viewport={...viewport,width:900,height:600};const r2=scene.getBoundingClientRect();camera.update({x:r2.left+.2*r2.width,y:r2.top+.775*r2.height},{now:920});assert.equal(camera.box.width,gardenCamera(900,600).width);assert.equal(camera.box.left,0);
 });
 test('manual exploration stays put until Follow Yuki and clamps both axes',()=>{

@@ -1,5 +1,5 @@
 import {waterGlisten,addGardenWaterSurfaces} from './water-light.mjs?v=3';
-import {GardenSkyDragons} from './sky-dragons.mjs';
+import {GardenSkyDragons} from './sky-dragons.mjs?v=2';
 // Every interactive object uses the illustration's coordinates. These are
 // authored effects and story snippets, not generated art or extra AI calls.
 export const gardenDiscoveries={

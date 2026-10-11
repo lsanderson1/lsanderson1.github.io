@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {dragonFrames} from '../assets/yuki/home/dragons/frames.mjs';
-import {dragonKinds,wingedKinds,flightSheets,rearCels,sideCels,glideCels,skyRoutes,DragonFlights,dragonPose,curvePoint,GardenSkyDragons,skyWindow,skyIslands,skyWater,islandDepths,islandEdgeInset,depthOcclusion} from '../assets/yuki/home/sky-dragons.mjs';
+import {dragonKinds,wingedKinds,flightSheets,rearCels,sideCels,glideCels,archivedSkyRoutes as skyRoutes,skyRoutes as activeSkyRoutes,DragonFlights,dragonPose,curvePoint,GardenSkyDragons,skyWindow,skyIslands,skyWater,islandDepths,islandEdgeInset,depthOcclusion} from '../assets/yuki/home/sky-dragons.mjs';
 const specimen=(kind,route,age=0)=>({id:0,kind,route,age,life:32000,tempo:1,size:1,phase:0});
 test('five approved designs have complete side and turn atlases, without rejected variants',()=>{
  assert.deepEqual(dragonKinds,['lavender','amber','sage','jade','cloud']);
@@ -68,7 +68,7 @@ test('flights are bounded, pause exactly, avoid catchup, and wait for paired art
  const snapshot=structuredClone(m.items);m.update(100,false);assert.deepEqual(m.items,snapshot);
  const kinds=new Set(),routes=new Set();
  for(let i=0;i<30000;i++){m.update(16);assert(m.items.length<=5);for(const d of m.items){kinds.add(d.kind);routes.add(d.route.id);}}
- assert.equal(kinds.size,5);assert(routes.has('left-away')&&routes.has('right-away'));
+ assert.equal(kinds.size,5);assert.deepEqual([...routes].sort(),activeSkyRoutes.map(r=>r.id).sort());
  m.clear();assert.equal(m.items.length,0);m.update(NaN);assert.equal(m.items.length,0);
 });
 function fixture(ImageClass){
@@ -126,12 +126,13 @@ test('near passes render above water threads and hidden/reduced scenes keep both
  assert.match(code,/if\(this.active\(\)\).*this.dragons.update/s);
  assert.match(readFileSync(new URL('../assets/yuki/home/garden.css',import.meta.url),'utf8'),/yg-sky-dragons/);
 });
-test('a design waits for every side/turn/rear sheet and late callbacks cannot revive a destroyed scene',()=>{
+test('a design waits only for active side sheets and late callbacks cannot revive a destroyed scene',()=>{
  class FakeImage{constructor(){this.src='';}}
  const {sky}=fixture(FakeImage);assert.equal(sky.ready.size,0);
  assert.equal(sky.loads.length,dragonKinds.flatMap(flightSheets).length);
- for(let i=0;i<4;i++)sky.loads[i].onload();assert.equal(sky.ready.size,0);sky.loads[4].onload();assert(sky.ready.has('lavender'));
- const late=sky.loads[5].onload,images=[...sky.loads];sky.destroy();late();
+ sky.loads[0].onload();assert.equal(sky.ready.size,0);sky.loads[1].onload();assert(sky.ready.has('lavender'));
+ assert(sky.loads.every(i=>!/-turn|-rear/.test(i.src)));
+ const late=sky.loads[2].onload,images=[...sky.loads];sky.destroy();late();
  assert.equal(sky.ready.size,0);assert(images.every(i=>i.onload===null&&i.onerror===null));
 });
 test('rear wingbeats alternate with living glides and retain a full up/down stroke',()=>{
@@ -144,9 +145,9 @@ test('rear wingbeats alternate with living glides and retain a full up/down stro
   assert(gliding>30&&flapping>30);
   assert(used.has(2)&&used.has(6));
   assert.deepEqual(rearCels(d,0),rearCels(d,8400));
-  assert.equal(flightSheets(kind).length,5);
+  assert.equal(flightSheets(kind).length,2);
  }
- assert.equal(flightSheets('jade').length,2);assert.equal(flightSheets('cloud').length,2);
+ assert.equal(flightSheets('jade').length,1);assert.equal(flightSheets('cloud').length,1);
 });
 test('side and rear glide companions move through all eight drawings and rejoin neutral exactly',()=>{
  for(const kind of wingedKinds)for(const rear of [false,true]){

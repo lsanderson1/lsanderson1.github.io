@@ -267,8 +267,8 @@
       "file": "services/yuki-api/reply-completion.mjs",
       "symbol": "completionRequest / parseCompletion",
       "firstLine": 6,
-      "lastLine": 53,
-      "sha256": "5e7917052ae11635600040d32a3f6e9158f0483c2ce833065b91391b0dca58e3"
+      "lastLine": 55,
+      "sha256": "570150f21edf160d208232b717d13ecab7ad2ccfdaeb1d6f10ff06fb79da47f2"
     }
   },
   {
@@ -296,13 +296,13 @@
       "en": "Placing feet on painted landmarks",
       "ja": "背景の目印に足元を合わせる"
     },
-    "explanation": "gardenSpots stores hand-authored normalized coordinates for five perches. gardenPoint converts them using the rendered illustration rectangle and scroll offset. For example, the nest is at 20% of width and 77.5% of height. These are chosen interface landmarks, not AI detection of objects in the picture.",
+    "explanation": "gardenSpots stores hand-authored normalized coordinates for five perches, shared with location memory and the camera. gardenPoint converts them using the rendered illustration rectangle and scroll offset. The roost foot anchor is at 22.5% of width and 79% of height, centering the curled drawing within the stone rim. These are chosen interface landmarks, not AI detection of objects in the picture.",
     "source": {
-      "file": "assets/yuki/home/garden.mjs",
+      "file": "assets/yuki/home/perches.mjs",
       "symbol": "gardenSpots / gardenPoint",
-      "firstLine": 8,
-      "lastLine": 9,
-      "sha256": "34a44791a515906f118e36f5692232783b39e2e92e7b71d5704c48084e629df0"
+      "firstLine": 3,
+      "lastLine": 5,
+      "sha256": "2159d45a6dcdb3f6369b437827798357f3742b6066ad59914996228814e5bfbe"
     }
   },
   {
@@ -317,9 +317,9 @@
     "source": {
       "file": "assets/yuki/home/location.mjs",
       "symbol": "YukiLocation",
-      "firstLine": 22,
-      "lastLine": 53,
-      "sha256": "10e03b9f4dc497aef0e2eddd27a9860ac57a310ff75d00ff0ebe7c2da65556c7"
+      "firstLine": 23,
+      "lastLine": 54,
+      "sha256": "c8b20538f99ea49c8f5d89f74ddca42c4364f7c460f2d5fa5886eb74f73e0bd7"
     }
   },
   {
@@ -351,9 +351,9 @@
     "source": {
       "file": "assets/yuki/home/camera.mjs",
       "symbol": "gardenCamera",
-      "firstLine": 4,
-      "lastLine": 9,
-      "sha256": "4f3fd80021203663b0d133ee69a1854afea896a6afd0c376f7a7527b65ceed87"
+      "firstLine": 5,
+      "lastLine": 10,
+      "sha256": "690f32bc32aa882deb81807f7c85bd29862f21fd38b87d04a7ba3be673343de8"
     }
   }
 ]

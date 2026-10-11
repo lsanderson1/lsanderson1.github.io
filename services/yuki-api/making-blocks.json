@@ -223,15 +223,15 @@
   {
     "id": "perch",
     "topic": "garden-testing",
-    "file": "assets/yuki/home/garden.mjs",
-    "start": "export const gardenSpots",
-    "until": "const tales",
+    "file": "assets/yuki/home/perches.mjs",
+    "start": "export const roostPerch",
+    "until": "// Move only",
     "symbol": "gardenSpots / gardenPoint",
     "title": {
       "en": "Placing feet on painted landmarks",
       "ja": "背景の目印に足元を合わせる"
     },
-    "explanation": "gardenSpots stores hand-authored normalized coordinates for five perches. gardenPoint converts them using the rendered illustration rectangle and scroll offset. For example, the nest is at 20% of width and 77.5% of height. These are chosen interface landmarks, not AI detection of objects in the picture."
+    "explanation": "gardenSpots stores hand-authored normalized coordinates for five perches, shared with location memory and the camera. gardenPoint converts them using the rendered illustration rectangle and scroll offset. The roost foot anchor is at 22.5% of width and 79% of height, centering the curled drawing within the stone rim. These are chosen interface landmarks, not AI detection of objects in the picture."
   },
   {
     "id": "location",

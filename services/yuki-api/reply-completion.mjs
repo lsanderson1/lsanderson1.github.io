@@ -1,4 +1,4 @@
-import {voiceInstructions,yukiStory,answerExplanationInstructions,replyContract} from './personality.mjs';
+import {voiceInstructions,yukiStory,answerExplanationInstructions,replyContract,firstPersonInstructions,ownerNameInstructions} from './personality.mjs';
 import {validReply,cleanAssistantText} from '../../assets/yuki/protocol.mjs';
 import {unfinishedReply,unfinishedNotice} from '../../assets/yuki/runtime/reply-completion.mjs';
 export {unfinishedReply};
@@ -12,6 +12,8 @@ export function completionRequest(request,reply,knowledge,web,language,issues=['
  const entries=[...knowledge.pages,...(web.entries??[])];
  const sourceIds=reply.sources.map(s=>entries.find(p=>p.url===s.url)?.id).filter(Boolean);
  if(language==='ja'&&issues.length===1&&issues[0]==='voice')return {messages:[{role:'system',content:`これは日本語の文章を、キャラクターの声に合わせて自然に書き直す作業。あなたは、明るく無邪気で遊び心のある赤ちゃんドラゴン「ゆき」。相手と友達のように話す。
+${firstPersonInstructions}
+${ownerNameInstructions}
 必ず普通体を使う。「です」「ます」「でした」「ました」の説明口調をやめる。ただし引用文はそのまま。「なの」「の」「だよ」を全部の文に付けない。動詞・形容詞で自然に言い切ってもいい。単純な語尾置換ではなく、文章全体を滑らかに組み直す。
 声の参考（この内容を回答に追加しない）：
 堅い文：小さな本でも、知らない世界を知ることができます。私はそこが魅力だと思います。
