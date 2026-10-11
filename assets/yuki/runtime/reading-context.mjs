@@ -24,6 +24,13 @@ export function readingDetail(section,title,lang='en'){
  if(!section||section.level===1||cleanTitle(section.title).toLocaleLowerCase()===cleanTitle(title).toLocaleLowerCase())return '';
  return (section.kind==='image'?(lang==='ja'?'画像：':'Image: '):'')+cleanTitle(section.title);
 }
+// Presentation only: the AI keeps its precise section/image/landmark context.
+export function readingLabels({title='',section=null,lang='en',garden=false}={}){
+ const ja=lang==='ja';
+ const name=garden?(ja?'「ゆきの庭」— 桜に囲まれた、わたしのおうち':'Yuki’s Garden — My Cozy Home Among the Blossoms'):title;
+ const detail=garden?'':readingDetail(section,title,lang);
+ return {page:(ja?'現在のページ：':'On this page: ')+name,view:detail?(ja?'表示中：':'In view: ')+detail:''};
+}
 export function readPageDisplaySection(doc,{path='/',base='',lang='en',height,header=0}){
  if(!homePage(path,base,lang))return readPageSection(doc,height,header);
  // The homepage label describes the broad area, not one of the cards inside

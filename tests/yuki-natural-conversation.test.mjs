@@ -26,4 +26,6 @@ for(const lang of ['en','ja'])test(`all ${lang} answer paths speak as Yuki witho
  assert.match(ownerNameInstructions,/only when the full identity is useful or explicitly requested/);
  assert.match(ownerNameInstructions,/preserve exact official titles/);
  assert.match(ownerNameInstructions,/not automatically the visitor/);
+ assert.match(voiceInstructions(lang),/exact-title exception is narrow/);
+ assert.doesNotMatch(requests[1].messages.map(m=>m.content).join('\n'),/Name the page and, when resolved/);
 });

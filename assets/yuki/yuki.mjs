@@ -25,7 +25,7 @@ import {messageRecord,translatedText,translationBatch,checkedTranslations,applyT
 import {replyLanguage,replyQualityIssues} from './runtime/reply-quality.mjs';
 import {DiscoveryGuide,isDiscoveryRequest} from './runtime/discovery-guide.mjs?v=2';
 import {CallDialogue} from './runtime/call-dialogue.mjs?v=3';
-import {ReadingMemory,readPageTitle,readingDetail,readPageDisplaySection,readPageSection,readPageImages,readGardenSpot,guideReference,followUpReference} from './runtime/reading-context.mjs?v=5';
+import {ReadingMemory,readPageTitle,readingLabels,readPageDisplaySection,readPageSection,readPageImages,readGardenSpot,guideReference,followUpReference} from './runtime/reading-context.mjs?v=6';
 import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=17';
 import {safeWebURL} from './runtime/web-sources.mjs?v=1';
 import {cleanVariety,rememberReply,packChatRequest,repetitionScore} from './runtime/reply-variety.mjs?v=3';
@@ -103,9 +103,9 @@ async function start(){
   measureHeader();
   const title=readPageTitle(document,{path:location.pathname,base,title:root.dataset.pageTitle,lang:ja?'ja':'en'});
   const section=readPageDisplaySection(document,{path:location.pathname,base,lang:ja?'ja':'en',height:innerHeight,header:headerBottom});
-  $('.yuki-page').textContent=tr('On this page: ','現在のページ：')+title;
-  const detail=readingDetail(section,title,ja?'ja':'en');
-  $('.yuki-view').textContent=detail?tr('In view: ','表示中：')+detail:'';
+  const labels=readingLabels({title,section,lang:ja?'ja':'en',garden:Boolean(gardenScene)});
+  $('.yuki-page').textContent=labels.page;
+  $('.yuki-view').textContent=labels.view;$('.yuki-view').hidden=!labels.view;
   $('.yuki-explain').hidden=!readingMemory.get();$('.yuki-explain').disabled=busy||!online;
  }
  $('.yuki-explain').onclick=()=>{if(!online||busy||!readingMemory.get())return;if($('textarea').value.trim()){status(tr('Send or clear your draft first; I’ll keep it here for you.','入力中のメッセージを先に送るか消してね。今の文章はそのまま残しておくよ。'));$('textarea').focus();return;}$('textarea').value=tr('Please explain what you just showed me in more detail. How does it relate to this project?','さっき案内してくれたところを、もう少し詳しく説明して。この作品とどう関係しているの？');$('.yuki-form').requestSubmit();};
