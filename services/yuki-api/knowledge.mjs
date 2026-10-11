@@ -1,7 +1,7 @@
 import {safeSitePath} from '../../assets/yuki/protocol.mjs';
 import {readingReference,sectionKey} from '../../assets/yuki/runtime/reading-context.mjs';
 import {makingKnowledge} from './making-knowledge.mjs';
-import {questionPage,questionImages,asksCurrentPage} from './page-awareness.mjs';
+import {questionPage,questionImages,asksCurrentPage,asksPageOverview} from './page-awareness.mjs';
 
 const clean=value=>typeof value==='string'?value.replace(/\s+/g,' ').trim():'';
 export function validateContext(value){
@@ -58,6 +58,7 @@ export function retrieveKnowledge(k,input){
  const focus=guideExplanation(input.message)?lastGuided:null;
  const mentioned=questionPage(pages,input.message),visual=focus?null:questionImages(pages,input,current,lastGuided,mentioned);
  const localQuestion=!focus&&!mentioned&&asksCurrentPage(input.message);
+ const wholePage=!focus&&!visual&&(localQuestion||Boolean(mentioned))&&asksPageOverview(input.message);
  const gardenPage=pages.find(p=>p.url===current?.page&&/^\/(?:ja\/)?yuki\/$/.test(p.url));
  const gardenSection=gardenPage?.sections.find(s=>s.anchor==='garden-'+input.context?.gardenSpot);
  const gardenSpot=gardenSection?{id:input.context.gardenSpot,title:gardenSection.title,sourceId:`${gardenPage.id}::${gardenSection.id}`}:null;
@@ -84,11 +85,20 @@ export function retrieveKnowledge(k,input){
  // Reserve evidence for the actual pictures in question before unrelated
  // keyword matches consume the six-passage budget. Description, not vision.
  for(const image of visual?.images??[])add(ranked.find(c=>c.id===image.sourceId));
- if(localQuestion&&gardenSpot)add(ranked.find(c=>c.id===gardenSpot.sourceId));
+ if(localQuestion&&gardenSpot&&!wholePage)add(ranked.find(c=>c.id===gardenSpot.sourceId));
+ if(wholePage){
+  add(ranked.find(c=>c.page===scope&&c.section===''));
+  // Give an overview a spread of verified landmarks/sections, independent of
+  // the currently selected perch. Do not spend the budget on repeated chunks.
+  const overviewPage=pages.find(p=>p.url===scope);
+  const sections=(overviewPage?.sections||[]).filter(s=>s.id!=='s0'&&s.kind!=='image');
+  const landmarks=sections.filter(s=>s.kind==='garden');
+  for(const s of landmarks.length?landmarks:sections)add(ranked.find(c=>c.page===scope&&c.section===s.id&&c.part===0));
+ }
  if(mentioned)add(ranked.find(c=>c.page===mentioned.url&&c.section===''));
  // A live-view question must not reserve space for a stale guided stop.
  // Ordinary follow-ups can still use the recent, published guide reference.
- for(const ref of focus?[focus]:localQuestion?[current]:[current,lastGuided])if(ref){const c=ranked.find(c=>c.page===ref.page&&c.section===ref.section);add(c);if(c)ref.sourceId=c.id;}
+ for(const ref of wholePage?[]:focus?[focus]:localQuestion?[current]:[current,lastGuided])if(ref){const c=ranked.find(c=>c.page===ref.page&&c.section===ref.section);add(c);if(c)ref.sourceId=c.id;}
  for(const c of ranked)add(c);
- return {owner:k.owner,bio:clean(k.bio[input.lang]).slice(0,2000),skills:JSON.stringify(k.skills||[]).slice(0,2000),view:{current,lastGuided:localQuestion?null:lastGuided,focus,...(scope?{scope}:{}),...(localQuestion?{localQuestion:true}:{}),...(mentioned?{questionPage:{page:mentioned.url,title:mentioned.title}}:{}),...(visual?{visual}:{}),...(gardenSpot?{gardenSpot}:{} )},pages:chosen.map(({id,url,title,text})=>({id,url,title,text})),makingOf:focus?null:makingKnowledge(localQuestion?{...input,history:[]}:input)};
+ return {owner:k.owner,bio:clean(k.bio[input.lang]).slice(0,2000),skills:JSON.stringify(k.skills||[]).slice(0,2000),view:{current:wholePage?resolve(pages,{page:current?.page}):current,lastGuided:localQuestion?null:lastGuided,focus,...(scope?{scope}:{}),...(localQuestion?{localQuestion:true}:{}),...(wholePage?{wholePage:true}:{}),...(mentioned?{questionPage:{page:mentioned.url,title:mentioned.title}}:{}),...(visual?{visual}:{}),...(gardenSpot&&!wholePage?{gardenSpot}:{} )},pages:chosen.map(({id,url,title,text})=>({id,url,title,text})),makingOf:focus||wholePage?null:makingKnowledge(localQuestion?{...input,history:[]}:input)};
 }

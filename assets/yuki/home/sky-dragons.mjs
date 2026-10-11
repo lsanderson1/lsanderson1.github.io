@@ -1,4 +1,5 @@
 import {dragonFrames} from './dragons/frames.mjs';
+import {tracedIslands,tracedTerrain} from './depth-contours.mjs';
 
 // Distant visitors, never Yuki. Positions are in the unchanged garden's 1536x1024 space.
 export const dragonKinds = ['lavender','amber','sage','jade','cloud'];
@@ -28,28 +29,37 @@ export const skyRoutes = [
  {id:'side-east-water',points:[[190,223],[420,237],[700,237],[1010,221]],size:[.085,.085],depth:[.80,.80],motion:'glide',direction:1},
  {id:'side-west-near',points:[[1010,221],[700,237],[420,237],[190,223]],size:[.13,.13],depth:[.30,.30],motion:'steady',direction:-1}
 ];
-// Authored scene depth, near=0 / far=1. Both falls belong to the large left island.
+// Authored scene depth, near=0 / far=1. Each fall follows its parent island.
 // Depth is independent of species/body size, but follows the same route progress as scale.
 export const islandDepths=[.46,.77,.86,.69];
-export const islandEdgeInset=.65;
-export const skyWindow='M300 -100 H951 V0 L948 36 L947 72 L956 111 L932 116 L930 171 L913 171 L913 140 L918 133 L918 116 L910 107 L886 32 L863 109 L855 117 L852 133 L859 141 L859 211 L852 221 L850 242 L837 240 L834 220 L824 223 L821 192 L816 180 L811 199 L810 224 L802 230 L794 227 L789 233 L785 207 L782 192 L775 181 L771 196 L767 228 L759 234 L751 243 L748 268 L738 285 L716 295 L671 296 L625 293 L580 291 L537 294 L493 291 L447 292 L414 286 L378 282 L337 269 L307 261 L279 247 L248 219 L211 195 L222 152 L250 121 L265 83 L291 52Z';
-export const skyIslands=[
- 'M325 184 L341 178 L353 177 L358 167 L364 175 L371 173 L372 155 L378 151 L382 129 L388 150 L391 151 L392 140 L401 136 L404 113 L410 137 L416 140 L419 156 L421 143 L427 132 L431 149 L434 157 L438 161 L444 174 L450 179 L460 169 L464 179 L475 181 L478 186 L471 203 L462 211 L461 219 L453 222 L448 215 L439 220 L433 242 L423 240 L415 250 L408 257 L399 253 L391 240 L382 235 L379 225 L370 225 L363 217 L358 231 L352 229 L346 216 L340 211 L337 201 L329 194Z',
- 'M475 100 L480 96 L486 97 L488 86 L486 83 L490 74 L495 88 L500 89 L503 79 L509 76 L511 65 L514 56 L518 63 L518 78 L522 78 L523 63 L526 49 L530 62 L533 80 L539 79 L539 69 L543 62 L549 71 L550 81 L555 78 L561 91 L562 85 L566 77 L571 91 L577 98 L581 103 L570 114 L566 132 L560 139 L553 130 L548 144 L541 150 L537 158 L528 163 L516 153 L509 141 L504 143 L498 134 L493 117 L483 113Z',
- 'M583 154 L592 150 L595 143 L599 151 L602 137 L606 150 L612 149 L617 146 L621 151 L622 156 L615 160 L612 172 L606 183 L599 180 L595 172 L590 170 L588 161Z',
- 'M539 220 L544 216 L547 208 L550 218 L558 216 L564 220 L558 229 L554 228 L551 238 L547 233 L545 227 L541 226Z'
+// The centre of Lloyd's stroke is the edge: no outline dilation/inset halo.
+export const islandEdgeInset=0;
+// Only a broad canopy/ground safety window. Actual rock/tower boundaries now
+// come from the tracing, rather than this old approximate diagonal sky clip.
+export const skyWindow='M300 -100 H1100 V340 H50 V235 L70 179 L129 145 L185 105 L250 81 L278 39Z';
+export const skyIslands=tracedIslands;
+export const skyTerrain=tracedTerrain;
+// Soft painted-cloud volumes. Near flights stay in front; distant flights fade
+// through these feathered areas without introducing another hard silhouette.
+export const skyClouds=[
+ {id:'west',cx:233,cy:133,rx:49,ry:38,depth:.62,density:.90},
+ {id:'castle-breeze',cx:707,cy:149,rx:67,ry:45,depth:.65,density:.92},
+ {id:'horizon',cx:672,cy:226,rx:62,ry:24,depth:.90,density:.82}
 ];
 // Water attenuates the dragon instead of deleting it like solid rock.
 export const skyWater=[
  {island:0,d:'M429 192 Q433 191 437 192 L436 219 L434 247 L434 270 Q434 282 432 288 L428 288 Q431 275 430 253 L429 220Z',transmission:.30,threads:['M431 219 Q431 254 430 283','M434 218 Q435 252 432 287']},
- {island:0,d:'M365 234 L369 234 L369 266 L368 280 L365 280 L367 261Z',transmission:.48,threads:['M367 241 L367 276']}
+ {island:0,d:'M365 234 L369 234 L369 266 L368 280 L365 280 L367 261Z',transmission:.48,threads:['M367 241 L367 276']},
+ {island:1,d:'M543 130 L547 132 L547 152 L545 183 L542 181 L544 151Z',transmission:.55,threads:[]}
 ];
 const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
 const mix=(a,b,t)=>a+(b-a)*t;
 const smooth=t=>{t=clamp(t);return t*t*(3-2*t);};
 export function depthOcclusion(depth){
  const islands=islandDepths.map(plane=>smooth((depth-plane+.008)/.016));
- return {islands,water:skyWater.map(w=>1-islands[w.island]*(1-w.transmission))};
+ return {islands,water:skyWater.map(w=>1-islands[w.island]*(1-w.transmission)),
+  terrain:skyTerrain.map(s=>smooth((depth-s.depth+.008)/.016)),
+  clouds:skyClouds.map(c=>smooth((depth-c.depth)/.08)*c.density)};
 }
 export function curvePoint(points,t){
  const u=1-t;
@@ -156,6 +166,9 @@ export class GardenSkyDragons{
   this.prefix=`yg-dragons-${++instance}`;
   const clip=element(doc,'clipPath',{id:this.prefix+'-sky',clipPathUnits:'userSpaceOnUse'});
   clip.append(element(doc,'path',{d:skyWindow}));defs.append(clip);
+  const cloudFade=element(doc,'radialGradient',{id:this.prefix+'-cloud-fade'});
+  for(const [offset,alpha] of [[0,1],[.4,.94],[.7,.48],[1,0]])cloudFade.append(element(doc,'stop',{offset,'stop-color':'black','stop-opacity':alpha}));
+  defs.append(cloudFade);
   // World-space, per-visitor masks allow near and far flights at the same screen point.
   const layerAttrs={class:'yg-sky-dragons','clip-path':`url(#${this.prefix}-sky)`,'aria-hidden':'true','pointer-events':'none'};
   this.layer=element(doc,'g',{...layerAttrs,id:this.prefix+'-visitors'});svg.append(this.layer);
@@ -195,18 +208,24 @@ export class GardenSkyDragons{
     const maskId=this.prefix+'-depth-'+dragon.id;
     const mask=element(this.doc,'mask',{id:maskId,maskUnits:'userSpaceOnUse',x:0,y:-100,width:1536,height:1124,'mask-type':'luminance'});
     mask.append(element(this.doc,'rect',{x:0,y:-100,width:1536,height:1124,fill:'white'}));
+    const clouds=skyClouds.map(c=>element(this.doc,'ellipse',{cx:c.cx,cy:c.cy,rx:c.rx,ry:c.ry,fill:`url(#${this.prefix}-cloud-fade)`,opacity:0}));
     const water=skyWater.map(w=>element(this.doc,'path',{d:w.d,fill:'white'}));
-    const islands=skyIslands.map(d=>element(this.doc,'path',{d,fill:'white',stroke:'white','stroke-width':islandEdgeInset*2,'stroke-linejoin':'round'}));
-    for(const shape of [...water,...islands])mask.append(shape);this.defs.append(mask);
+    const islands=skyIslands.map(d=>element(this.doc,'path',{d,fill:'black',opacity:0}));
+    const terrain=skyTerrain.map(s=>element(this.doc,'path',{d:s.d,fill:'black',opacity:0}));
+    // Alpha-composite dark occluders; a foreground shape must never paint white
+    // over another occluder and accidentally reveal a more distant dragon.
+    for(const shape of [...clouds,...water,...islands,...terrain])mask.append(shape);this.defs.append(mask);
     const outer=element(this.doc,'g',{mask:`url(#${maskId})`});
     const group=element(this.doc,'g',{'data-sky-dragon':dragon.kind,'data-flight':dragon.route.id});
     const blend=element(this.doc,'g',{style:'isolation:isolate'}),uses=[];
     for(let i=0;i<4;i++){const use=element(this.doc,'use',{style:'mix-blend-mode:plus-lighter',opacity:0});blend.append(use);uses.push(use);}
-    group.append(blend);outer.append(group);node={group,outer,uses,mask,water,islands};this.nodes.set(dragon.id,node);
+    group.append(blend);outer.append(group);node={group,outer,uses,mask,water,islands,terrain,clouds};this.nodes.set(dragon.id,node);
    }
-   const occlusion=depthOcclusion(p.depth),gray=value=>{const c=Math.round(value*255);return `rgb(${c} ${c} ${c})`;};
-   node.water.forEach((shape,i)=>shape.setAttribute('fill',gray(occlusion.water[i])));
-   node.islands.forEach((shape,i)=>shape.setAttribute('fill',gray(1-occlusion.islands[i])));
+   const occlusion=depthOcclusion(p.depth);
+   node.water.forEach((shape,i)=>{shape.setAttribute('fill','black');shape.setAttribute('opacity',1-occlusion.water[i]);});
+   node.islands.forEach((shape,i)=>shape.setAttribute('opacity',occlusion.islands[i]));
+   node.terrain.forEach((shape,i)=>shape.setAttribute('opacity',occlusion.terrain[i]));
+   node.clouds.forEach((shape,i)=>shape.setAttribute('opacity',occlusion.clouds[i]));
    // The near pass also paints above the animated falling-water threads.
    (p.depth<islandDepths[0]?this.frontLayer:this.layer).append(node.outer);
    node.group.setAttribute('transform',`translate(${p.x.toFixed(2)} ${p.y.toFixed(2)}) rotate(${p.angle.toFixed(2)}) scale(${(p.scale*p.direction).toFixed(4)} ${p.scale.toFixed(4)})`);

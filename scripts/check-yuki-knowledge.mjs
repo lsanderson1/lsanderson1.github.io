@@ -18,9 +18,12 @@ for(const p of k.pages){
  assert(awareness.pages.every(s=>s.url.split('#')[0]===p.url));assert.equal(awareness.makingOf,null);
  if(/^\/(ja\/)?yuki\/$/.test(p.url))for(const id of ['nest','pond','lookout','books','treasures']){
   const s=p.sections.find(s=>s.anchor==='garden-'+id);assert(s,id);
-  const detail=retrieveKnowledge(k,{...input,context:{section:s.id,gardenSpot:id}});
+  const detail=retrieveKnowledge(k,{...input,message:p.lang==='ja'?'これ何？':"What's this?",context:{section:s.id,gardenSpot:id}});
   assert.equal(detail.view.gardenSpot.id,id);assert(detail.pages.some(s=>s.id===detail.view.gardenSpot.sourceId));
   assert(s.text.length>70,'Garden landmarks need useful role/interaction evidence, not only a title');
+  const overview=retrieveKnowledge(k,{...input,context:{section:s.id,gardenSpot:id}});
+  assert.equal(overview.view.wholePage,true);assert.equal(overview.view.gardenSpot,undefined);
+  for(const spot of ['nest','pond','lookout','books','treasures'])assert(overview.pages.some(entry=>entry.url.endsWith('#garden-'+spot)),'Whole-place answers need a spread of garden evidence');
  }
  const file=path.join(site,p.url.endsWith('/')?p.url+'index.html':p.url);
  assert(file.startsWith(site+path.sep));const html=fs.readFileSync(file,'utf8');

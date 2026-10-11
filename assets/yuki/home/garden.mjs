@@ -4,7 +4,7 @@ import {HomeDialogue} from './home-dialogue.mjs?v=2';
 import {attachAmbience} from './ambience.mjs';
 import {GardenCamera,attachGardenExplorer} from './camera.mjs?v=3';
 import {GardenPond} from './pond.mjs?v=3';
-import {GardenWorldLife} from './world-life.mjs?v=6';
+import {GardenWorldLife} from './world-life.mjs?v=7';
 import {gardenSpots,gardenPoint} from './perches.mjs';
 export {gardenSpots,gardenPoint} from './perches.mjs';
 const tales={

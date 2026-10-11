@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {dragonFrames} from '../assets/yuki/home/dragons/frames.mjs';
-import {dragonKinds,wingedKinds,flightSheets,rearCels,sideCels,glideCels,archivedSkyRoutes as skyRoutes,skyRoutes as activeSkyRoutes,DragonFlights,dragonPose,curvePoint,GardenSkyDragons,skyWindow,skyIslands,skyWater,islandDepths,islandEdgeInset,depthOcclusion} from '../assets/yuki/home/sky-dragons.mjs';
+import {dragonKinds,wingedKinds,flightSheets,rearCels,sideCels,glideCels,archivedSkyRoutes as skyRoutes,skyRoutes as activeSkyRoutes,DragonFlights,dragonPose,curvePoint,GardenSkyDragons,skyWindow,skyIslands,skyWater,skyTerrain,skyClouds,islandDepths,islandEdgeInset,depthOcclusion} from '../assets/yuki/home/sky-dragons.mjs';
 const specimen=(kind,route,age=0)=>({id:0,kind,route,age,life:32000,tempo:1,size:1,phase:0});
 test('five approved designs have complete side and turn atlases, without rejected variants',()=>{
  assert.deepEqual(dragonKinds,['lavender','amber','sage','jade','cloud']);
@@ -82,14 +82,14 @@ test('renderer mirrors the same artwork and intersects sky with island occlusion
  const node=sky.nodes.get(0);assert.match(node.group.attrs.transform,/scale\(-/);
  assert(node.uses.some(n=>n.attrs.href?.includes('cloud-turn')));
  assert.equal(defs.children[0].children[0].attrs.d,skyWindow);
- assert.equal(node.mask.children.length,skyIslands.length+skyWater.length+1);
+ assert.equal(node.mask.children.length,skyIslands.length+skyWater.length+skyTerrain.length+skyClouds.length+1);
  assert(skyWater.every(w=>w.transmission>0&&w.transmission<1));
  assert(node.outer.attrs.mask);assert(sky.layer.attrs['clip-path']);assert.equal(sky.layer.attrs['clip-path'],sky.frontLayer.attrs['clip-path']);
  assert.equal(node.uses.length,4);
  sky.clear();assert.equal(sky.nodes.size,0);sky.destroy();assert.equal(svg.children.length,1);
 });
 test('distance changes masking consistently, with water following its parent island',()=>{
- assert.equal(islandDepths.length,skyIslands.length);assert(islandEdgeInset>0&&islandEdgeInset<1);
+ assert.equal(islandDepths.length,skyIslands.length);assert.equal(islandEdgeInset,0);
  const near=depthOcclusion(.2),far=depthOcclusion(.99),middle=depthOcclusion(.72);
  assert(near.islands.every(n=>n===0));assert(near.water.every(n=>n===1));
  assert(far.islands.every(n=>n===1));assert(far.water.every((n,i)=>Math.abs(n-skyWater[i].transmission)<1e-9));
@@ -115,10 +115,23 @@ test('identical screen paths can pass in front or behind without scale-dependent
  const a=sky.nodes.get(1),b=sky.nodes.get(2),ap=dragonPose(sky.model.items[0]),bp=dragonPose(sky.model.items[1]);
  assert.equal(ap.x,bp.x);assert.equal(ap.y,bp.y);assert(ap.scale>bp.scale);
  assert.equal(a.outer.parent,sky.frontLayer);assert.equal(b.outer.parent,sky.layer);
- assert.equal(a.islands[0].attrs.fill,'rgb(255 255 255)');assert.equal(b.islands[0].attrs.fill,'rgb(0 0 0)');
- assert.equal(a.water[0].attrs.fill,'rgb(255 255 255)');assert.equal(b.water[0].attrs.fill,'rgb(77 77 77)');
+ assert.equal(a.islands[0].attrs.opacity,'0');assert.equal(b.islands[0].attrs.opacity,'1');
+ assert.equal(a.water[0].attrs.opacity,'0');assert.equal(b.water[0].attrs.opacity,'0.7');
  sky.render();assert.equal(sky.frontLayer.children.length,1);assert.equal(sky.layer.children.length,1);
  const masks=[a.mask,b.mask];sky.clear();assert(masks.every(n=>n.parent===null));
+});
+
+test('traced terrain and feathered clouds compose without white cutouts revealing hidden visitors',()=>{
+ const {sky,defs}=fixture();sky.model.items=[specimen('lavender',activeSkyRoutes[2],18000)];sky.render();
+ const n=sky.nodes.get(0);
+ assert(n.terrain.every(p=>p.attrs.fill==='black'&&p.attrs.opacity==='1'));
+ assert(n.islands.every(p=>p.attrs.stroke===undefined));
+ assert(n.mask.children.slice(1).every(p=>p.attrs.fill!=='white'));
+ assert(n.clouds.some(p=>Number(p.attrs.opacity)>.8));
+ const fade=defs.children.find(p=>p.name==='radialGradient');
+ assert.equal(fade.children[0].attrs['stop-opacity'],'1');assert.equal(fade.children.at(-1).attrs['stop-opacity'],'0');
+ assert(depthOcclusion(.3).clouds.every(v=>v===0));
+ for(let z=0;z<1;z+=.001){const a=depthOcclusion(z),b=depthOcclusion(z+.001);assert(a.clouds.every((v,i)=>v<=b.clouds[i]&&b.clouds[i]-v<.02));}
 });
 test('near passes render above water threads and hidden/reduced scenes keep both depth layers paused',()=>{
  const code=readFileSync(new URL('../assets/yuki/home/world-life.mjs',import.meta.url),'utf8');

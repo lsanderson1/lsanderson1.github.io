@@ -62,7 +62,7 @@ test('every AI guide stage paraphrases with a personal thought and the correct s
   const request=modelRequest(input,selectKnowledge(site,input)),prompt=request.messages.map(m=>m.content).join('\n');
   assert.match(prompt,/OWN WORDS AT EVERY STOP/);assert.match(prompt,/do not quote, recite, or closely copy/);assert.match(prompt,/topic-specific personal thought/);
   assert.match(prompt,/Coding Strategies/);assert(!prompt.includes('Project Reap'));
-  assert.match(prompt,kind==='arrive'?/6–8 connected sentences/:/2–3 sentence guide preview/);
+  assert.match(prompt,kind==='arrive'?/6–8 connected sentences/:kind==='link'?/PENULTIMATE STOP/:/EARLY NAVIGATION/);
   if(kind!=='arrive'){const action=guideNextAction(guideEvent,site,lang);assert.match(action,kind==='nav'?/Essays/:new RegExp(label));assert(guideReplyMatches('Coding Strategies! '+action,guideEvent,pages,lang));}
   if(kind==='link')assert(prompt.includes('"linkLabel":"'+label+'"'));
  }
