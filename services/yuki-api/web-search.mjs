@@ -33,14 +33,17 @@ export function searchInstructions(web={}){
  return 'WEB ACCESS: No web lookup is available for this reply. Do not claim to browse, search or verify current internet information. Use the supplied site/canon or clearly qualified general knowledge; be honest about uncertainty.';
 }
 export async function searchTavily({network,readJSON,env,query,lang,signal,message=''}){
- const clean=safeSearchQuery(query);if(!clean)return [];
+ return (await searchTavilyResult({network,readJSON,env,query,lang,signal,message})).entries;
+}
+export async function searchTavilyResult({network,readJSON,env,query,lang,signal,message=''}){
+ const clean=safeSearchQuery(query);if(!clean)return {entries:[],issue:'planning'};
  const domains=officialSearchDomains(message,clean);
  // Hard-code endpoint, depth and every cost-affecting option. No crawling,
  // extraction, advanced/automatic modes, retries, or paid fallback.
  const response=await network(TAVILY_SEARCH,{method:'POST',redirect:'manual',signal,headers:{Authorization:`Bearer ${env.TAVILY_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({query:clean,search_depth:'basic',auto_parameters:false,max_results:3,topic:'general',language:lang==='ja'?'ja':'en',include_answer:false,include_raw_content:false,include_images:false,include_usage:true,safe_search:true,...(domains.length?{include_domains:domains,include_domains_mode:'restrict',filter_by_language:false}:{})})});
- if(!response.ok)return [];
+ if(!response.ok)return {entries:[],issue:[429,432,433].includes(response.status)?'provider-limit':'provider'};
  const data=await readJSON(response,96000);
- if(!Array.isArray(data?.results))return [];
+ if(!Array.isArray(data?.results))return {entries:[],issue:'provider'};
  const entries=[],seen=new Set();
  for(const result of data.results.slice(0,10)){
   const url=safeWebURL(result?.url);
@@ -50,7 +53,24 @@ export async function searchTavily({network,readJSON,env,query,lang,signal,messa
   if(!title||!text)continue;
   seen.add(url);entries.push({id:`web:${entries.length+1}`,title,url,text});if(entries.length===3)break;
  }
- return entries;
+ return {entries,issue:entries.length?'':'no-results'};
+}
+
+// Operational notices are not answers/facts and must not become novelty memory.
+export function lookupNotice(language,issue='provider'){
+ const ja=language==='ja',texts={
+  disabled:ja?'新しい豆知識は出典も確かめたいな。今はウェブ検索がオフになっているから、プライバシー欄で検索をオンにすると調べられるよ。':"I'd like to check a source for a new fact. Web lookup is switched off right now; you can enable it under Privacy.",
+  limit:ja?'無料検索の安全枠に達したみたい。新しい出典は確認できなかったけれど、これまでの話の説明や冗談なら続けられるよ。':"The free search safety allowance has been reached, so I couldn't check a new source. We can still build on our conversation or share a joke.",
+  'ai-limit':ja?'検索結果を説明するためのAI利用枠が、今は足りなかったよ。検索自体は始めていないから、少し待ってから試してね。':"I couldn't reserve enough AI allowance to explain a search result, so I haven't started a lookup. Give me a little time before trying again.",
+  'no-results':ja?'検索はできたけれど、今回の疑問を裏づける使える出典が見つからなかったよ。見つけたふりはせず、ここは正直に伝えるね。':"The search ran, but it didn't return usable evidence for this question. I don't want to pretend those results answered it.",
+  answer:ja?'出典は見つかったけれど、それを正確に説明する返事がまとまらなかったよ。検索の失敗ではなく、わたしの回答づくりの問題だったんだ。':"I found sources, but couldn't turn them into a dependable answer this time. The lookup worked; the problem was putting my explanation together.",
+  planning:ja?'新しい豆知識の検索先をうまく絞れなかったよ。まだ検索していないし、さっきの話を新しい発見として繰り返すのも避けたいな。':"I couldn't choose a useful new fact to look up this time. I haven't searched yet, and I don't want to pass the previous fact off as a new discovery.",
+  provider:ja?'今は検索サービスから使える結果が届かなかったよ。調べられたふりはせず、少し後でまた試してみたいな。':"I couldn't get usable results from the search service just now. I haven't verified a new source, so I'd rather try again later than guess.",
+  'provider-limit':ja?'検索サービス側から、これ以上の検索を受け付けられないと返ってきたよ。一時的な制限か利用枠の上限で、こちらのテスト用上限とは別なんだ。':"The search provider isn't accepting more lookups right now because of a rate or allowance limit. That's separate from our testing limits.",
+  timeout:ja?'今回は確認に時間がかかりすぎちゃった。新しい出典を確かめられたとは言えないから、答えを推測するのはやめておくね。':"The check took too long this time. I can't say I've verified a new source, so I won't fill in the answer with a guess."
+ };
+ if(!Object.hasOwn(texts,issue))issue='provider';
+ return {text:texts[issue],emotion:'thoughtful',gesture:'none',destination:'none',sources:[],storyTopics:[],notice:true,searchIssue:issue,searchStatus:issue==='limit'||issue==='provider-limit'?'limit':issue==='answer'?'used':'unavailable'};
 }
 
 // Uses a separate object name for each UTC month, inside the existing binding.
@@ -62,7 +82,9 @@ export async function reserveSearch(state,env,body,now=Date.now()){
  const allowed=await state.storage.transaction(async tx=>{
   const monthKey='web:'+day.slice(0,7),dayKey='web:'+day,visitorKey=dayKey+':'+hash;
   const total=await tx.get(monthKey)||0,daily=await tx.get(dayKey)||0,visitor=await tx.get(visitorKey)||0;
-  if(total>=limits.month||daily>=limits.day||visitor>=limits.visitor)return false;
+  // Owner-controlled testing switches only. The free-month ceiling remains
+  // unconditional; missing/invalid switches keep the daily protections on.
+  if(total>=limits.month||(env.SEARCH_DAILY_LIMIT_ENABLED!=='false'&&daily>=limits.day)||(env.SEARCH_VISITOR_DAILY_LIMIT_ENABLED!=='false'&&visitor>=limits.visitor))return false;
   await tx.put(monthKey,total+1);await tx.put(dayKey,daily+1);await tx.put(visitorKey,visitor+1);return true;
  });
  if(!await state.storage.getAlarm())await state.storage.setAlarm(now+42*86400000);

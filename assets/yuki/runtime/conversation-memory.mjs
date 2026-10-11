@@ -1,3 +1,4 @@
+import {discoveryKind} from './discovery.mjs';
 // Bounded, same-tab conversation recall. Never a server-side visitor profile.
 export const memoryKey='yuki-conversation-memory-v1';
 const lifetime=86400000;
@@ -19,8 +20,8 @@ export class ConversationMemory{
  }
  recall(question,history=[]){
   this.expire();
-  const query=words(question),recent=new Set(history.map(m=>m.content));
-  const available=this.turns.map((t,i)=>({t,i,score:[...words(t.question+' '+t.answer)].filter(w=>query.has(w)).length})).filter(({t})=>!recent.has(t.question)&&!recent.has(t.answer));
+  const query=words(question),recent=new Set(history.map(m=>m.content)),kind=discoveryKind(question,history);
+  const available=this.turns.map((t,i)=>({t,i,score:[...words(t.question+' '+t.answer)].filter(w=>query.has(w)).length+(kind&&discoveryKind(t.question,this.turns.slice(0,i).map(m=>({role:'user',content:m.question})))===kind?100:0)})).filter(({t})=>!recent.has(t.answer)&&(kind||!recent.has(t.question)));
   // Include the latest older exchange as continuity, plus relevant older turns.
   const selected=available.sort((a,b)=>b.score-a.score||b.i-a.i).slice(0,3);
   const last=available.reduce((a,b)=>!a||b.i>a.i?b:a,null);if(last&&!selected.includes(last))selected.push(last);

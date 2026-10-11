@@ -102,7 +102,7 @@ test('handler never silently substitutes secondary sources for a known official-
  const f=fixture({models:[{...draft,webQuery:'Blender geometry nodes'},{...answer,text:'今は公式資料を確認できなかったよ。別の解説を公式資料として紹介するのは避けたいんだ。',sourceIds:[]}]});
  const value=await(await f.handler(f.request({message:'Blenderの公式資料を調べて',lang:'ja'}),f.env)).json();
  const request=JSON.parse(f.calls.find(c=>c.url===TAVILY_SEARCH).options.body);
- assert.deepEqual(request.include_domains,['docs.blender.org']);assert.equal(value.searchStatus,'unavailable');assert.deepEqual(value.sources,[]);assert.equal(f.ai.length,2);
+ assert.deepEqual(request.include_domains,['docs.blender.org']);assert.equal(value.searchStatus,'unavailable');assert.deepEqual(value.sources,[]);assert.equal(f.ai.length,1);assert.equal(value.searchIssue,'no-results');assert.equal(value.notice,true);
 });
 test('prompt explains in depth before links and separates untrusted web evidence, portfolio facts, and lore',()=>{
  const k={pages:[]},eligible=modelRequest(input,k,{mode:'eligible'}),p=eligible.messages[0].content;
@@ -133,28 +133,28 @@ test('ordinary story or portfolio reply needs only one call and zero search cred
 test('fun facts require actual checked evidence, not a plausible unsupported model answer',async()=>{
  for(const options of [{models:[{...answer,webQuery:''}]},{budget:429},{webData:{results:[]}}]){
   const f=fixture(options),response=await f.handler(f.request({message:'Tell me a fun fact'}),f.env),value=await response.json();
-  assert.equal(response.status,200);assert.match(value.text,/couldn't check a source/);assert.deepEqual(value.sources,[]);
+  assert.equal(response.status,200);assert.equal(value.notice,true);assert(['planning','limit','no-results'].includes(value.searchIssue));assert.deepEqual(value.sources,[]);
  }
  const off=fixture();const notice=await (await off.handler(off.request({message:'Tell me a fun fact',webSearch:false}),off.env)).json();
- assert.match(notice.text,/couldn't check a source/);assert.equal(off.ai.length,0);
+ assert.equal(notice.searchIssue,'disabled');assert.match(notice.text,/switched off/);assert.equal(off.ai.length,0);
  const good=fixture(),value=await (await good.handler(good.request({message:'Tell me a fun fact'}),good.env)).json();
  assert.equal(value.text,answer.text);assert.equal(value.searchStatus,'used');assert.equal(value.sources[0].url,results.results[0].url);
 });
-test('search cap refuses provider call; AI can still explain without claiming live evidence',async()=>{
+test('search cap refuses provider call without wasting an answer inference',async()=>{
  const f=fixture({budget:429,models:[draft,{...answer,text:'I could not check that just now.',sourceIds:[]}]});const value=await(await f.handler(f.request(),f.env)).json();
- assert.equal(value.searchStatus,'limit');assert.equal(f.calls.length,2);assert.equal(f.ai.length,2);assert.equal(value.sources.length,0);assert.match(f.ai[1].body.messages[0].content,/WEB LOOKUP UNAVAILABLE/);
+ assert.equal(value.searchStatus,'limit');assert.equal(value.searchIssue,'limit');assert.equal(value.notice,true);assert.equal(f.calls.length,2);assert.equal(f.ai.length,1);assert.equal(value.sources.length,0);
 });
 test('search quota fault, timeout/error or provider limit do not fail chat or retry',async()=>{
  for(const opts of [{budget:503},{webStatus:429},{webStatus:500},{webStatus:302},{webError:true},{webData:{results:[]}}]){
   const f=fixture({...opts,models:[draft,{...answer,text:'I could not verify the web information.',sourceIds:[]}]});const response=await f.handler(f.request(),f.env),value=await response.json();
-  assert.equal(response.status,200);assert.equal(value.searchStatus,'unavailable');assert.equal(value.sources.length,0);assert(f.calls.filter(c=>c.url===TAVILY_SEARCH).length<=1);assert.equal(f.ai.length,2);
+  assert.equal(response.status,200);assert.equal(value.searchStatus,opts.webStatus===429?'limit':'unavailable');assert.equal(value.notice,true);assert.equal(value.sources.length,0);assert(f.calls.filter(c=>c.url===TAVILY_SEARCH).length<=1);assert.equal(f.ai.length,1);
  }
 });
 test('extra AI budget denial does not spend search credits or break normal chat',async()=>{
- const f=fixture({extra:429});const response=await f.handler(f.request(),f.env),value=await response.json();assert.equal(response.status,200);assert.equal(f.calls.length,2);assert.equal(f.ai.length,1);assert.equal(f.reservations.length,2);assert.equal(value.searchStatus,'unavailable');assert.match(value.text,/couldn't check web/);
+ const f=fixture({extra:429});const response=await f.handler(f.request(),f.env),value=await response.json();assert.equal(response.status,200);assert.equal(f.calls.length,2);assert.equal(f.ai.length,1);assert.equal(f.reservations.length,2);assert.equal(value.searchStatus,'unavailable');assert.equal(value.searchIssue,'ai-limit');assert.match(value.text,/haven't started a lookup/);
 });
 test('final model failure returns honest fallback, not an unfinished or invented lookup',async()=>{
- for(const model of [new Error('secret error'),{}]){const f=fixture({models:[draft,model]});const value=await(await f.handler(f.request({lang:'ja',message:'公式の情報を調べて教えて'}),f.env)).json();assert.equal(value.searchStatus,'unavailable');assert.match(value.text,/確認できなかった/);assert.equal(value.sources.length,0);assert.equal(f.ai.length,2);}
+ for(const model of [new Error('secret error'),{}]){const f=fixture({models:[draft,model]});const value=await(await f.handler(f.request({lang:'ja',message:'公式の情報を調べて教えて'}),f.env)).json();assert.equal(value.searchStatus,'used');assert.equal(value.searchIssue,'answer');assert.equal(value.notice,true);assert.match(value.text,/検索の失敗ではなく/);assert.equal(value.sources.length,0);assert.equal(f.ai.length,2);}
 });
 test('cancellation never starts a lookup after first inference',async()=>{
  const controller=new AbortController(),f=fixture({signal:controller.signal});const run=f.env.AI.run;f.env.AI.run=async(...args)=>{const result=await run(...args);controller.abort();return result;};
@@ -166,8 +166,9 @@ test('sources resolve only against current returned evidence; arbitrary model UR
  assert.deepEqual(value.sources,[{title:'NASA',url:'https://www.nasa.gov'}]);assert.equal(validReply({...value,webQuery:'secret'}).webQuery,undefined);
  assert.equal(followUpReference(value,{page:'/',section:''},[{url:'/',sections:[]}]),null);
 });
-test('returned evidence stays inspectable if model forgets its source IDs',async()=>{
- const f=fixture({models:[draft,{...answer,sourceIds:[]}]});const value=await(await f.handler(f.request(),f.env)).json();assert.equal(value.sources[0].url,results.results[0].url);
+test('missing source IDs get one evidence repair, never automatic citations on unchecked prose',async()=>{
+ const f=fixture({models:[draft,{...answer,sourceIds:[]},answer]});const value=await(await f.handler(f.request(),f.env)).json();assert.equal(value.sources[0].url,results.results[0].url);assert.equal(f.ai.length,3);assert.equal(f.calls.filter(c=>c.url===TAVILY_SEARCH).length,1);
+ const bad=fixture({models:[draft,{...answer,sourceIds:[]},{...answer,sourceIds:[]}]});const rejected=await(await bad.handler(bad.request(),bad.env)).json();assert.equal(rejected.searchIssue,'answer');assert.deepEqual(rejected.sources,[]);assert.equal(rejected.notice,true);assert.equal(bad.ai.length,3);
 });
 class Storage {
  constructor(){this.m=new Map();this.queue=Promise.resolve();}
@@ -188,6 +189,29 @@ test('monthly reservations are atomic and enforce month/day/visitor limits acros
 test('existing Durable Object dispatches search separately from AI budgets and fails closed on invalid limits',async()=>{
  const state={storage:new Storage()},q=new YukiQuota(state,{...envSearch,SEARCH_MONTHLY_LIMIT:'99999'});
  const r=await q.fetch(new Request('https://quota.invalid/search',{method:'POST',body:JSON.stringify({hash:'a'.repeat(64),day:new Date().toISOString().slice(0,10)})}));assert.equal(r.status,503);assert.equal(state.storage.m.size,0);
+});
+test('owner testing switches remove daily lookup limits but never the monthly free safety ceiling',async()=>{
+ const state={storage:new Storage()},now=Date.UTC(2026,9,11),day='2026-10-11';
+ const env={SEARCH_MONTHLY_LIMIT:'40',SEARCH_DAILY_LIMIT:'30',SEARCH_VISITOR_DAILY_LIMIT:'3',SEARCH_DAILY_LIMIT_ENABLED:'false',SEARCH_VISITOR_DAILY_LIMIT_ENABLED:'false'};
+ const call=()=>reserveSearch(state,env,{hash:'a'.repeat(64),day},now);
+ for(let i=0;i<40;i++)assert.equal((await call()).status,204,`lookup ${i+1}`);
+ assert.equal((await call()).status,429,'monthly free safety ceiling is unconditional');
+ assert.equal((await reserveSearch({storage:new Storage()},{...env,SEARCH_MONTHLY_LIMIT:'901'},{hash:'a'.repeat(64),day},now)).status,503);
+});
+test('failed lookup notices do not trigger repeated-answer repairs on the next attempt',async()=>{
+ const f=fixture({webStatus:500,models:[draft]});const first=await(await f.handler(f.request(),f.env)).json();
+ const second=fixture({webStatus:500,models:[draft]});const result=await second.handler(second.request({history:[{role:'assistant',content:first.text}]}),second.env),value=await result.json();
+ assert.equal(result.status,200);assert.equal(value.notice,true);assert.equal(value.searchIssue,'provider');assert.equal(second.ai.length,1);
+});
+test('English question on a Japanese page searches in the actual reply language',async()=>{
+ const f=fixture();await f.handler(f.request({lang:'ja',message:'How does wing lift work?'}),f.env);
+ assert.equal(JSON.parse(f.calls.find(c=>c.url===TAVILY_SEARCH).options.body).language,'en');
+});
+test('plain fact and another follow-up both enforce evidence rather than returning unsupported trivia',async()=>{
+ for(const message of ['Can you tell me a fact?','Can you tell me another?']){
+  const f=fixture({models:[{...answer,webQuery:''}]});const result=await(await f.handler(f.request({message,history:[{role:'user',content:'Can you tell me a fact?'},{role:'assistant',content:'Octopuses have three hearts.'}]}),f.env)).json();
+  assert.equal(result.notice,true);assert.equal(result.searchIssue,'planning');assert.equal(f.calls.filter(c=>c.url===TAVILY_SEARCH).length,0);
+ }
 });
 test('UI keeps optional consent, explanation-first source links and artwork untouched',()=>{
  const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');

@@ -24,6 +24,10 @@ TAVILY_FREE_PLAN_CONFIRMED = "true"
 SEARCH_MONTHLY_LIMIT = "900"
 SEARCH_DAILY_LIMIT = "30"
 SEARCH_VISITOR_DAILY_LIMIT = "3"
+# Owner requested unrestricted daily lookup testing on 2026-10-11.
+# Keep the 900/month safety ceiling inside the provider's free allowance.
+SEARCH_DAILY_LIMIT_ENABLED = "false"
+SEARCH_VISITOR_DAILY_LIMIT_ENABLED = "false"
 
 [ai]
 binding = "AI"

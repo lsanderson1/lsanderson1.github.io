@@ -46,6 +46,21 @@ test('ordinary send uses verification once, stores pass, then continues without 
  await f.send('Why is that your dream?');assert.equal(f.calls.verify,1);assert.equal(f.calls.fetch[1].pass,pass.pass);assert.equal(f.calls.fetch[1].token,undefined);assert.equal(f.context.conversationMemory.turns.length,2);assert.equal(f.context.busy,false);
 });
 
+test('explain-here keeps the clicked section through verification instead of the old guide or new scroll',async()=>{
+ const f=fixture();f.context.readingContext=()=>({section:'s9',lastGuide:{page:'/essays/codingstandards.html',section:'s2'}});
+ await f.send('Please explain this section.',null,()=>{},{page:'/resume.html',section:'s3'});
+ assert.equal(f.calls.fetch[0].context.section,'s3');assert.equal(f.calls.fetch[0].context.lastGuide,null);
+ assert.deepEqual(f.calls.fetch[0].context.images,[]);
+});
+
+test('operational search notices do not become facts, assistant chat or repetition memory',async()=>{
+ const f=fixture({network:async()=>new Response(JSON.stringify({...cue,text:'The lookup service is busy. Please try again later.',notice:true,searchIssue:'provider',searchStatus:'unavailable'}))});
+ await f.send('Can you tell me another fact?');
+ assert.equal(f.context.messages.length,1);assert.equal(f.context.messages[0].role,'user');
+ assert.equal(f.context.conversationMemory.turns.length,0);assert.equal(f.calls.fetch.length,1);
+ assert(f.calls.status.some(s=>s.includes('lookup service is busy')));assert.equal(f.context.busy,false);
+});
+
 test('language switches use translated history, while deliberate Japanese on English remains Japanese',async()=>{
  const japanese='小さな図書館が夢なんだ。本を開くと知らない世界が広がるところが好き！';
  const f=fixture({network:async(_url,options)=>{const req=JSON.parse(options.body);return new Response(JSON.stringify({...cue,text:replyLanguage(req.message,req.lang)==='ja'?japanese:cue.text}));}});
@@ -140,6 +155,20 @@ test('failed/partial translation retains all originals, re-enables chat and neve
  for(const status of [200,429,403,503]){
   const f=fixture({network:async()=>new Response(JSON.stringify({translations:[]}),{status})});f.context.messages=[messageRecord('assistant',cue.text,'en')];f.context.ja=true;f.context.conversationLanguage='ja';await f.translate();
   assert.equal(f.calls.fetch.length,1);assert.equal(f.context.messages[0].text,cue.text);assert.equal(f.context.messages[0].translations.ja,undefined);assert.equal(f.context.busy,false);assert.equal(f.context.$('textarea').readOnly,false);assert.equal(f.context.$('textarea').value,'Draft to preserve');
+ }
+});
+
+test('translation waiting status speaks as Yuki in the destination language, without adding a chat turn',async()=>{
+ for(const [language,original,expected] of [
+  ['ja','A little library among the clouds is my dream.','うーん、日本語でどう伝えようかな……。ちょっとだけ待ってね！'],
+  ['en','雲の上に小さな図書館を作るのが夢なんだ。','Hmm… I’m thinking about how to say this to you in English. One little moment!']
+ ]){
+  const f=fixture({network:async()=>new Response(JSON.stringify({translations:[]}))});
+  f.context.ja=language==='ja';f.context.conversationLanguage=language;
+  f.context.messages=[messageRecord('assistant',original,language==='ja'?'en':'ja')];
+  await f.translate();
+  assert(f.calls.status.includes(expected));assert.equal(f.context.messages.length,1);
+  assert.equal(f.context.messages[0].text,original);assert.equal(f.context.conversationMemory.turns.length,0);
  }
 });
 

@@ -45,6 +45,10 @@ export function readPageDisplaySection(doc,{path='/',base='',lang='en',height,he
  return null;
 }
 export const sectionKey=value=>typeof value==='string'&&/^[si]\d{1,4}$/.test(value)?value:'';
+export function sectionExplanation(section,{garden=false,lang='en'}={}){
+ if(garden||!sectionKey(section?.id)||!cleanTitle(section?.title))return null;
+ return {section:section.id,text:lang==='ja'?'この項目をもう少し詳しく説明して。何を表していて、この作品や内容とどうつながっているの？':'Please explain this section in more detail. What does it mean, and how does it connect to this work?'};
+}
 export function readingReference(value){
  if(!value||typeof value!=='object'||typeof value.page!=='string'||value.page.length>500)return null;
  const page=safeSitePath(value.page);if(!page||page.includes('#'))return null;

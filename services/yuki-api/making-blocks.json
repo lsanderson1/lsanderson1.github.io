@@ -153,7 +153,7 @@
       "en": "Bounded conversation recall",
       "ja": "範囲を限った会話の記憶"
     },
-    "explanation": "ConversationMemory retains up to 40 bounded question/answer pairs in the provided same-tab storage, with a 24-hour inactivity lifetime. recall ranks token overlap, removes exchanges already in recent history, and returns up to four. A keyword filter skips obvious credentials/contact strings but is not a complete sensitive-data detector. Clearing the transcript is separate from this store; this is not server-side personal memory."
+    "explanation": "ConversationMemory retains up to 40 bounded question/answer pairs in the provided same-tab storage, with a 24-hour inactivity lifetime. recall ranks token overlap and prioritizes the same fact/joke activity for requests such as another one. It removes answers already in recent history but retains different older discovery answers even when their questions repeat, returning up to four exchanges. A keyword filter skips obvious credentials/contact strings but is not a complete sensitive-data detector. Clearing the transcript is separate from this store; this is not server-side personal memory."
   },
   {
     "id": "translate",

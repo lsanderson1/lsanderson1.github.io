@@ -207,7 +207,7 @@ test('guide Explain resets the topic to the selected picture rather than old con
 });
 test('context travels with a message or a requested route follow-up, never passive scrolling',()=>{
  const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
- assert.match(ui,/const context=readingContext\(\)/);assert.match(ui,/page:location.pathname,context,/);assert.match(ui,/readingMemory.set\(guideReference/);
+ assert.match(ui,/const context=sectionRequest\?\.page===location.pathname\?.*:readingContext\(\)/);assert.match(ui,/page:location.pathname,context,/);assert.match(ui,/readingMemory.set\(guideReference/);
  assert.equal((ui.match(/fetch\(endpoint/g)||[]).length,2);assert.match(ui,/readingMemory.clear\(\)/);
  const translation=ui.slice(ui.indexOf(' async function translateConversation('),ui.indexOf(' function render(){'));assert(!translation.includes('readingContext()'),'translation needs only saved text, not live page context');
  assert(!ui.includes('getSelection('));assert(!ui.includes('document.body.innerText'));assert.match(ui,/void speakGuideFollowup\(step\)/);

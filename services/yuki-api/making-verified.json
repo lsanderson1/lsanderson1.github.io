@@ -194,13 +194,13 @@
       "en": "Bounded conversation recall",
       "ja": "範囲を限った会話の記憶"
     },
-    "explanation": "ConversationMemory retains up to 40 bounded question/answer pairs in the provided same-tab storage, with a 24-hour inactivity lifetime. recall ranks token overlap, removes exchanges already in recent history, and returns up to four. A keyword filter skips obvious credentials/contact strings but is not a complete sensitive-data detector. Clearing the transcript is separate from this store; this is not server-side personal memory.",
+    "explanation": "ConversationMemory retains up to 40 bounded question/answer pairs in the provided same-tab storage, with a 24-hour inactivity lifetime. recall ranks token overlap and prioritizes the same fact/joke activity for requests such as another one. It removes answers already in recent history but retains different older discovery answers even when their questions repeat, returning up to four exchanges. A keyword filter skips obvious credentials/contact strings but is not a complete sensitive-data detector. Clearing the transcript is separate from this store; this is not server-side personal memory.",
     "source": {
       "file": "assets/yuki/runtime/conversation-memory.mjs",
       "symbol": "ConversationMemory",
-      "firstLine": 8,
-      "lastLine": 31,
-      "sha256": "724c5cfbe8de07265f1cf64f47da41d0e9291b8b0a568e551ddea9492957243b"
+      "firstLine": 9,
+      "lastLine": 32,
+      "sha256": "65543b6d488f8d841863d616ef3c6e2c7d3a19ffb7b2ff7690b0e45af9353e1e"
     }
   },
   {
@@ -249,9 +249,9 @@
     "source": {
       "file": "services/yuki-api/worker.mjs",
       "symbol": "parseModel",
-      "firstLine": 95,
-      "lastLine": 165,
-      "sha256": "7f9998fb2956a388966dc147200bb6108c1aca63255deed86b8a740af6143ad6"
+      "firstLine": 100,
+      "lastLine": 174,
+      "sha256": "f8fc706930bd05aa2004d2c00ddb85635babeae04e523cc2ac4fa8f67f6144be"
     }
   },
   {
