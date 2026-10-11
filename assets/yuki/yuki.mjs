@@ -14,7 +14,7 @@ import {PageMotion,pageProjection,inViewport,containPageRover,prepareCall} from 
 import {CallPerches} from './runtime/call-perches.mjs?v=7';
 import {VisitorPersonality,conversationOpening,localizeGreetingMessages,replySequence,cueArtwork} from './runtime/visitor-personality.mjs?v=11';
 import {ChatAvailability,ChatPermission,ChatSession,ChatVerification,chatEnvironment,chatEnabledKey,searchConsentKey} from './runtime/chat-access.mjs?v=3';
-import {ConversationMemory} from './runtime/conversation-memory.mjs?v=1';
+import {ConversationMemory} from './runtime/conversation-memory.mjs?v=2';
 import {VisitorInterests} from './runtime/visitor-interests.mjs';
 import {expressionSequence} from './runtime/reply-beats.mjs';
 import {GardenHome} from './home/garden.mjs?v=10';
@@ -25,10 +25,10 @@ import {messageRecord,translatedText,translationBatch,checkedTranslations,applyT
 import {replyLanguage,replyQualityIssues,formalJapaneseVoice} from './runtime/reply-quality.mjs?v=3';
 import {DiscoveryGuide,isDiscoveryRequest} from './runtime/discovery-guide.mjs?v=3';
 import {CallDialogue} from './runtime/call-dialogue.mjs?v=3';
-import {ReadingMemory,readPageTitle,readingLabels,readPageDisplaySection,readPageSection,readPageImages,readGardenSpot,guideReference,followUpReference} from './runtime/reading-context.mjs?v=6';
-import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=19';
+import {ReadingMemory,readPageTitle,readingLabels,readPageDisplaySection,readPageSection,readPageImages,readGardenSpot,guideReference,followUpReference,sectionExplanation} from './runtime/reading-context.mjs?v=7';
+import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=20';
 import {safeWebURL} from './runtime/web-sources.mjs?v=1';
-import {cleanVariety,rememberReply,packChatRequest,needsFreshText} from './runtime/reply-variety.mjs?v=4';
+import {cleanVariety,rememberReply,packChatRequest,needsFreshText} from './runtime/reply-variety.mjs?v=5';
 import {thirdPersonSelf} from './runtime/self-narration.mjs?v=1';
 
 const root=document.querySelector('#yuki-companion');
@@ -73,7 +73,7 @@ async function start(){
  <section class="yuki-panel" id="yuki-panel" role="dialog" aria-modal="false" aria-labelledby="yuki-title" hidden>
  <div class="yuki-panel-inner"><header class="yuki-heading"><span class="yuki-chat-seal" aria-hidden="true">✧</span><div class="yuki-heading-copy"><h2 id="yuki-title">${tr('Yuki','ゆき')} <span class="yuki-beta">BETA</span></h2><small>${tr('Small Dragon, Big Dreams','小さなからだに、大きな夢')}</small></div><button class="yuki-menu" type="button" aria-expanded="false" aria-controls="yuki-more" aria-label="${tr('Guide, history and settings','案内・履歴・設定')}">⋯</button><button class="yuki-close" type="button" aria-label="${tr('Close chat','チャットを閉じる')}">×</button></header>
  <div class="yuki-conversation"><p class="yuki-aside" role="status" hidden></p><div class="yuki-speech" role="log" aria-live="polite" aria-atomic="true" aria-label="${tr('Yuki says','ゆきの返事')}"></div><p class="yuki-status" role="status"></p><button class="yuki-translate" type="button" hidden>${tr('Retry translation','翻訳を再試行')}</button>
- <p class="yuki-reading"><span class="yuki-page"></span><span class="yuki-view"></span><button class="yuki-explain" type="button" hidden>${tr('Explain what you showed me','案内したところを説明して')}</button></p></div>
+ <p class="yuki-reading"><span class="yuki-page"></span><span class="yuki-view"></span><button class="yuki-explain" type="button" hidden>${tr('Explain What You See Here','ここにある内容を説明して')}</button></p></div>
  <form class="yuki-form"><textarea maxlength="1000" rows="1" aria-label="${tr('Message Yuki','ゆきへのメッセージ')}" placeholder="${tr('Talk to Yuki…','ゆきに話しかける…')}"></textarea><button type="submit">${tr('Send','送信')}</button>
  <details class="yuki-setup"><summary></summary><div class="yuki-privacy"><p>${tr('Talking to Yuki sends your message, recent and relevant older chat, and the current page/guide context to Cloudflare Workers AI. Opening an empty or already-translated conversation does not send anything. After a language switch, earlier messages may be sent for translation as explained below. Please don’t share sensitive information.','ゆきへの送信時に、メッセージ・直近と関連する過去の会話・現在のページや案内先をCloudflare Workers AIへ送ります。会話が空か翻訳済みの場合、開くだけでは送信しません。言語を切り替えた後は、下記の説明のとおり過去の会話を翻訳のために送る場合があります。個人情報・機密情報は入力しないでください。')}</p><p>${tr('Requested guided routes can also generate an AI follow-up at each stop. Free usage limits still apply. A verified chat pass lasts up to two hours in this tab; the security check appears only when needed.','依頼した道案内では、各地点でAIが続きの質問を作る場合があります。無料利用上限があります。認証済みチャットはこのタブで最大2時間有効で、必要なときだけセキュリティ認証が表示されます。')}</p><p>${tr('Yuki recalls up to 40 earlier exchanges in this tab for up to 24 hours after the last exchange. This is not permanent memory or a server-side profile. Clear chat only removes the visible conversation; these memories stay until they expire or this tab’s session data is removed.','このタブでは最大40件の過去のやり取りを、最後の会話から最大24時間まで記憶します。永久的な記憶やサーバー上のプロフィールではありません。「チャットを消去」では表示中の会話だけを消し、記憶は期限切れやこのタブのセッションデータの削除まで保持します。')}</p></div></details>
  <div class="yuki-check"><p class="yuki-verification-status" role="status"></p><div class="yuki-verification"></div><button class="yuki-retry" type="button" hidden>${tr('Retry verification','認証をやり直す')}</button><button class="yuki-cancel" type="button" hidden>${tr('Cancel sending','送信をキャンセル')}</button></div></form>
@@ -107,16 +107,17 @@ async function start(){
   if(reveal&&!hidden&&!busy&&!journey.active)panel(true,{focus:false,translate:false});
  }
  function readingContext(){measureHeader();const viewed=readPageSection(document,innerHeight,headerBottom),r=companion?.rover;const nearby=garden&&!journey.active&&!garden.pending&&(r?.graph.state==='rest'||r?.isHovering)?garden.spotAt(r.position):null;const spot=readGardenSpot(document,nearby,innerHeight,headerBottom);return {section:spot?.section||viewed?.id||'',images:readPageImages(document,innerHeight,headerBottom),lastGuide:readingMemory.get(),...(spot?{gardenSpot:spot.id}:{})};}
+ function displayedSection(){return readPageDisplaySection(document,{path:location.pathname,base,lang:ja?'ja':'en',height:innerHeight,header:headerBottom});}
  function updateReading(){
   measureHeader();
   const title=readPageTitle(document,{path:location.pathname,base,title:root.dataset.pageTitle,lang:ja?'ja':'en'});
-  const section=readPageDisplaySection(document,{path:location.pathname,base,lang:ja?'ja':'en',height:innerHeight,header:headerBottom});
+  const section=displayedSection();
   const labels=readingLabels({title,section,lang:ja?'ja':'en',garden:Boolean(gardenScene)});
   $('.yuki-page').textContent=labels.page;
   $('.yuki-view').textContent=labels.view;$('.yuki-view').hidden=!labels.view;
-  $('.yuki-explain').hidden=!readingMemory.get();$('.yuki-explain').disabled=busy||!online;
+  $('.yuki-explain').hidden=!sectionExplanation(section,{garden:Boolean(gardenScene)});$('.yuki-explain').disabled=busy||!online||!permission.allowed;
  }
- $('.yuki-explain').onclick=()=>{if(!online||busy||!readingMemory.get())return;if($('textarea').value.trim()){status(tr('Send or clear your draft first; I’ll keep it here for you.','入力中のメッセージを先に送るか消してね。今の文章はそのまま残しておくよ。'));$('textarea').focus();return;}$('textarea').value=tr('Please explain what you just showed me in more detail. How does it relate to this project?','さっき案内してくれたところを、もう少し詳しく説明して。この作品とどう関係しているの？');$('.yuki-form').requestSubmit();};
+ $('.yuki-explain').onclick=()=>{if(!online||busy||!ready||!permission.allowed)return;measureHeader();const request=sectionExplanation(displayedSection(),{garden:Boolean(gardenScene),lang:ja?'ja':'en'});if(!request)return;if($('textarea').value.trim()){status(tr('Send or clear your draft first; I’ll keep it here for you.','入力中のメッセージを先に送るか消してね。今の文章はそのまま残しておくよ。'));$('textarea').focus();return;}void runChat(request.text,null,()=>{},{page:location.pathname,section:request.section});};
  const offline=chatUnavailable(access.reason||'not-connected',ja?'ja':'en');
  if(access.reason==='preview'&&access.liveOrigin){$('.yuki-live-link').href=new URL(location.pathname,access.liveOrigin).href;$('.yuki-preview').hidden=false;}
  function permissionUI(){
@@ -534,7 +535,7 @@ async function start(){
   if(!permission.allowed){status(tr('AI chat is off. You can turn it on in the menu.','AIチャットはオフです。メニューでオンにできます。'));return;}
   await runChat(text);
  };
- async function runChat(text,guideEvent=null,fallback=()=>{}){
+ async function runChat(text,guideEvent=null,fallback=()=>{},sectionRequest=null){
   if(busy||!online||!permission.allowed)return;
   const routeVersion=journeySerial;
   busy=true;translationUI();$('button[type=submit]').disabled=true;$('textarea').readOnly=true;$('.yuki-cancel').hidden=false;
@@ -549,7 +550,9 @@ async function start(){
    await wake();if(requestController.signal.aborted||!permission.allowed)throw Error('cancelled');
    // Verification or wake-up can take time. Read the actual view immediately
    // before sending, not the page/spot that was visible before that wait.
-   const context=readingContext();
+   // An explicit section button stays attached to the section clicked, even
+   // if verification takes time and the visitor scrolls before it completes.
+   const context=sectionRequest?.page===location.pathname?{section:sectionRequest.section,images:sectionRequest.section.startsWith('i')?[sectionRequest.section]:[],lastGuide:null}:readingContext();
    conversationLanguage=guideEvent?(ja?'ja':'en'):replyLanguage(text,ja?'ja':'en');
    const history=conversationHistory(messages,conversationLanguage);drawMessages();if(!guideEvent){addMessage('user',text,true,[],[],undefined,conversationLanguage);$('textarea').value='';}
    if(!guideEvent)interests.remember(text);
@@ -559,6 +562,10 @@ async function start(){
    if(result.chatSession)chatSession.set(result.chatSession);
    if(!response.ok){if(response.status===403)chatSession.clear();throw Object.assign(Error(response.status===429?'limit':response.status===403?'verification':result.reference==='YUKI_VARIETY'?'novelty':'request'),{reference:result.reference,limit:result.limit});}
    const cue=validReply(result);
+   // A failed lookup is an operational status, not a new fact, joke or memory.
+   // Keep it out of the transcript so the next "another" still means the last
+   // successful topic, and repeated errors cannot poison the novelty check.
+   if(cue.notice){status(cue.text);react(cue).catch(()=>{});return;}
    if(replyQualityIssues(cue.text,conversationLanguage).includes('language')||thirdPersonSelf(cue.text,text)||(conversationLanguage==='ja'&&formalJapaneseVoice(cue.text)))throw Error('request');
    // Check all retained local recall too, not only the excerpts that fit the
    // request budget. A rejected draft is never displayed or remembered.
@@ -587,7 +594,7 @@ async function start(){
   const requestController=new AbortController();controller=requestController;let timer,tokenUsed=false;
   const current=()=>!requestController.signal.aborted&&permission.allowed;
   try{
-   status(tr('Translating our conversation, keeping your original messages…','原文を残したまま、会話を翻訳しています…'));
+   status(tr('Hmm… I’m thinking about how to say this to you in English. One little moment!','うーん、日本語でどう伝えようかな……。ちょっとだけ待ってね！'));
    // Each bounded batch uses the ordinary protected endpoint and shared quota.
    // No retry loop on errors, no new conversation turns, no change to the draft.
    for(let count=0;count<12;count++){

@@ -1,3 +1,5 @@
+import {discoveryKind} from './discovery.mjs';
+export {discoveryKind} from './discovery.mjs';
 // Short-lived, tab-local reply metadata. No user profiling or server storage.
 export const storyTopicIds=Object.freeze(['origin','firstFlight','lanternKeeper','firstGuide','treasure','quietEvening','home','dailyGoals','bigDream','innerConflict','littlePreferences','relationships','character']);
 const recentLimit=12,sampleSize=32,hex=/^[a-f0-9]{8}$/;
@@ -35,11 +37,6 @@ export function replySimilarity(a,b){
 }
 // Short facts and punchlines need a stricter check than a necessary name or
 // navigation label. This is lexical detection, not a semantic guarantee.
-export function discoveryKind(message){
- if(/\b(?:joke|pun|riddle)\b|冗談|ジョーク|なぞなぞ|ダジャレ/iu.test(message))return 'joke';
- if(/\b(?:(?:fun|interesting|random|surprising|another) fact|trivia)\b|豆知識|雑学/iu.test(message))return 'fact';
- return '';
-}
 function sharedPassage(text,previous,discovery){
  const parts=value=>(String(value).match(/[^.!?。！？\n]+[.!?。！？\n]*|[^.!?。！？\n]+$/gu)||[]).map(normalized);
  const before=normalized(previous),after=normalized(text);
@@ -48,22 +45,46 @@ function sharedPassage(text,previous,discovery){
  const shorter=before.length<after.length?before:after,longer=before.length<after.length?after:before;
  if(shorter.length>=48&&longer.includes(shorter))return 1;
  for(const part of parts(previous)){
-  const minimum=discovery?18:48;
+  const minimum=discovery?8:48;
   if(part.length>=minimum&&after.includes(part))return .9;
  }
  return 0;
 }
+const ideaStop=new Set('a an the i me my we our you your it its is are was were be been has have had did does do with of to for in on at as and but or because that this those these they their can could would will about actually really just little very so now then'.split(' '));
+function ideaWords(text){
+ const digits={one:'1',two:'2',three:'3',four:'4',five:'5',six:'6',seven:'7',eight:'8',nine:'9',ten:'10'};
+ return new Set((String(text).normalize('NFKC').toLowerCase().match(/[a-z0-9]+/g)||[]).filter(w=>!ideaStop.has(w)).map(w=>digits[w]??(w.length>5&&w.endsWith('ses')?w.slice(0,-2):w.length>4&&w.endsWith('s')&&!/(?:us|ss)$/u.test(w)?w.slice(0,-1):w)));
+}
+function discoveryIdeaScore(text,previous){
+ // Compare the setup/claim AND short payoff independently of the long personal
+ // aside. Lexical overlap is deliberately not called semantic understanding.
+ const parts=value=>String(value).split(/[.!?。！？\n]+/u).map(s=>s.trim()).filter(Boolean);
+ for(const a of parts(text))for(const b of parts(previous)){
+  const left=ideaWords(a),right=ideaWords(b),shared=[...left].filter(w=>right.has(w)).length;
+  const numbers=s=>[...s].filter(w=>/^\d+$/.test(w)).sort().join(',');
+  if(shared>=3&&numbers(left)===numbers(right)&&shared/Math.min(left.size,right.size)>=.85&&shared/Math.max(left.size,right.size)>=.5)return .84;
+ }
+ return 0;
+}
+function recurringFrame(text,previous){
+ if(normalized(text).length<80)return false;
+ // Two prior uses of an identical substantial opening/closing are enough;
+ // don't reject a necessary name or a single connective word such as "But".
+ const edges=value=>{const sentences=String(value).trim().split(/(?<=[.!?。！？])\s*|\n+/u).filter(Boolean);return [normalized(sentences[0]?.split(/[,，、]/u)[0]??'').slice(0,28),normalized(sentences.at(-1)??'')];};
+ const [opening,ending]=edges(text);
+ return previous.filter(p=>{const [o,e]=edges(p);return opening.length>=18&&opening===o||ending.length>=18&&ending===e;}).length>=2;
+}
 export function repetitionScore(text,variety,history=[],memory=[],{discovery=false}={}){
  const fingerprint=replyFingerprint(text),recent=cleanVariety(variety).recent;
- const previous=[...history.filter(item=>item.role==='assistant').map(item=>item.content),...memory.filter(item=>typeof item?.answer==='string').map(item=>item.answer)];
+ const previous=[...new Set([...history.filter(item=>item.role==='assistant').map(item=>item.content),...memory.filter(item=>typeof item?.answer==='string').map(item=>item.answer)])];
  for(const content of previous)recent.push(replyFingerprint(content));
  const score=recent.reduce((score,item)=>Math.max(score,discovery&&fingerprint.length>=8&&fingerprint.digest===item.digest?1:replySimilarity(fingerprint,item)),0);
- return previous.reduce((score,content)=>Math.max(score,sharedPassage(text,content,discovery)),score);
+ return previous.reduce((score,content)=>Math.max(score,sharedPassage(text,content,discovery),discovery?discoveryIdeaScore(text,content):0),Math.max(score,recurringFrame(text,previous)? .82:0));
 }
 export const repeatThreshold=.8;
 export function needsFreshText(text,input){
  if(wantsExactRepeat(input.message))return false;
- const discovery=Boolean(discoveryKind(input.message));
+ const discovery=Boolean(discoveryKind(input.message,input.history));
  return repetitionScore(text,input.variety,input.history??[],input.memory??[],{discovery})>=(input.guideEvent?0.75:discovery?0.72:repeatThreshold);
 }
 export function wantsExactRepeat(text){
