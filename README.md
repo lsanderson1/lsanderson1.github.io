@@ -42,4 +42,4 @@ GitHub Actions workflow.
 
 ## Yuki companion
 
-The portfolio includes the approved Yuki artwork, page-guidance controls and a consent-based Cloudflare Workers AI text-chat connection. The backend is enabled with owner approval on **Workers Free**, with bot verification, daily request limits, no OpenAI key, no paid-provider fallback, and no automatic retries. See [Yuki setup](docs/yuki-setup.md) for live verification status, free-tier limits and the disable switch. Never put secrets in `_data/yuki.json` or browser code.
+The portfolio includes the approved Yuki artwork, page-guidance controls and a consent-based Cloudflare Workers AI text-chat connection. The backend is enabled with owner approval on **Workers Free**, with bot verification, daily request limits, no paid-provider fallback, and no automatic retries. See [Yuki setup](docs/yuki-setup.md) for live verification status, free-tier limits and the disable switch. Never put secrets in `_data/yuki.json` or browser code.
