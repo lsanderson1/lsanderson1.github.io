@@ -1,6 +1,6 @@
 // One companion location for this visitor's tab, shared by all site pages and
 // languages. No chat contents, credentials or cross-visitor/server tracking.
-import {roostPerch,centerLegacyRoost} from './perches.mjs';
+import {roostPerch,centerLegacyRoost} from './perches.mjs?v=2';
 export const locationKey='yuki-location-v1';
 export const returnAfterSleepMs=45000;
 export function locationPage(path,base=''){

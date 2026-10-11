@@ -1,6 +1,6 @@
 {% include locale.html %}
 {% assign jp = false %}{% if page.lang == 'ja' %}{% assign jp = true %}{% endif %}
-<link rel="stylesheet" href="{{ '/assets/yuki/home/garden.css?v=14' | relative_url }}">
+<link rel="stylesheet" href="{{ '/assets/yuki/home/garden.css?v=16' | relative_url }}">
 <div class="yg-page">
  <h1 class="yg-sr-only">{% if jp %}ゆきの庭{% else %}Yuki’s Garden{% endif %}</h1>
  <section class="yg-world" tabindex="0" aria-describedby="garden-pan-hint" aria-label="{% if jp %}ゆきのインタラクティブな庭{% else %}Yuki’s interactive garden{% endif %}">
@@ -17,7 +17,7 @@
     <button id="garden-treasures" data-yuki-description="{% if jp %}水晶玉、紙の鶴、緑色のノートを置いた小さな宝物の場所。水晶玉は想像をふくらませる飾りで、本当に未来が見えるわけではない。紙の鶴は、ゆきの物語で初めての案内を思い出させる。{% else %}A crystal orb on its stand, a paper crane, and a green notebook. The orb is a decorative focus for daydreams, not a real prediction tool. The crane recalls Yuki’s first guiding adventure in her story.{% endif %}" data-garden-spot="treasures" style="--x:58%;--y:83%" aria-label="{% if jp %}小さな宝物を見る{% else %}Explore Yuki’s keepsakes{% endif %}" title="{% if jp %}小さな宝物{% else %}Little Treasures{% endif %}">◇</button>
    </div>
   </div>
-  <div class="yg-controls">
+  <div class="yg-controls" hidden>
    <details class="yg-menu">
     <summary class="btn">{% if jp %}庭を探検{% else %}Explore{% endif %} <span aria-hidden="true">✧</span></summary>
     <div>

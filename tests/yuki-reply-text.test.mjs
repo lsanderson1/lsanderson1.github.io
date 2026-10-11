@@ -88,15 +88,15 @@ test('longer explanations retain personality, examples, evidence limits and shor
 test('the actual message renderer protects both speech and saved history without touching user input',()=>{
  const source=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
  const fn=source.slice(source.indexOf(' function addMessage('),source.indexOf(' function save(){'));
- const make=()=>({children:[],dataset:{},append(...items){this.children.push(...items);},replaceChildren(...items){this.children=items;},cloneNode(){return this;}});
+ const make=()=>({children:[],dataset:{},append(...items){this.children.push(...items);},prepend(...items){this.children.unshift(...items);},replaceChildren(...items){this.children=items;},cloneNode(){return this;}});
  const elements=new Map(),$=key=>{if(!elements.has(key))elements.set(key,make());return elements.get(key);};
  const document={createElement:()=>make(),createTextNode:t=>t};
  const add=new Function('cleanAssistantText','unfinishedReply','unfinishedNotice','document','$','tr','online','ja',`return (${fn.trim()});`)(cleanAssistantText,unfinishedReply,unfinishedNotice,document,$,(en)=>en,false,false);
  add('assistant',null,false);assert.equal($('.yuki-log').children.length,0);assert.equal($('.yuki-speech').children.length,0,'preview translations stay silent, not fake assistant messages');
  add('assistant',broken,false);assert.equal($('.yuki-speech').children[0].children[1],octopus);assert.equal($('.yuki-log').children[0].children[1],octopus);
- add('user',broken,false);assert.equal($('.yuki-log').children[1].children[1],broken);
+ add('user',broken,false);assert.equal($('.yuki-log').children[0].children[1],broken);
  add('assistant',`${octopus}','text':'broken'}`,false);assert.match($('.yuki-speech').children[0].children[1],/got tangled/);
  const cutoff='Lloyd connected different technologies to create a';
  add('assistant',cutoff,false,[{url:'/projects/',title:'Projects'}]);assert.equal($('.yuki-speech').children[0].children[1],unfinishedNotice());assert.equal($('.yuki-speech').children[0].children.length,2);
- add('user',cutoff,false);assert.equal($('.yuki-log').children.at(-1).children[1],cutoff);
+ add('user',cutoff,false);assert.equal($('.yuki-log').children[0].children[1],cutoff);
 });

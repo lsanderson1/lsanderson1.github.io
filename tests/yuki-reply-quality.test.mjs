@@ -45,7 +45,14 @@ test('substantial internal loops are detected without stripping emphasis, quotat
  for(const text of ['Very, very tiny paws. Very, very tiny paws.',en,`The two examples are “${en}” and “${en}”.`, `An example:\n\x60\x60\x60\n${en}\n${en}\n\x60\x60\x60`])assert(!repeatedPassage(text),text);
 });
 
+test('short untranslated English questions are caught without rejecting names or Japanese technical terms',()=>{
+ for(const text of ['Could you tell me more?','What is your dream?','Tell me about your garden.'])assert(wrongReplyLanguage(text,'ja'),text);
+ for(const text of ['Cloudflare Workers AI','Unity Engine and Blender','Cloudflare Workers AIを使っているよ。'])assert(!wrongReplyLanguage(text,'ja'),text);
+});
+
 test('Japanese voice review notices stiff narration and repeated cute suffixes, not quoted speech',()=>{
+ for(const text of ['ここがわたしの庭です。','本も好きだよ。花も好き。小さな夢があります！','わくわくしますね 🌸','まだ知りません','昨日は雨でした。','いい場所ですけど、少し遠いね。','いっしょに見てみましょう！','好きですけれど、まだ詳しくないんだ。'])assert(formalJapaneseVoice(text),text);
+ for(const text of ['ますます楽しくなってきた！','「です・ます」を使った例を見てね。','`できます`を例にしたよ。','小さな庭が好き。ゆっくり見ていってね。'])assert(!formalJapaneseVoice(text),text);
  assert(formalJapaneseVoice('ここは私の庭です。池のそばで本を読みます。'));
  assert(formalJapaneseVoice('ここが庭なの。本が好きなの。葉っぱに座るの。'));
  assert(!formalJapaneseVoice('小さな本でも、知らない世界へ連れていってくれるんだ。想像するとわくわくする！'));

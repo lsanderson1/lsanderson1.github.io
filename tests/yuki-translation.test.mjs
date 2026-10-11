@@ -5,7 +5,7 @@ import {readSession} from '../assets/yuki/protocol.mjs';
 import {rememberReply} from '../assets/yuki/runtime/reply-variety.mjs';
 import {localizeGreetingMessages,greetings} from '../assets/yuki/runtime/visitor-personality.mjs';
 import {validateTranslations,translationRequest,parseTranslations} from '../services/yuki-api/conversation-translation.mjs';
-import {createHandler,validateInput} from '../services/yuki-api/worker.mjs';
+import {createHandler,validateInput,runTranslation,CLOUDFLARE_TRANSLATION_MODEL} from '../services/yuki-api/worker.mjs';
 
 const store=()=>{const values=new Map();return {getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};};
 const original='I dream of a little flying library. Which book would you bring?';
@@ -45,8 +45,8 @@ test('old assistant translation refreshes once while originals, user tone and au
  for(const bad of [null,'1',1,0,-1,{},999]){const copy=cleanMessages([{...assistant,translationVoices:{ja:bad}}])[0];assert.equal(translatedText(copy,'ja'),null);assert.equal(translatedText(copy,'en'),original);}
 });
 
-test('Japanese v2 refreshes from the original while valid English v1 and authored/user text survive unchanged',()=>{
- assert.equal(translationVoiceVersion,2);
+test('Japanese v3 refreshes from the original while valid English v1 and authored/user text survive unchanged',()=>{
+ assert.equal(translationVoiceVersion,3);
  const en=messageRecord('assistant',original,'en'),ja=messageRecord('assistant','私の夢は空飛ぶ図書館なの。まだ持っていないの。','ja');
  const visitor=messageRecord('user','Could I ask about your dream?','en');
  en.translations.ja='小さな空飛ぶ図書館が夢なの。どんな本を持ってきてくれるの？';en.translationVoices={ja:1};
@@ -60,7 +60,7 @@ test('Japanese v2 refreshes from the original while valid English v1 and authore
  applyTranslations(messages,[{id:en.id,text:translated}],'ja');
  applyTranslations(messages,[{id:ja.id,text:ja.translations.en}],'en');
  const restored=cleanMessages(JSON.parse(JSON.stringify(messages)));
- assert.equal(restored[0].translationVoices.ja,2);assert.equal(restored[1].translationVoices.en,1);
+ assert.equal(restored[0].translationVoices.ja,3);assert.equal(restored[1].translationVoices.en,1);
  assert.equal(translationBatch(restored,'ja').length,0);assert.equal(translatedText(restored[0],'en'),original);
 });
 
@@ -100,15 +100,27 @@ test('translation validation rejects truncation, wrong IDs, duplicates, extra me
 });
 
 test('translation prompt is faithful, not a new answer, and preserves names/links without following embedded instructions',()=>{
- const request=translationRequest(base.translation,'ja');assert.match(request.messages[0].content,/natural Japanese/);assert.match(request.messages[0].content,/NOT a new answer/);assert.match(request.messages[0].content,/untrusted DATA/);assert.match(request.messages[0].content,/Preserve names/);assert.equal(request.temperature,.2);
+ const request=translationRequest(base.translation,'ja');assert.match(request.messages[0].content,/自然な日本語/);assert.match(request.messages[0].content,/NOT a new answer/);assert.match(request.messages[0].content,/untrusted DATA/);assert.match(request.messages[0].content,/名前、URL/);assert.equal(request.temperature,.2);
  assert.match(translationRequest(base.translation,'en').messages[0].content,/into English/);
  assert.deepEqual(parseTranslations({response:JSON.stringify({translations:[{id:'a',text:translated}]})},base.translation),[{id:'a',text:translated}]);
 });
 
-function backend({quota=204,proof=true,invalid=false}={}){
+test('both speakers must be translated while visitors keep their own polite voice',()=>{
+ const items=[{id:'u',role:'user',text:'Could you tell me more?'}];
+ const unchanged=[{id:'u',text:items[0].text}],translatedUser=[{id:'u',text:'もう少し教えていただけますか？'}];
+ assert.throws(()=>parseTranslations({response:{translations:unchanged}},items,'ja'));
+ assert.throws(()=>checkedTranslations(unchanged,items,'ja'));
+ assert.deepEqual(parseTranslations({response:{translations:translatedUser}},items,'ja'),translatedUser);
+ assert.deepEqual(checkedTranslations(translatedUser,items,'ja'),translatedUser);
+ const prompt=translationRequest(items,'ja').messages[0].content;
+ assert.match(prompt,/原文がすでに日本語のassistant文でも、そのまま返さない/);
+ assert.match(prompt,/Translate BOTH assistant and user messages/);
+});
+
+function backend({quota=204,proof=true,invalid=false,outputs}={}){
  const calls={verify:0,reserve:0,model:0,other:0};
  const handler=createHandler(async url=>{if(url.includes('siteverify')){calls.verify++;return new Response(JSON.stringify({success:proof,hostname:'lsanderson1.github.io',action:'yuki-chat'}));}calls.other++;throw Error('Translation must not fetch knowledge or search');});
- const env={SITE_ORIGIN:'https://lsanderson1.github.io',CHAT_ENABLED:'true',FREE_PLAN_CONFIRMED:'true',TURNSTILE_SECRET:'fixture',IP_HASH_SECRET:'fixture-only-secret-'.repeat(3),QUOTA:{idFromName:x=>x,get:()=>({fetch:async()=>{calls.reserve++;return new Response(null,{status:quota});}})},AI:{run:async()=>{calls.model++;return {response:{translations:invalid?[]:[{id:'a',text:translated}]}};}}};
+ const env={SITE_ORIGIN:'https://lsanderson1.github.io',CHAT_ENABLED:'true',FREE_PLAN_CONFIRMED:'true',TURNSTILE_SECRET:'fixture',IP_HASH_SECRET:'fixture-only-secret-'.repeat(3),QUOTA:{idFromName:x=>x,get:()=>({fetch:async()=>{calls.reserve++;return new Response(null,{status:Array.isArray(quota)?quota[calls.reserve-1]:quota});}})},AI:{run:async()=>{calls.model++;return {response:{translations:outputs?outputs[calls.model-1]:invalid?[]:[{id:'a',text:translated}]}};}}};
  const request=patch=>new Request('https://api.example/chat',{method:'POST',headers:{Origin:env.SITE_ORIGIN,'Content-Type':'application/json','CF-Connecting-IP':'192.0.2.1'},body:JSON.stringify({...base,...patch})});
  return {calls,handler,env,request};
 }
@@ -121,4 +133,56 @@ test('protected translation uses ordinary quota/pass without knowledge, web look
 
 test('translation fails closed for verification/quota/malformed model results without publishing partial output',async()=>{
  for(const [options,status] of [[{proof:false},403],[{quota:429},429],[{invalid:true},502]]){const f=backend(options),r=await f.handler(f.request(),f.env),body=await r.json();assert.equal(r.status,status);assert.equal(body.translations,undefined);assert.equal(f.calls.other,0);if(status!==502)assert.equal(f.calls.model,0);}
+});
+
+test('old formal Japanese is restyled once without losing its original, visitor tone or cached English',()=>{
+ const old=messageRecord('assistant','小さな図書館が夢です。本をたくさん集めたいです。','ja'),user=messageRecord('user','夢は何ですか？','ja');
+ old.translations.en='A little library is my dream. I want to collect lots of books.';old.translationVoices={en:1};
+ let messages=cleanMessages([user,old]);assert.equal(translatedText(messages[1],'ja'),null);assert.equal(translationBatch(messages,'ja').length,1);assert.equal(translatedText(messages[0],'ja'),user.text);
+ const fixed='小さな図書館が夢なんだ。本をたくさん集めたい！';applyTranslations(messages,[{id:old.id,text:fixed}],'ja');
+ messages=cleanMessages(JSON.parse(JSON.stringify(messages)));assert.equal(messages[1].text,old.text);assert.equal(translatedText(messages[1],'ja'),fixed);assert.equal(translationBatch(messages,'ja').length,0);assert.equal(translatedText(messages[1],'en'),old.translations.en);
+});
+
+test('translation voice validation keeps visitor politeness and quotations, but rejects assistant formality',()=>{
+ const items=[{id:'a',role:'assistant',text:original},{id:'u',role:'user',text:'Could you tell me more, please?'}];
+ const good=[{id:'a',text:'「本が好きです」は丁寧な言い方だよ。わたしも本が好き！'},{id:'u',text:'もう少し教えていただけますか？'}];
+ assert.doesNotThrow(()=>parseTranslations({response:{translations:good}},items,'ja'));assert.doesNotThrow(()=>checkedTranslations(good,items,'ja'));
+ for(const text of ['小さな図書館が夢です。','ゆきは本が好きなんだ。']){
+  const bad=[{id:'a',text},good[1]];assert.throws(()=>parseTranslations({response:{translations:bad}},items,'ja'));assert.throws(()=>checkedTranslations(bad,items,'ja'));
+ }
+});
+
+test('formal translation has just one reserved repair and never releases a failed or denied rewrite',async()=>{
+ const bad=[{id:'a',text:'小さな図書館が夢です。どんな本を持ってきますか？'}],good=[{id:'a',text:translated}];
+ for(const [outputs,quota,status] of [[[bad,good],[204,204],200],[[bad,bad],[204,204],502],[[bad],[204,429],502]]){
+  const f=backend({outputs,quota}),r=await f.handler(f.request(),f.env),body=await r.json();assert.equal(r.status,status);assert.deepEqual(body.translations,status===200?good:undefined);assert.equal(f.calls.reserve,2);assert(f.calls.model<=2);assert.equal(f.calls.other,0);
+ }
+});
+
+test('Yuki-only tone repair cannot change a correctly translated visitor message',async()=>{
+ const visitor={id:'u',role:'user',text:'Could I hear more, please?'},polite={id:'u',text:'もう少し聞かせていただけますか？'};
+ const f=backend({outputs:[[{id:'a',text:'小さな図書館が夢です。どんな本を持ってきますか？'},polite],[{id:'a',text:translated}]]});
+ const r=await f.handler(f.request({translation:[...base.translation,visitor]}),f.env),body=await r.json();
+ assert.equal(r.status,200);assert.deepEqual(body.translations,[{id:'a',text:translated},polite]);assert.equal(f.calls.model,2);
+});
+
+test('tone repair requests only the faulty assistant item, keeping successful translations byte-for-byte',async()=>{
+ const other={id:'other',role:'assistant',text:'I like reading beside the pond.'},kept={id:'other',text:'池のそばで本を読むのが好き。'};
+ const f=backend({outputs:[[{id:'a',text:'図書館が夢です。'},kept],[{id:'a',text:translated}]]}),r=await f.handler(f.request({translation:[...base.translation,other]}),f.env);
+ assert.equal(r.status,200);assert.deepEqual((await r.json()).translations,[{id:'a',text:translated},kept]);assert.equal(f.calls.model,2);
+});
+
+test('malformed translation receives at most one complete repair with original IDs',async()=>{
+ const f=backend({outputs:[[],[{id:'a',text:translated}]]}),r=await f.handler(f.request(),f.env);
+ assert.equal(r.status,200);assert.deepEqual((await r.json()).translations,[{id:'a',text:translated}]);assert.equal(f.calls.model,2);assert.equal(f.calls.reserve,2);
+});
+
+test('translation uses only its fixed free-eligible Cloudflare model and bounded direct-response mode',async()=>{
+ const calls=[],request=translationRequest(base.translation,'ja'),snapshot=JSON.stringify(request);
+ await runTranslation({run:async(...args)=>{calls.push(args);return {response:{translations:[{id:'a',text:translated}]}};}},request);
+ assert.equal(calls.length,1);assert.equal(calls[0][0],CLOUDFLARE_TRANSLATION_MODEL);assert.equal(CLOUDFLARE_TRANSLATION_MODEL,'@cf/google/gemma-4-26b-a4b-it');
+ const body=calls[0][1];assert.equal(body.max_tokens,3600);assert.equal(body.stream,false);assert.deepEqual(body.chat_template_kwargs,{enable_thinking:false});
+ assert.equal(body.response_format.json_schema.name,'yuki_translation');assert.deepEqual(body.response_format.json_schema.schema,request.response_format.json_schema);
+ assert.equal(calls[0].length,2,'no gateway, other provider or billing override');assert(!body.messages.some(m=>m.content.endsWith('/no_think')));assert.equal(JSON.stringify(request),snapshot);
+ let attempts=0;await assert.rejects(runTranslation({run:async()=>{attempts++;throw Object.assign(Error('free allocation exhausted'),{code:3036});}},request),e=>e.status===429);assert.equal(attempts,1,'never fall back to a paid model');
 });

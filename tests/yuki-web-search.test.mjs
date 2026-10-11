@@ -42,6 +42,16 @@ test('web lookup requires separate visitor permission, owner activation, free ac
  assert.equal(validateInput(input).webSearch,true);
  assert.equal(validateInput({...input,apiKey:'visitor',searchEndpoint:'https://evil.com'}).apiKey,undefined);
 });
+
+test('a repeated sourced fact is rejected after one repair, never re-searched or delivered again',async()=>{
+ const f=fixture({models:[draft,answer,answer]});
+ const response=await f.handler(f.request({message:'Tell me a fun fact.',history:[{role:'assistant',content:answer.text}]}),f.env);
+ assert.equal(response.status,502);const reply=await response.json();assert.equal(reply.text,undefined);assert.equal(reply.reference,'YUKI_VARIETY');
+ assert.equal(f.ai.length,3,'planning + evidence answer + the one quality slot');
+ assert.equal(f.calls.filter(c=>c.url===TAVILY_SEARCH).length,1,'no repeated paid search');
+ assert.match(f.ai[2].body.messages.at(-2).content,/already supplied verified evidence/);
+ assert(f.ai[2].body.messages[0].content.includes('WEB ENTRIES'));
+});
 test('search consent is independent and existing AI consent cannot grant another provider permission',()=>{
  const values=new Map([[chatConsentKey,'granted']]);const storage={getItem:k=>values.get(k),setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};
  const main=new ChatPermission(storage),search=new ChatPermission(storage,searchConsentKey);
@@ -89,7 +99,7 @@ test('official-source restriction is sent to Tavily and rechecked locally withou
 });
 
 test('handler never silently substitutes secondary sources for a known official-documentation request',async()=>{
- const f=fixture({models:[{...draft,webQuery:'Blender geometry nodes'},{...answer,text:'I could not verify the official documentation just now.',sourceIds:[]}]});
+ const f=fixture({models:[{...draft,webQuery:'Blender geometry nodes'},{...answer,text:'今は公式資料を確認できなかったよ。別の解説を公式資料として紹介するのは避けたいんだ。',sourceIds:[]}]});
  const value=await(await f.handler(f.request({message:'Blenderの公式資料を調べて',lang:'ja'}),f.env)).json();
  const request=JSON.parse(f.calls.find(c=>c.url===TAVILY_SEARCH).options.body);
  assert.deepEqual(request.include_domains,['docs.blender.org']);assert.equal(value.searchStatus,'unavailable');assert.deepEqual(value.sources,[]);assert.equal(f.ai.length,2);

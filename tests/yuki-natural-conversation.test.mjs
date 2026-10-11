@@ -14,7 +14,7 @@ for(const lang of ['en','ja'])test(`all ${lang} answer paths speak as Yuki witho
  const input={message:'Tell me about your dreams.',lang,page:'/yuki/',history:[{role:'user',content:'I like quiet reading corners.'},{role:'assistant',content:'I like those too.'}]};
  const general=modelRequest(input,knowledge);
  const requests=[general,pageAnswerRequest({...input,message:'What is this place?'},knowledge,web,schema),lightChatRequest(input,web,schema,'joke'),guideReplyRequest({...input,guideEvent:{kind:'arrive'}},schema,knowledge),translationRequest([{id:'a',role:'assistant',text:'My dream is a flying library.'}],lang)];
- for(const request of requests){const prompt=request.messages.map(m=>m.content).join('\n');assert(prompt.includes(firstPersonInstructions));assert(prompt.includes(conversationStyleInstructions));assert(prompt.includes(ownerNameInstructions));}
+ for(const [i,request] of requests.entries()){const prompt=request.messages.map(m=>m.content).join('\n');if(lang==='ja'&&i===4){for(const phrase of ['「わたし」「わたしの」','第三者のように説明しない','友達と話す','明るく無邪気','普段「ロイド」','訪問者がロイドだと決めつけない','正式な見出しや引用'])assert(prompt.includes(phrase),phrase);}else{assert(prompt.includes(firstPersonInstructions));assert(prompt.includes(conversationStyleInstructions));assert(prompt.includes(ownerNameInstructions));}}
  assert.equal(general.max_tokens,1900);assert.equal(general.temperature,.7);
  assert(general.messages.some(m=>m.role==='user'&&m.content==='I like quiet reading corners.'));
  assert.equal(requests[1].max_tokens,1900);assert.equal(requests[2].max_tokens,1900);assert.equal(requests[4].max_tokens,3600);

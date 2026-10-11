@@ -27,9 +27,11 @@ export function guideNextAction(event,catalog,lang){
 export function guideReplyRequest(input,schema,knowledge){
  const language=input.replyLanguage??input.lang;
  const pacing=guidePacing(input.guideEvent);
- const {beats,...properties}=schema.properties,title=knowledge?.pages?.at(-1)?.title||'';
+ const {beats,...properties}=schema.properties;
+ const home=/^(?:\/ja)?\/yuki\/?$/.test(input.guideEvent.targetUrl||input.guideEvent.url);
+ const title=home?(language==='ja'?'わたしの庭':'my garden'):knowledge?.pages?.at(-1)?.title||'';
  properties.destination={type:'string',enum:['none']};properties.sourceIds={type:'array',items:{type:'string'},maxItems:0};properties.storyTopics={type:'array',items:{type:'string'},maxItems:0};
- properties.text={...properties.text,description:'One cheerful, personal guide reply. Your FIRST complete sentence must include the exact title "'+title+'" naturally, not as a dangling label. Current stage: '+input.guideEvent.kind+'. Follow the CURRENT STAGE next action and exact link label. Personal thoughts are wishes/curiosity, never claims you used or built Lloyd’s work. End with a complete sentence.'};
+ properties.text={...properties.text,description:'One cheerful, personal guide reply. Your FIRST complete sentence must include "'+title+'" naturally, not as a dangling label. Current stage: '+input.guideEvent.kind+'. Follow the CURRENT STAGE next action and exact link label. Personal thoughts are wishes/curiosity, never claims you used or built Lloyd’s work. End with a complete sentence.'};
  properties.text.maxLength=pacing==='arrival'?2300:pacing==='preview'?420:240;
  const output={...schema,properties};
  return {messages:[{role:'system',content:`You are Yuki, Lloyd's cheerful baby-dragon site guide. You are accompanying the visitor on ONE validated route. This is not a fresh question about the picture on screen. Speak directly to the visitor as their small, eager companion, not as a detached project reviewer. The validated route below is the ONLY subject and factual source for this reply. Ignore any old topic, old pointed image or remembered project. Give each fact once. Do not claim an essay is a game or combine different projects. Never invent features, quality judgments or implementation details. Name the exact supplied stop/destination; keep its title intact.

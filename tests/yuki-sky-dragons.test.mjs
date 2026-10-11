@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {dragonFrames} from '../assets/yuki/home/dragons/frames.mjs';
-import {dragonKinds,wingedKinds,flightSheets,rearCels,sideCels,glideCels,archivedSkyRoutes as skyRoutes,skyRoutes as activeSkyRoutes,DragonFlights,dragonPose,curvePoint,GardenSkyDragons,skyWindow,skyIslands,skyWater,skyTerrain,skyClouds,islandDepths,islandEdgeInset,depthOcclusion} from '../assets/yuki/home/sky-dragons.mjs';
+import {dragonKinds,wingedKinds,flightSheets,rearCels,sideCels,glideCels,archivedSkyRoutes as skyRoutes,skyRoutes as activeSkyRoutes,DragonFlights,dragonPose,curvePoint,GardenSkyDragons,skyWindow,skyIslands,skyWater,skyTerrain,skyClouds,islandDepths,islandEdgeInset,depthOcclusion,islandMaxSpans,terrainMaxSpans,apparentDragonSpan} from '../assets/yuki/home/sky-dragons.mjs';
 const specimen=(kind,route,age=0)=>({id:0,kind,route,age,life:32000,tempo:1,size:1,phase:0});
 test('five approved designs have complete side and turn atlases, without rejected variants',()=>{
  assert.deepEqual(dragonKinds,['lavender','amber','sage','jade','cloud']);
@@ -108,7 +108,7 @@ test('distance changes masking consistently, with water following its parent isl
   }
  }
 });
-test('identical screen paths can pass in front or behind without scale-dependent mask guesses',()=>{
+test('identical screen paths use the same depth and apparent-size rules for rock and waterfall',()=>{
  const close=skyRoutes.find(r=>r.id==='near-island-crossing'),far=skyRoutes.find(r=>r.id==='behind-island-water');
  const {sky}=fixture();
  sky.model.items=[{...specimen('lavender',close,13000),id:1},{...specimen('amber',far,13000),id:2}];sky.render();
@@ -119,6 +119,36 @@ test('identical screen paths can pass in front or behind without scale-dependent
  assert.equal(a.water[0].attrs.opacity,'0');assert.equal(b.water[0].attrs.opacity,'0.7');
  sky.render();assert.equal(sky.frontLayer.children.length,1);assert.equal(sky.layer.children.length,1);
  const masks=[a.mask,b.mask];sky.clear();assert(masks.every(n=>n.parent===null));
+});
+
+test('each landmark rejects oversized visitors even on a far-labelled route',()=>{
+ for(let i=0;i<islandMaxSpans.length;i++){
+  assert.equal(depthOcclusion(.99,islandMaxSpans[i]+.001).islands[i],0);
+  assert.equal(depthOcclusion(.99,islandMaxSpans[i]).islands[i],1);
+  assert.equal(depthOcclusion(.1,islandMaxSpans[i]/2).islands[i],0,'small alone does not mean behind');
+ }
+ assert.deepEqual(depthOcclusion(.99,28).islands,[1,0,0,0]);
+ assert.deepEqual(depthOcclusion(.99,7).islands,[1,1,1,0]);
+ assert.deepEqual(depthOcclusion(.99,4).islands,[1,1,1,1]);
+ assert(depthOcclusion(.99,140).terrain.every(n=>n===0));assert(depthOcclusion(.99,4).terrain.every(n=>n===1));
+ for(let span=1;span<150;span++)for(const depth of [.1,.3,.8,.99]){
+  const o=depthOcclusion(depth,span);o.water.forEach((v,i)=>assert.equal(v,1-o.islands[skyWater[i].island]*(1-skyWater[i].transmission)));
+ }
+ assert.deepEqual(terrainMaxSpans,{'left-ridge':65,castle:128});
+});
+
+test('live mask assignment is stable through every wingbeat, both directions and all species sizes',()=>{
+ for(const kind of dragonKinds)for(const route of activeSkyRoutes)for(const size of [.84,1,1.12]){
+  let previous;
+  for(let age=0;age<=32000;age+=160){
+   const p=dragonPose({...specimen(kind,route,age),size}),span=apparentDragonSpan(kind,p.scale),o=depthOcclusion(p.depth,span);
+   if(previous)assert.deepEqual(o,previous,'a changing drawing must never swap masks');previous=o;
+   o.islands.forEach((mask,i)=>{if(mask)assert(span<=islandMaxSpans[i]);});
+  }
+ }
+ assert(activeSkyRoutes.some(r=>apparentDragonSpan('cloud',r.size[0]*1.12)<=5),'genuinely tiny flights can pass behind the smallest island');
+ const {sky}=fixture();const route={...activeSkyRoutes[0],depth:[.99,.99]};sky.model.items=[specimen('cloud',route,13000)];sky.render();
+ const n=sky.nodes.get(0);assert(n.islands.every(s=>s.attrs.opacity==='0'));assert(n.water.every(s=>s.attrs.opacity==='0'));assert.equal(n.outer.parent,sky.frontLayer);
 });
 
 test('traced terrain and feathered clouds compose without white cutouts revealing hidden visitors',()=>{

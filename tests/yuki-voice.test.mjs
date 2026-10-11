@@ -17,7 +17,7 @@ test('ordinary, web, guided and revised responses all receive the same casual vo
   requests.push(rewriteRequest(requests[0],{text:'An earlier answer',sources:[]}));
   for(const [i,request] of requests.entries()){assert(request.messages[0].content.includes(voice));if(i!==2)assert(request.messages[0].content.includes(JSON.stringify(yukiStory)));else assert.match(request.messages[0].content,/ONLY subject and factual source/);}
   assert.match(voice,/serious topics/);assert.match(voice,/never excuses inventing/);
-  if(lang==='ja'){assert.match(voice,/plain forms/);assert.match(voice,/Do not default to です・ます/);assert.match(voice,/direct quotations/);}
+  if(lang==='ja'){assert.match(voice,/plain forms throughout EVERY sentence/);assert.match(voice,/Do not use です・ます/);assert.match(voice,/direct quotations/);}
   else assert.match(voice,/natural contractions/);
  }
 });
@@ -26,10 +26,15 @@ test('translations adapt assistant register without changing the visitor, facts,
  const messages=[{id:'visitor',role:'user',text:'Would you explain your dream, please?'},{id:'yuki',role:'assistant',text:'My dream is a flying library. It is not real yet.'}];
  for(const lang of ['en','ja']){
   const request=translationRequest(messages,lang),system=request.messages[0].content;
-  assert(system.includes(voiceInstructions(lang)));assert.match(system,/ONLY to assistant messages/);assert.match(system,/visitor's own tone and perspective/);assert.match(system,/even stiff or formal source narration/);
-  assert.match(system,/without adding or removing meaning/);assert.match(system,/NOT a new answer/);assert.match(system,/do not invent new reactions, greetings, questions or story details/);assert.match(system,/untrusted DATA/);assert.match(system,/Preserve names, numbers, technical terms and links/);
+  if(lang==='en'){
+   assert(system.includes(voiceInstructions(lang)));assert.match(system,/ONLY to assistant messages/);assert.match(system,/visitor's own tone and perspective/);assert.match(system,/even stiff or formal source narration/);
+   assert.match(system,/without adding or removing meaning/);assert.match(system,/do not invent new reactions, greetings, questions or story details/);assert.match(system,/Preserve names, numbers, technical terms and links/);
+  }else{
+   for(const phrase of ['明るく無邪気','わたしの','一文だけでも不可','原文を短く要約しない','userの文は訪問者自身の口調','直接引用','新しい情報、冗談、感想、質問、あいさつ、思い出は追加しない'])assert(system.includes(phrase),phrase);
+  }
+  assert.match(system,/NOT a new answer/);assert.match(system,/untrusted DATA/);
   assert(!system.includes(JSON.stringify(yukiStory)),'translation should not introduce story information absent from the text');
-  assert.deepEqual(JSON.parse(request.messages[1].content.replace('\n/no_think','')),messages);
+  const data=JSON.parse(request.messages[1].content.replace('\n/no_think',''));assert.deepEqual(lang==='ja'?data.ORIGINALS:data,messages);
  }
 });
 
@@ -46,7 +51,8 @@ test('translation review preserves meaning, context and emotional intensity rath
  for(const lang of ['en','ja']){
   const request=translationRequest([{id:'a',role:'assistant',text:'I do not own a flying library yet. Which two books would you bring?'}],lang);
   const system=request.messages[0].content;
-  for(const phrase of ["meaning and emotional intensity, not its word order",'Keep negation, who is speaking, hypothetical dreams versus real events, quantities and questions unchanged','never to invent missing facts','Do not imitate repetitive endings','omissions, additions and unnatural phrasing','Do not output a review'])assert(system.includes(phrase),phrase);
+  const phrases=lang==='en'?["meaning and emotional intensity, not its word order",'Keep negation, who is speaking, hypothetical dreams versus real events, quantities and questions unchanged','never to invent missing facts','Do not imitate repetitive endings','omissions, additions and unnatural phrasing','Do not output a review']:['natural phrasing rather than English word order','感情、具体例、否定、数','誰が何をしたか、夢と現実','新しい情報','必要な助詞は残す','かわいさを出すために語尾を付け足さない','without printing the review','not another sleeping nest'];
+  for(const phrase of phrases)assert(system.includes(phrase),phrase);
   assert.equal(request.temperature,.2);assert.equal(request.max_tokens,3600,'no extra inference budget for style review');
  }
 });

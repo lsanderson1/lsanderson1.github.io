@@ -6,6 +6,7 @@ import {lightChatKind,lightChatRequest,unverifiedFactReply} from './light-chat.m
 import {personalityInstructions,replyContract} from './personality.mjs';
 import {cleanVariety,storyTopicIds,wantsExactRepeat} from '../../assets/yuki/runtime/reply-variety.mjs';
 import {replyLanguage,replyQualityIssues,formalJapaneseVoice} from '../../assets/yuki/runtime/reply-quality.mjs';
+import {thirdPersonSelf} from '../../assets/yuki/runtime/self-narration.mjs';
 import {varietyInstructions,needsFreshReply,rewriteRequest,preferFreshReply} from './reply-variety.mjs';
 import {searchEnabled,safeSearchQuery,searchInstructions,searchTavily,reserveSearch} from './web-search.mjs';
 import {issueChatSession,verifyChatSession} from './chat-session.mjs';
@@ -13,13 +14,16 @@ import {cleanRecall} from '../../assets/yuki/runtime/conversation-memory.mjs';
 import {cleanInterests} from '../../assets/yuki/runtime/visitor-interests.mjs';
 import {cleanGuideEvent,guideFollowupInstructions,guideReplyRequest,guideNextAction} from './guide-followup.mjs';
 import {guideReplyMatches} from '../../assets/yuki/runtime/guide-journey.mjs';
-import {validateTranslations,translationRequest,parseTranslations} from './conversation-translation.mjs';
+import {validateTranslations,translationRequest,parseTranslations,translationVoiceNeedsRepair} from './conversation-translation.mjs';
 import {unfinishedReply,completionRequest,parseCompletion,completeRevision,incompleteAnswer} from './reply-completion.mjs';
 
 // Deliberately fixed: neither a visitor nor an environment model override can
 // route requests to a paid-only model, AI Gateway, or another provider.
-// Free-tier eligibility checked 2026-10-05; recheck before deployment.
+// Free-tier eligibility checked 2026-10-11; recheck before deployment.
 export const CLOUDFLARE_MODEL='@cf/qwen/qwen3-30b-a3b-fp8';
+// Translation only: better fidelity in the bilingual regression samples.
+// Still a Cloudflare-hosted, free-eligible model, not an external paid fallback.
+export const CLOUDFLARE_TRANSLATION_MODEL='@cf/google/gemma-4-26b-a4b-it';
 const VERIFY='https://challenges.cloudflare.com/turnstile/v0/siteverify';
 const MAX_BODY=14000;
 const failure=(status,message)=>Object.assign(new Error(message),{status});
@@ -109,11 +113,20 @@ export function parseModel(data,knowledge,web={}){
  try{return {...validReply({...value,sources}),...(web.mode==='eligible'?{webQuery:safeSearchQuery(value.webQuery)}:{})};}catch{throw failure(502,'Reply unavailable');}
 }
 export async function runModel(ai,request,timeoutMs=22000){
+ return runInference(ai,CLOUDFLARE_MODEL,request,timeoutMs);
+}
+export async function runTranslation(ai,request,timeoutMs=22000){
+ // Gemma uses the named JSON-schema envelope and explicit direct-response mode.
+ // Qwen's /no_think is not a language instruction for the translation model.
+ const adapted={...request,messages:request.messages.map(m=>({...m,content:m.content.replace(/\n\/no_think$/u,'')})),response_format:{type:'json_schema',json_schema:{name:'yuki_translation',schema:request.response_format.json_schema}},chat_template_kwargs:{enable_thinking:false}};
+ return runInference(ai,CLOUDFLARE_TRANSLATION_MODEL,adapted,timeoutMs);
+}
+async function runInference(ai,model,request,timeoutMs){
  let timer;
  try{
   // Timeout bounds the visitor's wait. It cannot cancel an already-running
   // remote inference. Never retry it or fall back to a billable API.
-  return await Promise.race([ai.run(CLOUDFLARE_MODEL,request),new Promise((_,reject)=>{timer=setTimeout(()=>reject(failure(503,'AI timeout')),timeoutMs);})]);
+  return await Promise.race([ai.run(model,request),new Promise((_,reject)=>{timer=setTimeout(()=>reject(failure(503,'AI timeout')),timeoutMs);})]);
  }catch(error){
   const code=Number(error?.code);
   const exhausted=code===3036||Number(error?.status)===429||/\b3036\b|daily free allocation/i.test(String(error?.message));
@@ -188,8 +201,20 @@ export function createHandler(network=fetch){
    if(reservation.status===429){const limit=reservation.headers.get('X-Yuki-Limit');headers['Retry-After']=String(limit==='site-day'||limit==='visitor-day'?Math.ceil((Date.parse(day+'T00:00:00Z')+86400000-now)/1000):60);throw Object.assign(failure(429,'Chat limit reached'),{limit});}
    if(reservation.status!==204)throw failure(503,'Chat limit unavailable');
    if(input.translation){
-    stage='MODEL';const translated=await runModel(env.AI,translationRequest(input.translation,input.lang));
-    stage='REPLY';let translations;try{translations=parseTranslations(translated,input.translation,input.lang);}catch{throw failure(502,'Translation unavailable');}
+    stage='MODEL';const translated=await runTranslation(env.AI,translationRequest(input.translation,input.lang));
+    stage='REPLY';let translations=null;try{translations=parseTranslations(translated,input.translation,input.lang,{allowVoiceRepair:true});}catch{/* One formatting/language repair below, never a partial result. */}
+    try{
+     if(!translations||translationVoiceNeedsRepair(translations,input.translation,input.lang)){
+      // One bounded, quota-reserved rewrite; no lookup or partial publication.
+      const extra=await quota.fetch('https://quota.invalid/reserve',{method:'POST',body:JSON.stringify({hash,minute:Math.floor(Date.now()/60000)}),signal:AbortSignal.timeout(1500)});
+      const remaining=38000-(Date.now()-startedAt);
+      if(extra.status!==204||request.signal.aborted||remaining<6000)throw Error('Voice repair unavailable');
+      const repairItems=translations?input.translation.filter(m=>translations.some(t=>t.id===m.id&&translationVoiceNeedsRepair([t],[m],input.lang))):input.translation,repairIds=new Set(repairItems.map(m=>m.id));
+      const revised=await runTranslation(env.AI,translationRequest(repairItems,input.lang,{draft:translations?translations.filter(t=>repairIds.has(t.id)):'The previous output was invalid. Translate ORIGINALS again, using valid JSON, the selected language and complete sentences.'}),Math.min(16000,remaining));
+      const corrected=parseTranslations(revised,repairItems,input.lang);
+      translations=translations?translations.map(t=>corrected.find(c=>c.id===t.id)??t):corrected; // Never restyle the visitor or replace already-valid assistant translations.
+     }
+    }catch{throw failure(502,'Translation unavailable');}
     return response(200,{translations,...(chatSession?{chatSession}:{})});
    }
    stage='KNOWLEDGE';
@@ -210,7 +235,11 @@ export function createHandler(network=fetch){
    stage='MODEL';
    const web=searchEnabled(env,input)?{mode:'eligible'}:{};
    const checkingFunFact=lightChatKind(input,knowledge)==='fact';
-   if(checkingFunFact&&!web.mode)return response(200,{...unverifiedFactReply(input.replyLanguage),...(chatSession?{chatSession}:{})});
+   if(checkingFunFact&&!web.mode){
+    const notice=unverifiedFactReply(input.replyLanguage);
+    if(needsFreshReply(notice,input)){stage='VARIETY';throw failure(502,'Repeated reply');}
+    return response(200,{...notice,...(chatSession?{chatSession}:{})});
+   }
    const model=modelRequest(input,knowledge,web),result=await runModel(env.AI,model,web.mode?14000:22000);
    stage='REPLY';
    let reply=parseModel(result,knowledge,web),searched=false,answerModel=model,answerWeb=web;
@@ -251,14 +280,14 @@ export function createHandler(network=fetch){
    // One shared quality-rewrite slot, including language and internal loops.
    // Never retry a failed provider request, increase caps, or start another search.
    const unfinished=unfinishedReply(reply.text);
-   const quality=text=>replyQualityIssues(text,input.replyLanguage,{allowRepetition:wantsExactRepeat(input.message)});
-   const issues=[...(unfinished?['unfinished']:[]),...quality(reply.text),...(input.replyLanguage==='ja'&&formalJapaneseVoice(reply.text)?['voice']:[])];
-   if((issues.length||!searched&&needsFreshReply(reply,input))&&!request.signal.aborted&&Date.now()-startedAt<30000){
+   const quality=text=>[...replyQualityIssues(text,input.replyLanguage,{allowRepetition:wantsExactRepeat(input.message)}),...(thirdPersonSelf(text,input.message)?['self-narration']:[]),...(input.replyLanguage==='ja'&&formalJapaneseVoice(text)?['voice']:[])];
+   const issues=[...(unfinished?['unfinished']:[]),...quality(reply.text)];
+   if((issues.length||needsFreshReply(reply,input))&&!request.signal.aborted&&Date.now()-startedAt<30000){
     try{
      const extra=await quota.fetch('https://quota.invalid/reserve',{method:'POST',body:JSON.stringify({hash,minute:Math.floor(Date.now()/60000)}),signal:AbortSignal.timeout(1500)});
      const remaining=38000-(Date.now()-startedAt);
      if(extra.status===204&&!request.signal.aborted&&remaining>=6000){
-      const revision=issues.length?completionRequest(answerModel,reply,knowledge,answerWeb,input.replyLanguage,issues):rewriteRequest(model,reply);
+      const revision=issues.length?completionRequest(answerModel,reply,knowledge,answerWeb,input.replyLanguage,issues):rewriteRequest(answerModel,reply,input);
       const result=await runModel(env.AI,revision,Math.min(12000,remaining));
       const revised=issues.length?parseCompletion(result,reply):parseModel(result,knowledge,answerWeb);
       if(!unfinishedReply(revised.text)&&!quality(revised.text).length)reply=issues.length?completeRevision(reply,revised):preferFreshReply(reply,revised,input);
@@ -270,7 +299,9 @@ export function createHandler(network=fetch){
    // shows a localized retry status and keeps the existing conversation intact.
    if(quality(reply.text).length)throw failure(502,'Reply unavailable');
    if(input.guideEvent){const action=guideNextAction(input.guideEvent,cached.data,input.lang);if(action)reply={...reply,text:reply.text+' '+action};}
-   if(input.guideEvent&&needsFreshReply(reply,input))throw failure(502,'Repeated guide reply');
+   // Fail closed for known repeats on EVERY AI path, including sourced facts.
+   // A failed/denied revision cannot quietly release the repeated draft.
+   if(needsFreshReply(reply,input)){stage='VARIETY';throw failure(502,'Repeated reply');}
    if(input.guideEvent&&!guideReplyMatches(reply.text,input.guideEvent,cached.data.pages,input.lang))throw failure(502,'Guide reply does not match target');
    if(input.guideEvent)reply={...reply,destination:'none',sources:[],storyTopics:[]};
    return response(200,{...validReply(reply),...(chatSession?{chatSession}:{})});

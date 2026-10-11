@@ -49,14 +49,14 @@ test('shared names, necessary short answers and greetings do not cause rewrite l
  assert(repetitionScore(aboutFlight,rememberReply(null,en))<.78);
 });
 
-test('lenient variety accepts familiar explanations without spending another AI call',async()=>{
+test('lightly rewording an earlier explanation now uses the single revision slot',async()=>{
  const familiar=en.replace('There would be cozy perches for tired travelers','I would make cozy perches for tired travelers');
  const score=repetitionScore(familiar,input.variety);
- assert(score>=.78&&score<repeatThreshold);assert.equal(needsFreshReply(cue(familiar),input),false);
- const f=fixture({outputs:[cue(familiar)]}),response=await f.handler(f.request(),f.env);
- assert.equal(response.status,200);assert.equal((await response.json()).text,familiar);
- assert.equal(f.calls.length,1);assert.equal(f.reservations.length,1);
- assert.match(varietyInstructions(input),/You do not need a new fact/);
+ assert(score>=repeatThreshold);assert.equal(needsFreshReply(cue(familiar),input),true);
+ const f=fixture({outputs:[cue(familiar),cue(fresh)]}),response=await f.handler(f.request(),f.env);
+ assert.equal(response.status,200);assert.equal((await response.json()).text,fresh);
+ assert.equal(f.calls.length,2);assert.equal(f.reservations.length,2);
+ assert.match(varietyInstructions(input),/DIFFERENT underlying fact/);
  assert.match(varietyInstructions(input),/an option, not an obligation/);
  assert.equal(needsFreshReply(cue(en),input),true);
 });
@@ -135,9 +135,9 @@ test('new wording and explicit repeats need only one reservation and one model c
  }
 });
 
-test('rewrite budget denial, quota failure and provider failure retain a valid answer without loops',async()=>{
+test('rewrite budget denial, quota failure and provider failure never release a known repeat',async()=>{
  for(const setup of [{quotas:[204,429]},{quotas:[204,500]},{quotaError:true},{outputs:[cue(en),new Error('unavailable')]},{outputs:[cue(en),{}]},{outputs:[cue(en),cue(en)]}]){
-  const f=fixture(setup),response=await f.handler(f.request(),f.env);assert.equal(response.status,200);assert.equal((await response.json()).text,en);
+  const f=fixture(setup),response=await f.handler(f.request(),f.env);assert.equal(response.status,502);const body=await response.json();assert.equal(body.text,undefined);assert.equal(body.reference,'YUKI_VARIETY');
   assert.equal(f.reservations.length,2);assert(f.calls.length<=2);
   if(setup.quotas||setup.quotaError)assert.equal(f.calls.length,1);
  }
@@ -156,7 +156,7 @@ test('a canceled request cannot start the optional AI revision',async()=>{
 test('slow first reply skips the optional rewrite instead of exceeding the visitor deadline',async t=>{
  let now=Date.now();t.mock.method(Date,'now',()=>now);
  const f=fixture({afterCall:()=>{now+=31000;}}),response=await f.handler(f.request(),f.env);
- assert.equal(response.status,200);assert.equal((await response.json()).text,en);assert.equal(f.calls.length,1);assert.equal(f.reservations.length,1);
+ assert.equal(response.status,502);assert.equal((await response.json()).text,undefined);assert.equal(f.calls.length,1);assert.equal(f.reservations.length,1);
 });
 
 test('a revision cannot change the destination, sources or animation cues just to be novel',()=>{

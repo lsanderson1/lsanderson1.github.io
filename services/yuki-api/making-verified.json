@@ -165,8 +165,8 @@
       "file": "assets/yuki/runtime/guide-journey.mjs",
       "symbol": "guideTarget",
       "firstLine": 35,
-      "lastLine": 61,
-      "sha256": "2b3bfd6df3f5984795613a3332daf25cf99a558c80b2f6fb97370e1c6633a6a8"
+      "lastLine": 62,
+      "sha256": "9ff4eab68ada577fe04cb7612c26f85219db347b8c192bec47668bac606a56a4"
     }
   },
   {
@@ -181,8 +181,8 @@
     "source": {
       "file": "assets/yuki/runtime/guide-journey.mjs",
       "symbol": "GuideJourney",
-      "firstLine": 119,
-      "lastLine": 150,
+      "firstLine": 120,
+      "lastLine": 151,
       "sha256": "5bd9690db652ca43c164cc67d8317f678c2e356cdf2376f610487e15a382ca29"
     }
   },
@@ -211,13 +211,13 @@
       "en": "Keeping original meaning across languages",
       "ja": "言語を変えても元の意味を保つ"
     },
-    "explanation": "Each message keeps original text and separately stored translations. translatedText returns the original in its own language, otherwise a valid translation. translationBatch prioritizes recent untranslated messages within size caps. applyTranslations matches checked IDs and stores another language without overwriting the original. Authored bilingual greetings bypass model translation; translation quality still needs review.",
+    "explanation": "Each message keeps original text and separately stored translations. translatedText returns valid wording in the requested display language; stale assistant translations or formal Japanese originals wait for a checked tone-refreshed variant. User tone and direct quotations remain separate from Yuki's casual narration. translationBatch prioritizes recent messages within size caps. applyTranslations matches checked IDs and stores a display variant without overwriting the original. Both speakers' translations are checked for wrong-language prose. Authored bilingual greetings bypass model translation. The worker uses a fixed Cloudflare-hosted Gemma translation model with thinking disabled; normal conversation still uses Qwen. Translation shares verification and free quota, permits at most one reserved repair, and preserves already-correct items when only some need tone repair. These automated checks cannot guarantee naturalness or meaning, so translation quality still needs review.",
     "source": {
       "file": "assets/yuki/runtime/conversation-language.mjs",
       "symbol": "translatedText / translationBatch / applyTranslations",
-      "firstLine": 25,
-      "lastLine": 53,
-      "sha256": "8ddc580b680f57497cd6fba21c881c3e6ba70054c2380e341603d9b09c5bd905"
+      "firstLine": 29,
+      "lastLine": 59,
+      "sha256": "5944f9033c526c1d869afc5bb5f9554e7a03a382b438252289fb8241a58f2b2f"
     }
   },
   {
@@ -249,9 +249,9 @@
     "source": {
       "file": "services/yuki-api/worker.mjs",
       "symbol": "parseModel",
-      "firstLine": 91,
-      "lastLine": 152,
-      "sha256": "72003b5cda4ebbd4f845074406de93543796701ce619e64cf4e1d490f5cc2c67"
+      "firstLine": 95,
+      "lastLine": 165,
+      "sha256": "7f9998fb2956a388966dc147200bb6108c1aca63255deed86b8a740af6143ad6"
     }
   },
   {
@@ -267,8 +267,8 @@
       "file": "services/yuki-api/reply-completion.mjs",
       "symbol": "completionRequest / parseCompletion",
       "firstLine": 6,
-      "lastLine": 55,
-      "sha256": "570150f21edf160d208232b717d13ecab7ad2ccfdaeb1d6f10ff06fb79da47f2"
+      "lastLine": 56,
+      "sha256": "f1e7c19dbb9030e50cae7113fd49fc5d604752d83d078374f9a81a7b396f3c04"
     }
   },
   {
@@ -296,13 +296,13 @@
       "en": "Placing feet on painted landmarks",
       "ja": "背景の目印に足元を合わせる"
     },
-    "explanation": "gardenSpots stores hand-authored normalized coordinates for five perches, shared with location memory and the camera. gardenPoint converts them using the rendered illustration rectangle and scroll offset. The roost foot anchor is at 22.5% of width and 79% of height, centering the curled drawing within the stone rim. These are chosen interface landmarks, not AI detection of objects in the picture.",
+    "explanation": "gardenSpots stores hand-authored normalized coordinates for five perches, shared with location memory and the camera. gardenPoint converts them using the rendered illustration rectangle and scroll offset. The roost foot anchor is at 22.5% of width and 76.5% of height, lifting the curled drawing onto the cushion instead of the front stone rim. These are chosen interface landmarks, not AI detection of objects in the picture.",
     "source": {
       "file": "assets/yuki/home/perches.mjs",
       "symbol": "gardenSpots / gardenPoint",
-      "firstLine": 3,
-      "lastLine": 5,
-      "sha256": "2159d45a6dcdb3f6369b437827798357f3742b6066ad59914996228814e5bfbe"
+      "firstLine": 4,
+      "lastLine": 6,
+      "sha256": "f2bc524436975a7622bde721180c7b8947229c72eacbaca0da6a3503c1a3f54f"
     }
   },
   {

@@ -162,7 +162,7 @@ export const greetings={
   "えへへ、聞いてるよ。しっぽまで、いっしょに聞こうとしてるみたい。",
   "こんにちは。見て回るあいだ、ゆきがおともしてもいい？",
   "あっ、こんにちは！お客さんに分けたくて、わくわくを少しとっておいたんだ。",
-  "小さなドラゴン、ごあいさつに来ました！何を探すお手伝いをしようか？",
+  "小さなドラゴン、ごあいさつに来たよ！何を探すお手伝いをしようか？",
   "こんにちは！遊び心のあるものと、技術のお話、どっちから見てみる？ゆきは両方好き。",
   "大きな質問でも大丈夫。この小さな吹き出しに、わかりやすく入れてみるね。",
   "こんにちは！質問のおともになるよ。まずは、聞いてみたいことをどうぞ。",
@@ -170,7 +170,7 @@ export const greetings={
   "こんにちは！宝の地図がなくても大丈夫。探しているものを教えてね。",
   "小さなドラゴンに、いろんな作品。最初はどこに好奇心を向けようか？",
   "こんにちは。ちょっとおしゃべりするだけでもうれしいよ。目的がなくたって大歓迎！",
-  "ねえねえ、とっても大事な質問です。いま、何が気になってる？",
+  "ねえねえ、とっても大事な質問！いま、何が気になってる？",
   "こんにちは！全体をさっと見たい？それとも、ひとつだけ詳しく知りたい？",
   "めがねをかけると、準備万端に見えるでしょ。あとは行き先を決めるだけ！",
   "あっ、こんにちは！どんなものを作ったり遊んだりするのが好き？見る場所をいっしょに選ぼ。",
@@ -192,7 +192,7 @@ export const greetings={
   "わっ、わくわくを分けられる相手だ！小さじ一杯くらいにする？ドラゴン一匹ぶんにする？",
   "こんにちは！羽の生えたしおりだと思ってね。ちょっとおしゃべりだけど。",
   "ちいさな案内役から、こんにちは。最初の発見は何になるかな？",
-  "こんにちは、ぱたぱたっ。好奇心いっぱいのドラゴンが来ました！次は何をしよう？",
+  "こんにちは、ぱたぱたっ。好奇心いっぱいで飛んできちゃった！次は何をしよう？",
   "こんにちは！ペースは合わせるよ。ゆきのわくわくも、順番を待てるから。",
   "やっほ！楽しそうなところから見て、そのあと技術の話をのぞくのもいいね。",
   "わっ、お客さん！お昼寝の予定は、ちょっとだけ後にしちゃおうかな。",
@@ -232,15 +232,20 @@ export function conversationOpening(messages,personality,lang='en',{home=false}=
 // Older sessions contain only text: migrate an exact match at the start only.
 export function localizeGreetingMessages(messages,lang='en'){
  const list=greetings[lang==='ja'?'ja':'en'];
+ const legacy={
+  '小さなドラゴン、ごあいさつに来ました！何を探すお手伝いをしようか？':'小さなドラゴン、ごあいさつに来たよ！何を探すお手伝いをしようか？',
+  'ねえねえ、とっても大事な質問です。いま、何が気になってる？':'ねえねえ、とっても大事な質問！いま、何が気になってる？',
+  'こんにちは、ぱたぱたっ。好奇心いっぱいのドラゴンが来ました！次は何をしよう？':'こんにちは、ぱたぱたっ。好奇心いっぱいで飛んできちゃった！次は何をしよう？'
+ };
  return messages.map((message,position)=>{
   if(message.role!=='assistant')return message;
   if(message.greetingId>=homeGreetingBase)return localizeHomeGreeting(message,lang);
-  let id=message.greetingId;
+  let id=message.greetingId;const source=legacy[message.text]??message.text;
   if(id===undefined&&position===0){
-   id=greetings.en.indexOf(message.text);
-   if(id<0)id=greetings.ja.indexOf(message.text);
+   id=greetings.en.indexOf(source);
+   if(id<0)id=greetings.ja.indexOf(source);
   }
-  if(!Number.isInteger(id)||id<0||id>=list.length||![greetings.en[id],greetings.ja[id]].includes(message.text))return message;
+  if(!Number.isInteger(id)||id<0||id>=list.length||![greetings.en[id],greetings.ja[id]].includes(source))return message;
   return {...message,text:list[id],greetingId:id};
  });
 }

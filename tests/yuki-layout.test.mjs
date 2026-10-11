@@ -12,8 +12,8 @@ for(const [w,h] of [[320,568],[390,844],[768,1024],[1024,768],[1440,900],[1920,1
   const l=pageLayout(w,h),foot=l.home;
   assert.equal(l.readingWidth,w);assert.equal(l.readingHeight,h);
   assert(foot.x+44<=w&&foot.y<=h);
-  const p=bubblePlacement(foot,l,Math.min(316,w-20),Math.min(300,h-20));
-  assert(p.left>=10&&p.left+Math.min(316,w-20)<=w-10);
+  const p=bubblePlacement(foot,l,Math.min(336,w-20),Math.min(300,h-20));
+  assert(p.left>=10&&p.left+Math.min(336,w-20)<=w-10);
   assert(p.top>=10&&p.top+Math.min(300,h-20)<=h-10);
  });
  test(`scroll projects the same page perch without clamping or following at ${w}`,()=>{
@@ -156,4 +156,16 @@ test('header and decorative petals stack above Yuki without raising the branch l
  assert(layer(theme,'.fp-sakura-scene')<layer(widget,'#yuki-companion'));
  assert(layer(widget,'#yuki-companion')<layer(theme,'.fp-sakura-foreground'));
  assert(layer(theme,'.fp-sakura-foreground')<layer(theme,'.fp-nav'));
+});
+
+test('compact composer hides only its scrollbar and keeps privacy details accessible',()=>{
+ const css=fs.readFileSync(new URL('../assets/yuki/yuki.css',import.meta.url),'utf8'),script=fs.readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
+ assert.match(css,/\.yuki-form textarea\{[^}]*overflow-y:auto;scrollbar-width:none/);
+ assert.match(css,/\.yuki-form textarea::-webkit-scrollbar\{display:none\}/);
+ assert.match(css,/\.yuki-conversation\{[^}]*overflow-y:auto;[^}]*scrollbar-width:none/,'long replies still scroll without a visible track');
+ assert(!script.includes('yuki-send-arrow'));assert(!css.includes('yuki-send-arrow'));
+ assert.match(script,/textContent=tr\('Privacy','プライバシー'\)/);
+ assert.match(script,/privacyDetails.append\(privacyTitle,\.\.\.privacy.children\)/);
+ assert.match(script,/privacy.replaceChildren\(privacyBrief,searchLabel,privacyDetails\)/);
+ assert.match(script,/field.scrollHeight\+2/,'auto-height includes the two border pixels');
 });

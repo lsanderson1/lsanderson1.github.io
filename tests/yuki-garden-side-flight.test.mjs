@@ -11,6 +11,9 @@ test('new, returning and legacy settled roost positions use the centered anchor'
  const yuki=new YukiLocation(store,{now:()=>200});assert.deepEqual(yuki.state.position,roostPerch);assert.deepEqual(yuki.state.pose.position,roostPerch);assert.equal(yuki.state.pose.life.frame,3);
  assert.deepEqual(yuki.home().position,roostPerch);assert.deepEqual(new YukiLocation(null).state.position,gardenSpots.nest);
  assert.deepEqual(centerLegacyRoost(yuki.state),yuki.state);
+ const previous={...saved,position:{x:.225,y:.79},pose:{position:{x:.225,y:.79},at:{x:.225,y:.79},target:{x:.225,y:.79}}};
+ const centered=centerLegacyRoost(previous);assert.deepEqual(centered.position,roostPerch);assert.deepEqual(centered.pose.target,roostPerch);
+ assert.equal(roostPerch.x,.225);assert.equal(roostPerch.y,.765);assert(Math.abs((.79-roostPerch.y)*1024-25.6)<.001);
  for(const override of [{page:'/resume.html'},{status:'flight'},{position:{x:.3,y:.8}},{transfer:{}},{pose:{moving:true}},{pose:{route:{}}}]){const state={...saved,...override};assert.equal(centerLegacyRoost(state),state);}
 });
 
@@ -37,4 +40,11 @@ test('garden layers put artwork behind petals and text without blocking chat con
  assert.match(css,/\.yg-thought,\.yg-controls,\.yg-pan-edge,\.yg-beta,\.yg-hotspots button\{z-index:42\}/);
  assert.match(css,/\.yuki-panel,\.yuki-launcher,\.yuki-location\)\{z-index:48\}/);
  assert.doesNotMatch(css,/\.yg-(main|scene)\{[^}]*isolation:isolate/);
+ assert.match(css,/>\.fp-nav\{flex-shrink:0;z-index:50\}/);
+ assert.match(css,/\.yg-world-magic\{z-index:1;isolation:isolate\}/);
+ assert.doesNotMatch(css,/>\.fp-nav\{[^}]*background/,'garden uses the same glass as every portfolio page');
+ const shared=readFileSync(new URL('../css/techfolio-theme/sakura-tech.css',import.meta.url),'utf8');
+ assert.match(shared,/background: color-mix\(in srgb, var\(--background\) 68%, transparent\);\s*backdrop-filter: blur\(1\.5px\)/,'shared glass transmits small visitors without blurring them away');
+ assert.match(shared,/\.fp-nav nav a\s*\{[^}]*color: var\(--foreground\)/,'full-contrast labels remain readable over the scenery');
+ assert.match(css,/\.yg-world\{top:calc\(-1 \* var\(--yg-header-height,64px\)\)/,'the entire world, including visitors, extends behind the glass');
 });

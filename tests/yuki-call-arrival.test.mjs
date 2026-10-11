@@ -30,7 +30,7 @@ test('garden calls use varied bilingual home greetings across reloads, without g
 
 function fixture(ja=false){
  const storage=store(),elements=new Map(),panels=[];
- const make=()=>({children:[],dataset:{},hidden:false,textContent:'',append(...items){this.children.push(...items);},replaceChildren(...items){this.children=items;},cloneNode(){return {...this,children:[...this.children]};}});
+ const make=()=>({children:[],dataset:{},hidden:false,textContent:'',append(...items){this.children.push(...items);},prepend(...items){this.children.unshift(...items);},replaceChildren(...items){this.children=items;},cloneNode(){return {...this,children:[...this.children]};}});
  const $=key=>{if(!elements.has(key))elements.set(key,make());return elements.get(key);};
  const previous=messageRecord('assistant',ja?'この作品ではゲームの操作を試せるよ。':'This project explores game interactions.',ja?'ja':'en');
  const context={$,document:{createElement:make,createTextNode:t=>t},messages:[previous],ja,conversationLanguage:ja?'ja':'en',
@@ -84,4 +84,16 @@ test('clear/refresh/leave asides also keep one current message without erasing t
   assert.equal($('.yuki-aside').hidden,false);assert.equal($('.yuki-speech').hidden,true);assert.equal(c.messages.length,1);
   c.hideMoment();assert.equal($('.yuki-aside').hidden,true);assert.equal($('.yuki-speech').hidden,false);
  }
+});
+
+test('latest reply heads the history and the bubble, translating the same saved turn across EN/JA',()=>{
+ const {context:c,$}=fixture();c.addMessage('user','Where is your home?');c.addMessage('assistant','My home is this sunny garden. I like its quiet reading corner!');
+ const originals=c.messages.map(m=>m.text),latest=c.messages.at(-1);
+ assert.equal($('.yuki-log').children[0].children[1],latest.text);assert.equal($('.yuki-log').scrollTop,0);
+ c.conversationLanguage='ja';applyTranslations(c.messages,c.messages.map((m,i)=>({id:m.id,text:['この作品ではゲームの操作を試せるよ。','おうちはどこ？','わたしのおうちは、この明るい庭。静かな読書のコーナーが好き！'][i]})),'ja');c.drawMessages();
+ assert.equal($('.yuki-log').children[0].children[1],'わたしのおうちは、この明るい庭。静かな読書のコーナーが好き！');
+ assert.equal($('.yuki-speech').children[0].children[1],$('.yuki-log').children[0].children[1]);assert.deepEqual(c.messages.map(m=>m.text),originals);
+ c.conversationLanguage='en';c.drawMessages();assert.equal($('.yuki-log').children[0].children[1],latest.text);assert.equal($('.yuki-speech').children[0].children[1],latest.text);
+ // An unavailable newest translation must never make an older reply look current.
+ c.messages.at(-1).translationVoices={};c.conversationLanguage='ja';c.drawMessages();assert.equal($('.yuki-speech').children.length,0);
 });

@@ -77,13 +77,15 @@ test('garden keeps shared header and no article panels or outside footer',()=>{
 test('garden gives the unchanged shared glass header scenery underneath, not an opaque override',()=>{
  const css=readFileSync(new URL('../assets/yuki/home/garden.css',import.meta.url),'utf8');
  const shared=readFileSync(new URL('../css/techfolio-theme/sakura-tech.css',import.meta.url),'utf8');
- assert.match(shared,/\.fp-nav\s*\{[^}]*background: color-mix\(in srgb, var\(--background\) 88%, transparent\);[^}]*backdrop-filter: blur\(14px\)/);
+ assert.match(shared,/\.fp-nav\s*\{[^}]*background: color-mix\(in srgb, var\(--background\) 68%, transparent\);[^}]*backdrop-filter: blur\(1\.5px\)/);
  assert.doesNotMatch(css,/background-image:url\('\.\/petal-nook.png'\)/);
  assert.match(css,/\.yg-page\{overflow:visible\}/);
  assert.match(css,/\.yg-world\{top:calc\(-1 \* var\(--yg-header-height,64px\)\)/);
  assert.doesNotMatch(css,/\.fp-nav\{[^}]*(?:background|backdrop-filter)/);
  const html=readFileSync(new URL('../_includes/yuki-home.html',import.meta.url),'utf8');
  assert.match(html,/data-garden-pan="left"/);assert.match(html,/data-garden-pan="right"/);
+ assert.match(html,/class="yg-controls" hidden/,'the Explore menu is hidden in both locales');
+ for(const spot of ['nest','pond','lookout','books','treasures'])assert.match(html,new RegExp('id="garden-'+spot+'"[^>]*data-garden-spot="'+spot+'"'),'direct scene destinations remain available');
  assert.doesNotMatch(html,/Follow Yuki|data-garden-follow|yg-camera-controls/);
 });
 

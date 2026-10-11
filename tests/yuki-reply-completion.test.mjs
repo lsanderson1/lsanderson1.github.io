@@ -39,9 +39,9 @@ test('failed, malformed, incompatible or still unfinished repairs return an hone
  const f=fixture({quotas:[204,429]}),reply=await (await f.handler(f.request({lang:'ja',message:'この仕組みはどう動く？'}),f.env)).json();assert.equal(reply.text,unfinishedNotice('ja'));
 });
 
-test('complete ordinary replies use one call; a broken optional variety revision cannot replace them',async()=>{
+test('complete fresh replies use one call; a broken revision cannot release a known repeat',async()=>{
  const normal=fixture({outputs:[cue(full)]});assert.equal((await (await normal.handler(normal.request(),normal.env)).json()).text,full);assert.equal(normal.calls.length,1);
- const f=fixture({outputs:[cue(full),cue(cutoff)]}),reply=await (await f.handler(f.request({variety:rememberReply(null,full)}),f.env)).json();assert.equal(reply.text,full);assert.equal(f.calls.length,2);
+ const f=fixture({outputs:[cue(full),cue(cutoff)]}),reply=await (await f.handler(f.request({variety:rememberReply(null,full)}),f.env)).json();assert.equal(reply.text,undefined);assert.equal(reply.reference,'YUKI_VARIETY');assert.equal(f.calls.length,2);
 });
 
 test('completion consumes no further requests after cancellation or the time budget',async t=>{
@@ -71,11 +71,31 @@ test('bad language/loop repairs fail closed, never spend a third call or save a 
  }
 });
 
+test('third-person self narration gets one whole-answer repair, with the same source and cue',async()=>{
+ for(const [lang,message,bad,good] of [
+  ['en','Where do you live?',"Yuki lives in a bright castle garden. Yuki's dream is a flying library.","I live in a bright castle garden. I dream of a flying library, with a cozy corner for curious visitors."],
+  ['ja','どんなところに住んでいる？','ゆきは明るいお城の庭に住んでいる。ゆきの夢は空飛ぶ図書館だよ。','わたしは明るいお城の庭に住んでいるんだ。いつか空飛ぶ図書館を作りたい！']
+ ]){
+  const f=fixture({outputs:[cue(bad),{text:good}]}),response=await f.handler(f.request({lang,message}),f.env),reply=await response.json();
+  assert.equal(response.status,200);assert.equal(reply.text,good);assert.equal(f.calls.length,2);
+  assert.match(f.calls[1].body.messages[0].content,/FIRST-PERSON CORRECTION/);assert.equal(reply.destination,'none');
+  const denied=fixture({outputs:[cue(bad)],quotas:[204,429]});assert.equal((await denied.handler(denied.request({lang,message}),denied.env)).status,502);
+ }
+});
+
 test('Japanese on an English page and English on a Japanese page are accepted without repairs',async()=>{
  const japanese='空飛ぶ図書館を想像するとわくわくする！小さな本でも、知らない世界へ連れていってくれるんだ。';
  for(const [lang,message,text] of [['en','どんな夢がある？',japanese],['ja','What is your dream?',full]]){
   const f=fixture({outputs:[cue(text)]}),reply=await (await f.handler(f.request({lang,message}),f.env)).json();
   assert.equal(reply.text,text);assert.equal(f.calls.length,1);
+ }
+});
+
+test('even one formal ending gets a rewrite, and a failed voice repair never publishes the stiff draft',async()=>{
+ const bad='小さな図書館が夢なんだ。本を開くと知らない世界が広がります。',good='小さな図書館が夢なんだ。本を開くと知らない世界が広がるから、次のページが楽しみ！';
+ for(const [outputs,quotas,status] of [[ [cue(bad),{text:good}],[204,204],200],[[cue(bad),{text:bad}],[204,204],502],[[cue(bad)],[204,429],502]]){
+  const f=fixture({outputs,quotas}),response=await f.handler(f.request({lang:'ja',message:'夢について教えて'}),f.env),body=await response.json();
+  assert.equal(response.status,status);assert.equal(body.text,status===200?good:undefined);assert(f.calls.length<=2);assert.equal(f.reservations.length,2);
  }
 });
 

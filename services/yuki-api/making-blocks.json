@@ -166,7 +166,7 @@
       "en": "Keeping original meaning across languages",
       "ja": "言語を変えても元の意味を保つ"
     },
-    "explanation": "Each message keeps original text and separately stored translations. translatedText returns the original in its own language, otherwise a valid translation. translationBatch prioritizes recent untranslated messages within size caps. applyTranslations matches checked IDs and stores another language without overwriting the original. Authored bilingual greetings bypass model translation; translation quality still needs review."
+    "explanation": "Each message keeps original text and separately stored translations. translatedText returns valid wording in the requested display language; stale assistant translations or formal Japanese originals wait for a checked tone-refreshed variant. User tone and direct quotations remain separate from Yuki's casual narration. translationBatch prioritizes recent messages within size caps. applyTranslations matches checked IDs and stores a display variant without overwriting the original. Both speakers' translations are checked for wrong-language prose. Authored bilingual greetings bypass model translation. The worker uses a fixed Cloudflare-hosted Gemma translation model with thinking disabled; normal conversation still uses Qwen. Translation shares verification and free quota, permits at most one reserved repair, and preserves already-correct items when only some need tone repair. These automated checks cannot guarantee naturalness or meaning, so translation quality still needs review."
   },
   {
     "id": "retrieve",
@@ -231,7 +231,7 @@
       "en": "Placing feet on painted landmarks",
       "ja": "背景の目印に足元を合わせる"
     },
-    "explanation": "gardenSpots stores hand-authored normalized coordinates for five perches, shared with location memory and the camera. gardenPoint converts them using the rendered illustration rectangle and scroll offset. The roost foot anchor is at 22.5% of width and 79% of height, centering the curled drawing within the stone rim. These are chosen interface landmarks, not AI detection of objects in the picture."
+    "explanation": "gardenSpots stores hand-authored normalized coordinates for five perches, shared with location memory and the camera. gardenPoint converts them using the rendered illustration rectangle and scroll offset. The roost foot anchor is at 22.5% of width and 76.5% of height, lifting the curled drawing onto the cushion instead of the front stone rim. These are chosen interface landmarks, not AI detection of objects in the picture."
   },
   {
     "id": "location",
