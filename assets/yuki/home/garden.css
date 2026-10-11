@@ -4,11 +4,11 @@ html:has(.yg-page),body:has(.yg-page){height:100%;overflow:hidden;overscroll-beh
    that can drift out of alignment when the visitor pans the garden. */
 body:has(.yg-page){display:flex;flex-direction:column;height:100dvh}
 body:has(.yg-page)>.fp-nav{flex-shrink:0}
-.yg-main{position:relative;flex:1;min-height:0;isolation:isolate}
+.yg-main{position:relative;flex:1;min-height:0;isolation:auto}
 .yg-page,.yg-world{position:absolute;inset:0;margin:0;padding:0;overflow:clip}
 .yg-page{overflow:visible}
 .yg-world{top:calc(-1 * var(--yg-header-height,64px));background:#5f8160}
-.yg-scene{position:absolute;left:0;top:0;width:100%;aspect-ratio:3/2;overflow:hidden;isolation:isolate;will-change:left,top}
+.yg-scene{position:absolute;left:0;top:0;width:100%;aspect-ratio:3/2;overflow:hidden;isolation:auto;will-change:left,top}
 .yg-backdrop{display:block;width:100%;height:100%;max-width:none}
 .yg-hotspots button{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);display:grid;place-items:center;width:44px;height:44px;padding:0;border:1px solid #fff9;border-radius:50%;background:#20483de0;color:#fff8dc;font:24px/1 Georgia,serif;box-shadow:0 0 18px #fff2bd66;cursor:pointer;z-index:2}
 .yg-hotspots button:hover,.yg-hotspots button[aria-pressed=true]{background:#5c4435;box-shadow:0 0 0 3px #ffe5a470,0 0 22px #fff2bd88}
@@ -54,6 +54,14 @@ body:has(.yg-page)>.fp-nav{flex-shrink:0}
 @keyframes yg-water-flow{to{stroke-dashoffset:-48}}
 .yg-world-magic,.yg-discoveries{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:hidden;z-index:1}
 .yg-sky-dragons{pointer-events:none}
+/* Share the viewport stack: artwork < Yuki < petals < garden text < chat < header.
+   The garden pans its picture, not the document, so the absolute root still
+   uses viewport coordinates without trapping every chat child at one depth. */
+body:has(.yg-page) #yuki-companion{position:absolute;z-index:auto}
+body:has(.yg-page) :is(.yuki-pet,.yuki-hit,.yuki-guide-line,.yuki-target-ring){z-index:40}
+.yg-weather,.yg-chase-petal{z-index:41}
+.yg-thought,.yg-controls,.yg-pan-edge,.yg-beta,.yg-hotspots button{z-index:42}
+body:has(.yg-page) :is(.yuki-panel,.yuki-launcher,.yuki-location){z-index:48}
 @media(prefers-reduced-motion:reduce){.yg-sky-dragons{display:none}}
 .yg-discovery{position:absolute;display:block;min-width:0;min-height:0;margin:0;padding:0;border:0;border-radius:40%;background:transparent!important;box-shadow:none;color:transparent;pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .yg-discovery:focus-visible{outline:2px dashed #fff4a7!important;outline-offset:-3px;background:#ffebaf14!important}

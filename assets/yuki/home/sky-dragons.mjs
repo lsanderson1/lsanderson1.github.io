@@ -3,8 +3,10 @@ import {dragonFrames} from './dragons/frames.mjs';
 // Distant visitors, never Yuki. Positions are in the unchanged garden's 1536x1024 space.
 export const dragonKinds = ['lavender','amber','sage','jade','cloud'];
 export const wingedKinds = ['lavender','amber','sage'];
-export const flightSheets = kind => [kind,kind+'-turn',...(wingedKinds.includes(kind)?[kind+'-rear',kind+'-glide',kind+'-rear-glide']:[])];
-export const skyRoutes = [
+// Keep the turning artwork available for a future rig, but do not download or
+// schedule it in the garden's current side-only flight mode.
+export const flightSheets = kind => [kind,...(wingedKinds.includes(kind)?[kind+'-glide']:[])];
+export const archivedSkyRoutes = [
  {id:'left-away',points:[[256,124],[448,40],[760,129],[712,242]],size:[.18,.026],depth:[.22,.96],motion:'bank',turn:true,direction:1},
  {id:'right-away',points:[[964,124],[772,40],[460,129],[508,242]],size:[.18,.026],depth:[.22,.96],motion:'bank',turn:true,direction:-1},
  {id:'high-crossing',points:[[280,94],[495,42],[731,57],[990,103]],size:[.14,.12],depth:[.28,.36],motion:'steady',direction:1},
@@ -15,6 +17,16 @@ export const skyRoutes = [
  {id:'right-far-away',points:[[982,197],[770,146],[562,182],[515,243]],size:[.12,.020],depth:[.60,.98],motion:'glide',turn:true,direction:-1},
  {id:'behind-island-water',points:[[296,223],[395,241],[470,244],[651,221]],size:[.085,.06],depth:[.67,.80],motion:'glide',direction:1},
  {id:'near-island-crossing',points:[[296,223],[395,241],[470,244],[651,221]],size:[.13,.12],depth:[.27,.31],motion:'steady',direction:1}
+];
+// Lateral travel at a stable distance: no toward-camera growth or rear turns.
+// Different lanes can still pass in front of/behind the same island correctly.
+export const skyRoutes = [
+ {id:'side-east-high',points:[[180,84],[430,65],[750,65],[1035,84]],size:[.12,.12],depth:[.34,.34],motion:'steady',direction:1},
+ {id:'side-west-high',points:[[1035,84],[750,65],[430,65],[180,84]],size:[.12,.12],depth:[.34,.34],motion:'steady',direction:-1},
+ {id:'side-east-distant',points:[[190,139],[450,120],[740,146],[1010,137]],size:[.07,.07],depth:[.81,.81],motion:'glide',direction:1},
+ {id:'side-west-distant',points:[[1010,137],[740,146],[450,120],[190,139]],size:[.07,.07],depth:[.81,.81],motion:'glide',direction:-1},
+ {id:'side-east-water',points:[[190,223],[420,237],[700,237],[1010,221]],size:[.085,.085],depth:[.80,.80],motion:'glide',direction:1},
+ {id:'side-west-near',points:[[1010,221],[700,237],[420,237],[190,223]],size:[.13,.13],depth:[.30,.30],motion:'steady',direction:-1}
 ];
 // Authored scene depth, near=0 / far=1. Both falls belong to the large left island.
 // Depth is independent of species/body size, but follows the same route progress as scale.

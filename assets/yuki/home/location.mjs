@@ -1,5 +1,6 @@
 // One companion location for this visitor's tab, shared by all site pages and
 // languages. No chat contents, credentials or cross-visitor/server tracking.
+import {roostPerch,centerLegacyRoost} from './perches.mjs';
 export const locationKey='yuki-location-v1';
 export const returnAfterSleepMs=45000;
 export function locationPage(path,base=''){
@@ -22,7 +23,7 @@ const states=['sleep','awake','wake','bedtime','crash','rest','takeoff','flight'
 export class YukiLocation{
  constructor(storage,{now=Date.now,base=''}={}){this.storage=storage;this.now=now;this.base=base;this.reload();}
  reload(){let s;try{s=JSON.parse(this.storage?.getItem(locationKey)||'null');}catch{}
-  this.state=s?.version===1&&typeof s.page==='string'&&/^\/(?!\/)[^?#\s]*$/.test(s.page)&&point(s.position)&&states.includes(s.status)&&number(s.updatedAt,Number.MAX_SAFE_INTEGER)&&s.updatedAt<=this.now()+10000?s:{version:1,page:'/yuki/',title:'Yuki’s Garden',garden:true,spot:'nest',position:{x:.20,y:.775},status:'sleep',sleepSince:this.now(),updatedAt:this.now(),pose:null};return this.state;
+  this.state=s?.version===1&&typeof s.page==='string'&&/^\/(?!\/)[^?#\s]*$/.test(s.page)&&point(s.position)&&states.includes(s.status)&&number(s.updatedAt,Number.MAX_SAFE_INTEGER)&&s.updatedAt<=this.now()+10000?centerLegacyRoost(s):{version:1,page:'/yuki/',title:'Yuki’s Garden',garden:true,spot:'nest',position:{...roostPerch},status:'sleep',sleepSince:this.now(),updatedAt:this.now(),pose:null};return this.state;
  }
  here(path){return this.state.page===locationPage(path,this.base);}
  write(change){this.state={...this.state,...change,version:1,updatedAt:this.now()};try{this.storage?.setItem(locationKey,JSON.stringify(this.state));}catch{}return this.state;}
@@ -40,7 +41,7 @@ export class YukiLocation{
  }
  cancelTransfer(){this.write({transfer:null});}
  record({page,title,garden,spot,position,status,pose,departureDistance}){const same=this.here(page);return this.write({page:locationPage(page,this.base),title:String(title||'').slice(0,120),garden:Boolean(garden),spot:spot??null,position,status,pose,departureDistance:number(departureDistance)?departureDistance:null,sleepSince:status==='sleep'?(same&&this.state.status==='sleep'?this.state.sleepSince:this.now()):null});}
- home(){return this.write({page:'/yuki/',title:'Yuki’s Garden',garden:true,spot:'nest',position:{x:.20,y:.775},status:'sleep',sleepSince:this.now(),pose:null,departureDistance:null,transfer:null});}
+ home(){return this.write({page:'/yuki/',title:'Yuki’s Garden',garden:true,spot:'nest',position:{...roostPerch},status:'sleep',sleepSince:this.now(),pose:null,departureDistance:null,transfer:null});}
  // An unloaded page has no animation loop. Resolve an overdue off-page nap
  // when another page checks her location, rather than pretending it rendered.
  settleAway(path){const s=this.state;if(this.here(path)||s.garden||s.pose?.playing===false||s.pose?.hidden)return s;
