@@ -26,9 +26,9 @@ import {replyLanguage,replyQualityIssues,formalJapaneseVoice} from './runtime/re
 import {DiscoveryGuide,isDiscoveryRequest} from './runtime/discovery-guide.mjs?v=3';
 import {CallDialogue} from './runtime/call-dialogue.mjs?v=3';
 import {ReadingMemory,readPageTitle,readingLabels,readPageDisplaySection,readPageSection,readPageImages,readGardenSpot,guideReference,followUpReference,sectionExplanation} from './runtime/reading-context.mjs?v=7';
-import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=20';
+import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=21';
 import {safeWebURL} from './runtime/web-sources.mjs?v=1';
-import {cleanVariety,rememberReply,packChatRequest,needsFreshText} from './runtime/reply-variety.mjs?v=5';
+import {cleanVariety,rememberReply,rememberFactTopic,rememberJoke,packChatRequest,needsFreshText} from './runtime/reply-variety.mjs?v=6';
 import {thirdPersonSelf} from './runtime/self-narration.mjs?v=1';
 
 const root=document.querySelector('#yuki-companion');
@@ -84,6 +84,7 @@ async function start(){
  <div class="yuki-settings"><button class="yuki-ai-toggle" type="button"></button><button data-action="roam"></button><button data-action="pause"></button><button data-action="hide"></button><button data-action="clear">${tr('Clear chat','チャットを消去')}</button></div></div></div></section>`;
  const varietyNote=document.createElement('p');varietyNote.textContent=tr('To reduce repetition, this tab also keeps Yuki’s discussed story topics, recent reply openings and similarity fingerprints. They are sent with your next message and kept when you clear the chat, with the existing 30-minute session expiry. A near-duplicate or unfinished answer may use at most one extra AI rewrite within the same free usage limits.','繰り返しを減らすため、ゆきが話した物語の項目、直近の返事の書き出し、類似度を確認するためのデータも同じタブに保存し、次のメッセージと一緒に送信します。チャットを消去しても保持し、従来どおりセッションは30分で期限切れになります。よく似た回答や途中で切れた回答は、同じ無料利用上限の範囲内で一度だけAIが書き直す場合があります。');$('.yuki-privacy').append(varietyNote);
  const languageNote=document.createElement('p');languageNote.textContent=tr('Switching languages keeps our conversation and memory. Earlier messages are automatically translated through Cloudflare into the new page language, within the same free limits. The original wording and translations stay in this tab and are reused between pages and when switching back. An active guided route also continues in the new language.','言語を切り替えても会話と記憶は引き継ぎます。同じ無料上限の範囲で、過去のメッセージをCloudflareで新しいページの言語に自動翻訳します。原文と翻訳はこのタブに保存し、ページの移動や言語を戻したときに再利用します。案内中の行き先も引き継ぎます。');$('.yuki-privacy').append(languageNote);
+ const factNote=document.createElement('p');factNote.textContent=tr('For open-ended facts, generic requests to Wikipedia, Crossref or the Cleveland Museum of Art select a public subject before Tavily searches for supporting sources. No visitor messages or history are sent to these topic providers. Up to 128 subject IDs and 24 delivered jokes stay with this tab’s 30-minute session and accompany later chat requests, including after Clear chat or a language switch. Request size limits can omit older items. This reduces repeats; it is not permanent memory or a guarantee of unlimited unique answers.','話題を指定しない豆知識では、Wikipedia・Crossref・クリーブランド美術館への定型リクエストで公開トピックを選び、Tavilyで根拠となる資料を検索します。トピックの提供元にメッセージや会話履歴は送りません。最大128件のトピックIDと24件の冗談を、このタブの30分セッション内で保持し、次の会話に添えます。チャット消去や言語切り替えでも引き継ぎますが、送信サイズの上限で古い項目を省く場合があります。繰り返しを減らす仕組みであり、永久的な記憶や無制限の重複防止ではありません。');$('.yuki-privacy').append(factNote);
  const interestNote=document.createElement('p');interestNote.textContent=tr('Explicitly stated interests in six public topics (animation, game development, art, Yuki’s story, making Yuki, Japanese) can also be remembered in this tab for up to 24 hours. No interests are inferred from browsing. Current corrections take priority. These topic labels accompany your next chat request; Clear chat keeps them.','明確に伝えた興味（アニメーション、ゲーム開発、絵、ゆきの物語、ゆきの制作、日本語）も、このタブで最大24時間保持できます。閲覧行動から推測はしません。新しい訂正を優先し、次の会話の送信時にトピック名を添えます。チャットを消去しても保持します。');$('.yuki-privacy').append(interestNote);
  languageNote.textContent+=tr(' Older assistant wording may also receive a one-time tone refresh, including Japanese saved in Japanese. Originals stay saved; a failed translation does not replace them.',' 以前のゆきの返事は、日本語の原文も含め、口調を一度整える場合があります。原文は保存し、翻訳が失敗しても置き換えません。');
  const searchLabel=document.createElement('label'),searchBox=document.createElement('input');searchBox.type='checkbox';searchBox.className='yuki-search-consent';searchBox.disabled=!online;
@@ -144,7 +145,7 @@ async function start(){
   if(role==='assistant'&&text!=null){try{text=cleanAssistantText(text);if(unfinishedReply(text)){text=unfinishedNotice(ja?'ja':'en');sources=[];storyTopics=[];}}catch{text=tr('Oops, that reply got tangled up. Could you ask me again?','あれっ、返事がこんがらがっちゃった。もう一度聞いてくれる？');sources=[];storyTopics=[];}}
   if(remember)hideMoment();
   if(remember){messages.push({...messageRecord(role,text,language),...(sources.length?{sources}:{}),...(Number.isInteger(greetingId)?{greetingId}:{})});messages=messages.slice(-12);if(role==='assistant')variety=rememberReply(variety,text,storyTopics);}
-  const p=document.createElement('p');p.className='yuki-message';p.dataset.role=role;const label=document.createElement('strong');label.textContent=role==='user'?tr('YOU','あなた'):tr('YUKI','ゆき');p.append(label,document.createTextNode(text??(conversationLanguage==='ja'?'このメッセージを日本語に切り替え中…':'Switching this message to English…')));
+  const p=document.createElement('p');p.className='yuki-message';p.dataset.role=text==null?'assistant':role;const label=document.createElement('strong');label.textContent=role==='user'&&text!=null?tr('YOU','あなた'):tr('YUKI','ゆき');p.append(label,document.createTextNode(text??(conversationLanguage==='ja'?'うーん、日本語でどう伝えようかな……。ちょっとだけ待ってね！':'Hmm… I’m thinking about how to say this to you in English. One little moment!')));
   // Display newest first without reversing the chronological saved/model input.
   const history=p.cloneNode(true);$('.yuki-log').prepend(history);$('.yuki-log').scrollTop=0;
   if(role==='assistant'){
@@ -574,6 +575,8 @@ async function start(){
    if(guideEvent&&(replyQualityIssues(cue.text,conversationLanguage).length||!guideReplyMatches(cue.text,guideEvent,knowledge,ja?'ja':'en',base)))throw Error('request');
    if(!guideEvent){const followUp=followUpReference(cue,context.lastGuide,knowledge);if(followUp)readingMemory.set(followUp);else readingMemory.clear();conversationMemory.remember(text,cue.text);}
    addMessage('assistant',cue.text,true,cue.sources,cue.storyTopics,undefined,conversationLanguage);
+   if(cue.factTopic)variety=rememberFactTopic(variety,cue.factTopic);
+   if(cue.joke)variety=rememberJoke(variety,cue.text);
    if(!guideEvent&&isGuideRequest(text)){
     const targets=cue.sources.map(s=>checkedGuideTarget(s.url,knowledge,ja?'ja':'en',base)).filter(Boolean);
     const unique=[...new Map(targets.map(t=>[t.url,t])).values()];

@@ -3,6 +3,10 @@ export {discoveryKind} from './discovery.mjs';
 // Short-lived, tab-local reply metadata. No user profiling or server storage.
 export const storyTopicIds=Object.freeze(['origin','firstFlight','lanternKeeper','firstGuide','treasure','quietEvening','home','dailyGoals','bigDream','innerConflict','littlePreferences','relationships','character']);
 const recentLimit=12,sampleSize=32,hex=/^[a-f0-9]{8}$/;
+export const cleanFactTopic=value=>typeof value==='string'&&/^(?:(?:wiki-en|museum):[1-9]\d{0,9}|crossref:[a-f0-9]{24})$/.test(value)?value:'';
+export function rememberFactTopic(value,topic){const memory=cleanVariety(value),id=cleanFactTopic(topic);if(id)memory.factTopics=[...new Set([...(memory.factTopics??[]),id])].slice(-128);return memory;}
+export const cleanJokes=value=>[...new Set((Array.isArray(value)?value:[]).filter(s=>typeof s==='string'&&s.trim().length>=8&&s.length<=1200).map(s=>s.trim()))].slice(-24);
+export function rememberJoke(value,text){const memory=cleanVariety(value);if(typeof text==='string')memory.jokes=cleanJokes([...(memory.jokes??[]),text.slice(0,1200)]);return memory;}
 export const cleanStoryTopics=value=>Array.isArray(value)?[...new Set(value.filter(id=>storyTopicIds.includes(id)))].slice(0,3):[];
 const normalized=text=>text.normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
 // Similarity fingerprints, not encryption or a security boundary.
@@ -20,7 +24,9 @@ export function cleanVariety(value){
   if(!item||typeof item.digest!=='string'||!/^[a-f0-9]{16}$/.test(item.digest)||!Number.isInteger(item.length)||item.length<0||item.length>3000||!Array.isArray(item.grams))continue;
   recent.push({digest:item.digest,length:item.length,grams:[...new Set(item.grams.filter(g=>typeof g==='string'&&hex.test(g)))].sort().slice(0,sampleSize),opening:typeof item.opening==='string'?[...item.opening.replace(/\s+/g,' ').trim()].slice(0,64).join(''):''});
  }
- return {turn:Number.isInteger(value?.turn)&&value.turn>0?Math.min(value.turn,9999):0,topics,recent};
+ const factTopics=[...new Set((Array.isArray(value?.factTopics)?value.factTopics:[]).map(cleanFactTopic).filter(Boolean))].slice(-128);
+ const jokes=cleanJokes(value?.jokes);
+ return {turn:Number.isInteger(value?.turn)&&value.turn>0?Math.min(value.turn,9999):0,topics,recent,...(factTopics.length?{factTopics}:{}),...(jokes.length?{jokes}:{})};
 }
 export function rememberReply(value,text,storyTopics=[]){
  const memory=cleanVariety(value);memory.turn=Math.min(9999,memory.turn+1);
@@ -66,6 +72,15 @@ function discoveryIdeaScore(text,previous){
  }
  return 0;
 }
+function sameJapaneseJokeSetup(text,previous){
+ const opening=value=>normalized(String(value).split(/[?？!！。\n]/u)[0]);
+ const left=opening(text),right=opening(previous);
+ if(!/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(left+right))return false;
+ // Catch a reused riddle premise even when its proposed answer changes. This
+ // narrow prefix heuristic is not a test of whether Japanese wordplay is funny.
+ let common=0;while(common<Math.min(left.length,right.length)&&left[common]===right[common])common++;
+ return common>=7&&common>=Math.min(left.length,right.length)*.3;
+}
 function recurringFrame(text,previous){
  if(normalized(text).length<80)return false;
  // Two prior uses of an identical substantial opening/closing are enough;
@@ -74,18 +89,18 @@ function recurringFrame(text,previous){
  const [opening,ending]=edges(text);
  return previous.filter(p=>{const [o,e]=edges(p);return opening.length>=18&&opening===o||ending.length>=18&&ending===e;}).length>=2;
 }
-export function repetitionScore(text,variety,history=[],memory=[],{discovery=false}={}){
+export function repetitionScore(text,variety,history=[],memory=[],{discovery=false,joke=false}={}){
  const fingerprint=replyFingerprint(text),recent=cleanVariety(variety).recent;
- const previous=[...new Set([...history.filter(item=>item.role==='assistant').map(item=>item.content),...memory.filter(item=>typeof item?.answer==='string').map(item=>item.answer)])];
+ const previous=[...new Set([...history.filter(item=>item.role==='assistant').map(item=>item.content),...memory.filter(item=>typeof item?.answer==='string').map(item=>item.answer),...(joke?cleanJokes(variety?.jokes):[])])];
  for(const content of previous)recent.push(replyFingerprint(content));
  const score=recent.reduce((score,item)=>Math.max(score,discovery&&fingerprint.length>=8&&fingerprint.digest===item.digest?1:replySimilarity(fingerprint,item)),0);
- return previous.reduce((score,content)=>Math.max(score,sharedPassage(text,content,discovery),discovery?discoveryIdeaScore(text,content):0),Math.max(score,recurringFrame(text,previous)? .82:0));
+ return previous.reduce((score,content)=>Math.max(score,sharedPassage(text,content,discovery),discovery?discoveryIdeaScore(text,content):0,joke&&sameJapaneseJokeSetup(text,content)?.84:0),Math.max(score,recurringFrame(text,previous)? .82:0));
 }
 export const repeatThreshold=.8;
 export function needsFreshText(text,input){
  if(wantsExactRepeat(input.message))return false;
- const discovery=Boolean(discoveryKind(input.message,input.history));
- return repetitionScore(text,input.variety,input.history??[],input.memory??[],{discovery})>=(input.guideEvent?0.75:discovery?0.72:repeatThreshold);
+ const kind=discoveryKind(input.message,input.history),discovery=Boolean(kind);
+ return repetitionScore(text,input.variety,input.history??[],input.memory??[],{discovery,joke:kind==='joke'})>=(input.guideEvent?0.75:discovery?0.72:repeatThreshold);
 }
 export function wantsExactRepeat(text){
  if(/\b(?:don't|do not|stop|avoid)\s+(?:repeat|say that again)|\bnot (?:verbatim|word for word)|繰り返さない|繰り返さず|同じ.*(?:言わない|ではなく)/i.test(text))return false;
@@ -98,9 +113,12 @@ export function packChatRequest(input,limit=14000){
  const body={...input,history:input.history.slice(-6),...(input.memory?{memory:input.memory.map(m=>({...m}))}:{}),variety:cleanVariety(input.variety)};
  const size=()=>new TextEncoder().encode(JSON.stringify(body)).length;
  while(size()>limit&&body.variety.recent.length>2)body.variety.recent.shift();
+ while(size()>limit&&body.variety.jokes?.length>4)body.variety.jokes.shift();
+ while(size()>limit&&body.variety.factTopics?.length>16)body.variety.factTopics.shift();
  while(size()>limit&&body.memory?.length)body.memory.shift();
  while(size()>limit&&body.history.length)body.history.shift();
  while(size()>limit&&body.variety.recent.length)body.variety.recent.shift();
+ while(size()>limit&&body.variety.jokes?.length)body.variety.jokes.shift();
  if(size()>limit)throw Error('Message too large');
  return JSON.stringify(body);
 }

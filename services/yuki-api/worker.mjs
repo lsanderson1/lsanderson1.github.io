@@ -10,6 +10,7 @@ import {replyLanguage,replyQualityIssues,formalJapaneseVoice} from '../../assets
 import {thirdPersonSelf} from '../../assets/yuki/runtime/self-narration.mjs';
 import {varietyInstructions,needsFreshReply,rewriteRequest,preferFreshReply} from './reply-variety.mjs';
 import {searchEnabled,safeSearchQuery,searchInstructions,searchTavilyResult,lookupNotice,reserveSearch} from './web-search.mjs';
+import {openFactRequest,freshFactTopic,factMentionsTopic} from './random-facts.mjs';
 import {issueChatSession,verifyChatSession} from './chat-session.mjs';
 import {cleanRecall} from '../../assets/yuki/runtime/conversation-memory.mjs';
 import {cleanInterests} from '../../assets/yuki/runtime/visitor-interests.mjs';
@@ -115,7 +116,8 @@ export function parseModel(data,knowledge,web={}){
  if(value.storyTopics!==undefined&&(!Array.isArray(value.storyTopics)||value.storyTopics.length>3||value.storyTopics.some(id=>!storyTopicIds.includes(id))))throw failure(502,'Reply unavailable');
  const sourceUrls=new Set();
  const sources=[...new Set(Array.isArray(value.sourceIds)?value.sourceIds:[])].slice(0,3).map(id=>knowledge.pages.find(p=>p.id===id)??(web.entries??[]).find(p=>p.id===id)).filter(p=>p&&!sourceUrls.has(p.url)&&sourceUrls.add(p.url)).map(p=>({title:p.title,url:p.url}));
- try{return {...validReply({...value,sources}),...(web.mode==='eligible'?{webQuery:safeSearchQuery(value.webQuery)}:{})};}catch{throw failure(502,'Reply unavailable');}
+ // Only the server's completed discovery route can assign a seen-topic ID.
+ try{return {...validReply({...value,factTopic:undefined,joke:undefined,sources}),...(web.mode==='eligible'?{webQuery:safeSearchQuery(value.webQuery)}:{})};}catch{throw failure(502,'Reply unavailable');}
 }
 export async function runModel(ai,request,timeoutMs=22000){
  const {yukiTask,...body}=request;
@@ -172,7 +174,7 @@ export class YukiQuota {
  }
  async alarm(){await this.state.storage.deleteAll();}
 }
-export function createHandler(network=fetch){
+export function createHandler(network=fetch,{random}={}){
  let cached=null;
  return async function handle(request,env){
   const origin=request.headers.get('origin'),allowed=env.SITE_ORIGIN;
@@ -243,23 +245,33 @@ export function createHandler(network=fetch){
    if(portrait)return response(200,{...validReply(portrait),...(chatSession?{chatSession}:{})});
    stage='MODEL';
    const web=searchEnabled(env,input)?{mode:'eligible'}:{};
-   const checkingFunFact=lightChatKind(input,knowledge)==='fact';
+   const discovery=lightChatKind(input,knowledge),checkingFunFact=discovery==='fact';
    if(checkingFunFact&&!web.mode){
     return response(200,{...lookupNotice(input.replyLanguage,input.webSearch?'provider':'disabled'),...(chatSession?{chatSession}:{})});
    }
-   const model=modelRequest(input,knowledge,web),result=await runModel(env.AI,model,web.mode?14000:22000);
+   let factTopic=null;
+   if(checkingFunFact&&openFactRequest(input)){
+    try{factTopic=await freshFactTopic({network,readJSON:boundedJSON,input,random,signal:AbortSignal.any([request.signal,AbortSignal.timeout(6000)])});}catch{/* No familiar-trivia fallback when discovery fails. */}
+    if(!factTopic)return response(200,{...lookupNotice(input.replyLanguage,'planning'),...(chatSession?{chatSession}:{})});
+   }
+   const model=modelRequest(input,knowledge,web);
+   // An open discovery uses a live random subject, not the model's favorite
+   // trivia. Its first reserved inference is available for the sourced answer.
+   const result=factTopic?null:await runModel(env.AI,model,web.mode?14000:22000);
    stage='REPLY';
-   let reply=parseModel(result,knowledge,web),searched=false,repairUsed=false,answerModel=model,answerWeb=web;
+   let reply=factTopic?{webQuery:factTopic.query}:parseModel(result,knowledge,web),searched=false,repairUsed=false,answerModel=model,answerWeb=web;
    if(reply.webQuery){
     searched=true;
     let entries=[],searchIssue='provider';
     const remaining=()=>38000-(Date.now()-startedAt);
-    // Reserve a second inference before spending a search credit. Both quotas
-    // must succeed. An exhausted/failed lookup never breaks the valid draft.
+    // Planned searches need a second inference reserved before a search credit.
+    // Random discovery has not used its first inference yet. Both budgets apply.
     try{
      if(request.signal.aborted||remaining()<14000){searchIssue='timeout';throw Error('Not enough time');}
-     const extra=await quota.fetch('https://quota.invalid/reserve',{method:'POST',body:JSON.stringify({hash,minute:Math.floor(Date.now()/60000)}),signal:AbortSignal.timeout(1500)});
-     if(extra.status!==204){searchIssue=extra.status===429?'ai-limit':'provider';throw Error('No inference budget');}
+     if(!factTopic){
+      const extra=await quota.fetch('https://quota.invalid/reserve',{method:'POST',body:JSON.stringify({hash,minute:Math.floor(Date.now()/60000)}),signal:AbortSignal.timeout(1500)});
+      if(extra.status!==204){searchIssue=extra.status===429?'ai-limit':'provider';throw Error('No inference budget');}
+     }
      const monthly=env.QUOTA.get(env.QUOTA.idFromName('web-search:'+day.slice(0,7)));
      const budget=await monthly.fetch('https://quota.invalid/search',{method:'POST',body:JSON.stringify({hash,day}),signal:AbortSignal.timeout(1500)});
      if(budget.status===429)searchIssue='limit';
@@ -269,19 +281,19 @@ export function createHandler(network=fetch){
      if(!entries.length)throw Error('No usable search evidence');
      searchIssue='answer';
      if(request.signal.aborted||remaining()<5000)throw Error('Not enough time');
-     const evidence={mode:'results',entries,date:day};
+     const evidence={mode:'results',entries,date:day,...(factTopic?{factTopic}:{})};
      const searchedModel=modelRequest(input,knowledge,evidence);
      let answer=parseModel(await runModel(env.AI,searchedModel,Math.min(18000,remaining())),knowledge,evidence);
-     if(!answer.sources.some(s=>entries.some(e=>e.url===s.url))){
+     if(!answer.sources.some(s=>entries.some(e=>e.url===s.url))||!factMentionsTopic(answer.text,factTopic)){
       // Missing citations are an ANSWER failure, not a failed web lookup.
       // Use the same single quality-repair slot, never another search or
       // automatic source attachment that could legitimize an unrelated claim.
       const repair=await quota.fetch('https://quota.invalid/reserve',{method:'POST',body:JSON.stringify({hash,minute:Math.floor(Date.now()/60000)}),signal:AbortSignal.timeout(1500)});
       if(repair.status!==204||remaining()<6000||request.signal.aborted)throw Error('Citation repair unavailable');
       repairUsed=true;
-      const revised={...searchedModel,messages:[...searchedModel.messages.slice(0,-1),{role:'system',content:'The previous draft omitted its evidence citation. Answer the visitor using ONLY claims directly supported by the supplied WEB ENTRIES. Include their exact web IDs in sourceIds. Do not substitute an unrelated remembered fact or attach citations to an unsupported claim. Keep your cheerful first-person voice and finish the explanation. Return the same JSON schema; do not search again.'},searchedModel.messages.at(-1)]};
+      const revised={...searchedModel,messages:[...searchedModel.messages.slice(0,-1),{role:'system',content:'The previous draft omitted its evidence citation or the selected discovery subject. Answer the visitor using ONLY claims directly supported by the supplied WEB ENTRIES. Include their exact web IDs in sourceIds. If a FRESH DISCOVERY TOPIC was supplied, explain that subject and name it using its exact source spelling. Do not substitute an unrelated remembered fact or attach citations to an unsupported claim. Keep your cheerful first-person voice and finish the explanation. Return the same JSON schema; do not search again.'},searchedModel.messages.at(-1)]};
       answer=parseModel(await runModel(env.AI,revised,Math.min(12000,remaining())),knowledge,evidence);
-      if(!answer.sources.some(s=>entries.some(e=>e.url===s.url)))throw Error('Answer omitted checked evidence');
+      if(!answer.sources.some(s=>entries.some(e=>e.url===s.url))||!factMentionsTopic(answer.text,factTopic))throw Error('Answer omitted checked evidence or selected topic');
      }
      reply={...answer,searchStatus:'used'};answerModel=searchedModel;answerWeb=evidence;
     }catch{
@@ -310,7 +322,8 @@ export function createHandler(network=fetch){
      }
     }catch{/* Keep a complete original, or show the explicit notice below. */}
    }
-   if(unfinishedReply(reply.text))reply=incompleteAnswer(input.replyLanguage);
+   const incomplete=unfinishedReply(reply.text);
+   if(incomplete)reply=incompleteAnswer(input.replyLanguage);
    // Never display or remember a known wrong-language/looping answer. The UI
    // shows a localized retry status and keeps the existing conversation intact.
    if(quality(reply.text).length)throw failure(502,'Reply unavailable');
@@ -318,8 +331,13 @@ export function createHandler(network=fetch){
    // Fail closed for known repeats on EVERY AI path, including sourced facts.
    // A failed/denied revision cannot quietly release the repeated draft.
    if(needsFreshReply(reply,input)){stage='VARIETY';throw failure(502,'Repeated reply');}
+   if(factTopic){
+    if(!factMentionsTopic(reply.text,factTopic)||!reply.sources?.length)return response(200,{...lookupNotice(input.replyLanguage,'answer'),...(chatSession?{chatSession}:{})});
+    reply={...reply,factTopic:factTopic.id};
+   }
    if(input.guideEvent&&!guideReplyMatches(reply.text,input.guideEvent,cached.data.pages,input.lang))throw failure(502,'Guide reply does not match target');
    if(input.guideEvent)reply={...reply,destination:'none',sources:[],storyTopics:[]};
+   if(discovery==='joke'&&!incomplete)reply={...reply,joke:true};
    return response(200,{...validReply(reply),...(chatSession?{chatSession}:{})});
   }catch(error){
    // Never expose provider responses, visitor content, stack traces or credentials.

@@ -97,3 +97,14 @@ test('latest reply heads the history and the bubble, translating the same saved 
  // An unavailable newest translation must never make an older reply look current.
  c.messages.at(-1).translationVoices={};c.conversationLanguage='ja';c.drawMessages();assert.equal($('.yuki-speech').children.length,0);
 });
+
+test('pending English and Japanese message placeholders speak as Yuki, without changing stored turns',()=>{
+ for(const language of ['en','ja']){
+  const {context:c,$}=fixture(language==='en');c.online=true;c.conversationLanguage=language;
+  const saved=JSON.stringify(c.messages);c.drawMessages();
+  const p=$('.yuki-speech').children[0];assert.match(p.children[1],language==='ja'?/日本語でどう伝えようかな/:/thinking about how to say this to you in English/);
+  assert(!p.children[1].includes('切り替え中'));assert(!p.children[1].includes('Switching this message'));
+  c.addMessage('user',undefined,false);const pending=$('.yuki-log').children[0];assert.equal(pending.dataset.role,'assistant','translation aside is not misattributed to the visitor');
+  assert.equal(JSON.stringify(c.messages),saved);
+ }
+});

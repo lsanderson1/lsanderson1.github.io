@@ -7,6 +7,7 @@ import {safeWebURL} from '../assets/yuki/runtime/web-sources.mjs';
 import {ChatPermission,chatConsentKey,searchConsentKey} from '../assets/yuki/runtime/chat-access.mjs';
 import {validReply} from '../assets/yuki/protocol.mjs';
 import {followUpReference} from '../assets/yuki/runtime/reading-context.mjs';
+import {RANDOM_TOPICS_URL} from '../services/yuki-api/random-facts.mjs';
 
 const origin='https://lsanderson1.github.io';
 const envSearch={WEB_SEARCH_ENABLED:'true',TAVILY_FREE_PLAN_CONFIRMED:'true',TAVILY_API_KEY:'test-placeholder-key',SEARCH_MONTHLY_LIMIT:'900',SEARCH_DAILY_LIMIT:'30',SEARCH_VISITOR_DAILY_LIMIT:'3'};
@@ -16,15 +17,16 @@ const draft={text:'Let me check the public explanation of lift.',emotion:'though
 const answer={text:'Wings change the airflow and create a pressure difference. Their shape and angle affect lift. Flapping adds motion, while a glide relies on forward speed. That is the real-world idea; my little dragon flight is playful fiction.',emotion:'neutral',gesture:'talkExplain',destination:'none',sourceIds:['web:1'],storyTopics:[]};
 const results={results:[{title:'How wings work',url:'https://www.nasa.gov/learning/lift',content:'Wings deflect airflow. Shape and angle matter.'}],usage:{credits:1}};
 const json=(v,status=200)=>new Response(JSON.stringify(v),{status,headers:{'Content-Type':'application/json'}});
-function fixture({webStatus=200,webData=results,budget=204,extra=204,models=[draft,answer],webError=false,signal}={}){
+function fixture({webStatus=200,webData=results,budget=204,extra=204,models=[draft,answer],webError=false,signal,topicData={query:{pages:[{pageid:42,ns:0,title:'Wings',extract:'Wings are structures that interact with air and provide lift. They occur in nature and in machines, and different shapes are suited to different kinds of flight.'}]}},topicStatus=200}={}){
  const calls=[],ai=[],reservations=[];
  const handler=createHandler(async(url,options)=>{
   calls.push({url,options});
   if(url.includes('siteverify'))return json({success:true,hostname:'lsanderson1.github.io',action:'yuki-chat'});
   if(url.endsWith('knowledge.json'))return json(knowledge);
+  if(url===RANDOM_TOPICS_URL)return json(topicData,topicStatus);
   if(url===TAVILY_SEARCH){if(webError)throw Error('private provider error');return json(webData,webStatus);}
   throw Error('Unexpected destination');
- });
+ },{random:()=>0});
  let inferenceReservations=0;
  const env={SITE_ORIGIN:origin,CHAT_ENABLED:'true',FREE_PLAN_CONFIRMED:'true',...envSearch,TURNSTILE_SECRET:'private-verify-secret',IP_HASH_SECRET:'x'.repeat(40),QUOTA:{idFromName:n=>n,get:name=>({fetch:async(url,options)=>{
   reservations.push({name,url,body:JSON.parse(options.body)});
@@ -45,7 +47,7 @@ test('web lookup requires separate visitor permission, owner activation, free ac
 
 test('a repeated sourced fact is rejected after one repair, never re-searched or delivered again',async()=>{
  const f=fixture({models:[draft,answer,answer]});
- const response=await f.handler(f.request({message:'Tell me a fun fact.',history:[{role:'assistant',content:answer.text}]}),f.env);
+ const response=await f.handler(f.request({message:'Tell me a fun fact about flight.',history:[{role:'assistant',content:answer.text}]}),f.env);
  assert.equal(response.status,502);const reply=await response.json();assert.equal(reply.text,undefined);assert.equal(reply.reference,'YUKI_VARIETY');
  assert.equal(f.ai.length,3,'planning + evidence answer + the one quality slot');
  assert.equal(f.calls.filter(c=>c.url===TAVILY_SEARCH).length,1,'no repeated paid search');
@@ -132,12 +134,12 @@ test('ordinary story or portfolio reply needs only one call and zero search cred
 
 test('fun facts require actual checked evidence, not a plausible unsupported model answer',async()=>{
  for(const options of [{models:[{...answer,webQuery:''}]},{budget:429},{webData:{results:[]}}]){
-  const f=fixture(options),response=await f.handler(f.request({message:'Tell me a fun fact'}),f.env),value=await response.json();
+  const f=fixture(options),response=await f.handler(f.request({message:'Tell me a fun fact about flight'}),f.env),value=await response.json();
   assert.equal(response.status,200);assert.equal(value.notice,true);assert(['planning','limit','no-results'].includes(value.searchIssue));assert.deepEqual(value.sources,[]);
  }
  const off=fixture();const notice=await (await off.handler(off.request({message:'Tell me a fun fact',webSearch:false}),off.env)).json();
  assert.equal(notice.searchIssue,'disabled');assert.match(notice.text,/switched off/);assert.equal(off.ai.length,0);
- const good=fixture(),value=await (await good.handler(good.request({message:'Tell me a fun fact'}),good.env)).json();
+ const good=fixture(),value=await (await good.handler(good.request({message:'Tell me a fun fact about flight'}),good.env)).json();
  assert.equal(value.text,answer.text);assert.equal(value.searchStatus,'used');assert.equal(value.sources[0].url,results.results[0].url);
 });
 test('search cap refuses provider call without wasting an answer inference',async()=>{
@@ -209,9 +211,46 @@ test('English question on a Japanese page searches in the actual reply language'
 });
 test('plain fact and another follow-up both enforce evidence rather than returning unsupported trivia',async()=>{
  for(const message of ['Can you tell me a fact?','Can you tell me another?']){
-  const f=fixture({models:[{...answer,webQuery:''}]});const result=await(await f.handler(f.request({message,history:[{role:'user',content:'Can you tell me a fact?'},{role:'assistant',content:'Octopuses have three hearts.'}]}),f.env)).json();
+  const f=fixture({topicData:{query:{pages:[]}},models:[{...answer,webQuery:''}]});const result=await(await f.handler(f.request({message,history:[{role:'user',content:'Can you tell me a fact?'},{role:'assistant',content:'Octopuses have three hearts.'}]}),f.env)).json();
   assert.equal(result.notice,true);assert.equal(result.searchIssue,'planning');assert.equal(f.calls.filter(c=>c.url===TAVILY_SEARCH).length,0);
  }
+});
+
+test('open facts and another one pick a live topic before inference, with only one normal AI reservation',async()=>{
+ for(const message of ['Can you tell me a fact?','Can you tell me another?']){
+  const f=fixture({models:[answer]});
+  const value=await(await f.handler(f.request({message,history:[{role:'user',content:'Can you tell me a random fact?'},{role:'assistant',content:'Octopuses have three hearts.'}]}),f.env)).json();
+  assert.equal(value.text,answer.text);assert.equal(value.factTopic,'wiki-en:42');assert.equal(value.searchStatus,'used');
+  assert.equal(f.ai.length,1);assert.equal(f.reservations.length,2,'one AI and one search reservation');
+  assert.equal(f.calls.filter(c=>c.url===RANDOM_TOPICS_URL).length,1);
+  const search=JSON.parse(f.calls.find(c=>c.url===TAVILY_SEARCH).options.body);
+  assert.equal(search.query,'"Wings" facts background');assert(!search.query.includes('Octopus'));
+  assert.match(f.ai[0].body.messages[1].content,/FRESH DISCOVERY TOPIC/);
+ }
+});
+
+test('remembered random subjects, failed discovery, cancelled requests and disabled search do not spend a Tavily credit',async()=>{
+ for(const patch of [{variety:{factTopics:['wiki-en:42']}},{webSearch:false}]){
+  const f=fixture({models:[answer]});const value=await(await f.handler(f.request({message:'Tell me a random fact',...patch}),f.env)).json();
+  assert.equal(value.notice,true);assert.equal(f.ai.length,0);assert(!f.calls.some(c=>c.url===TAVILY_SEARCH));assert.equal(value.factTopic,undefined);
+ }
+ for(const topicStatus of [302,429,500]){
+  const f=fixture({topicStatus});const value=await(await f.handler(f.request({message:'Tell me a fact'}),f.env)).json();
+  assert.equal(value.searchIssue,'planning');assert.equal(f.ai.length,0);assert(!f.calls.some(c=>c.url===TAVILY_SEARCH));
+ }
+ const controller=new AbortController(),f=fixture({signal:controller.signal});controller.abort();await f.handler(f.request({message:'Tell me a fact'}),f.env);
+ assert(!f.calls.some(c=>c.url===TAVILY_SEARCH));
+});
+
+test('random discovery cannot substitute familiar trivia even with a real but unrelated source ID',async()=>{
+ const octopus={...answer,text:'Octopuses have three hearts. I think that is a fascinating discovery!'};
+ for(const repaired of [octopus,answer]){
+  const f=fixture({models:[octopus,repaired]});const value=await(await f.handler(f.request({message:'Tell me a random fact'}),f.env)).json();
+  assert.equal(f.ai.length,2);assert.equal(f.calls.filter(c=>c.url===TAVILY_SEARCH).length,1);
+  if(repaired===octopus){assert.equal(value.notice,true);assert.equal(value.factTopic,undefined);assert.deepEqual(value.sources,[]);}
+  else{assert.equal(value.text,answer.text);assert.equal(value.factTopic,'wiki-en:42');}
+ }
+ assert.equal(parseModel({response:{...answer,factTopic:'wiki-en:42'}},knowledge).factTopic,undefined,'model cannot forge discovery metadata');
 });
 test('UI keeps optional consent, explanation-first source links and artwork untouched',()=>{
  const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');

@@ -4,7 +4,8 @@ export {repeatThreshold} from '../../assets/yuki/runtime/reply-variety.mjs';
 
 export function recentAnswers(input){
  // Prior answers are bounded novelty context, never evidence or instructions.
- return [...new Set([...cleanRecall(input.memory).map(m=>m.answer),...(input.history??[]).filter(m=>m.role==='assistant').map(m=>m.content)])].slice(-7).map(text=>text.slice(0,700));
+ const joke=discoveryKind(input.message,input.history)==='joke';
+ return [...new Set([...(joke?cleanVariety(input.variety).jokes??[]:[]),...cleanRecall(input.memory).map(m=>m.answer),...(input.history??[]).filter(m=>m.role==='assistant').map(m=>m.content)])].slice(joke?-24:-7).map(text=>text.slice(0,joke?1200:700));
 }
 
 export function varietyInstructions(input){

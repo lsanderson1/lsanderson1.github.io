@@ -249,9 +249,9 @@
     "source": {
       "file": "services/yuki-api/worker.mjs",
       "symbol": "parseModel",
-      "firstLine": 100,
-      "lastLine": 174,
-      "sha256": "f8fc706930bd05aa2004d2c00ddb85635babeae04e523cc2ac4fa8f67f6144be"
+      "firstLine": 101,
+      "lastLine": 176,
+      "sha256": "68cce2fe069ae50f0476271f5e38a60a78c4a87e04201d7f528cb619e6c61d23"
     }
   },
   {
