@@ -241,7 +241,7 @@
     "until": "const clock=",
     "symbol": "YukiLocation",
     "title": {"en": "Remembering where Yuki is", "ja": "ゆきの居場所を覚える"},
-    "explanation": "YukiLocation stores one position, pose and travel record in the visitor's sessionStorage. English and Japanese versions share a canonical page path. A cross-page call keeps its origin, target, start time and two travel legs; revisiting the origin during departure resumes that journey and lets the visitor stop her. Unloaded pages use elapsed timing, not background rendering. Ordinary navigation does not send her back to the nest. After inactivity she sleeps, then returns home after 45 more seconds. This is same-browser-tab state, not server or cross-device memory."
+    "explanation": "YukiLocation stores one position, pose and travel record in the visitor's sessionStorage. English and Japanese versions share a canonical page path. A cross-page call keeps its origin, target, start time and two travel legs; revisiting the origin during departure resumes that journey and lets the visitor stop her. Unloaded pages use elapsed timing, not background rendering. Ordinary navigation does not send her back to the nest. After inactivity she sleeps, then starts returning home after 45 more seconds. beginHomeReturn retains the origin and marks the transfer as a homecoming. An open garden plays the header entrance, flight to the cushion, landing and bedtime; the status remains returning during travel. An entirely off-page completed return settles into sleep. This is same-browser-tab state, not server or cross-device memory."
   },
   {
     "id": "summon",

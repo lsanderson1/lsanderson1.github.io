@@ -9,14 +9,14 @@ const code=source.slice(source.indexOf(' function showExitSeal(){'),source.index
 function fixture({kind='returning',reduced=false}={}){
  const nodes={'.yuki-pet':{hidden:false},'.yuki-hit':{hidden:false}},target={x:200,y:100},events=[];
  const r={foot:{x:200,y:200},point:()=>target,wanted:'exit',at:'start',graph:{state:'flight'},hidden:false};
- const s={portalAfterglow:null,portalTrip:{kind,phase:'flying',age:0,origin:{page:'/essays/'}},paused:false,hidden:false,companion:{rover:r,lifecycle:{locked:false}},resident:true,calling:true,media:{matches:reduced},$:key=>nodes[key],portalPoint:section=>{s.portal.dataset.source=section??(kind==='returning'?'/yuki/':'/essays/');return target;},presence:{home:()=>events.push('home'),transit:()=>events.push('transit')}};
+ const s={portalAfterglow:null,portalTrip:{kind,phase:'flying',age:0,origin:{page:'/essays/'}},paused:false,hidden:false,companion:{rover:r,lifecycle:{locked:false}},resident:true,calling:true,media:{matches:reduced},$:key=>nodes[key],portalPoint:section=>{s.portal.dataset.source=section??(kind==='returning'?'/yuki/':'/essays/');return target;},presence:{beginHomeReturn:(timing,arrivalMs)=>{assert.equal(timing.total,0);assert(arrivalMs>0);events.push('homeward-flight');},transit:()=>events.push('transit')}};
  let visible=false;s.portal={dataset:{},get hidden(){return !visible;},set hidden(value){visible=!value;if(visible)events.push({show:true,petHidden:nodes['.yuki-pet'].hidden,hitHidden:nodes['.yuki-hit'].hidden,roverHidden:r.hidden,resident:s.resident});}};
  runInNewContext(code,s);return {s,r,nodes,events};
 }
 test('return seal stays hidden throughout approach, then appears after Yuki disappears',()=>{
  const {s,r,events}=fixture();for(const distance of [500,220,100,21]){r.foot.y=100+distance;s.updatePortal(16);assert(s.portal.hidden);assert(s.resident);}
  r.foot.y=110;s.updatePortal(16);assert(!s.portal.hidden);assert.equal(s.portalTrip,null);assert.equal(s.calling,false);assert.equal(s.portalAfterglow.section,'/yuki/');
- assert.deepEqual(events,['home',{show:true,petHidden:true,hitHidden:true,roverHidden:true,resident:false}]);
+ assert.deepEqual(events,['homeward-flight',{show:true,petHidden:true,hitHidden:true,roverHidden:true,resident:false}]);
 });
 test('the completed return keeps the seal at its exit for 2.4 seconds, then hides it',()=>{
  const {s,r}=fixture();r.foot.y=100;s.updatePortal(16);s.updatePortal(1200);assert(!s.portal.hidden);assert.equal(s.portal.dataset.source,'/yuki/');s.updatePortal(1199);assert(!s.portal.hidden);s.updatePortal(1);assert(s.portal.hidden);assert.equal(s.portalAfterglow,null);

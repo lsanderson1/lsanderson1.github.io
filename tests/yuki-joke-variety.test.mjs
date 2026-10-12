@@ -33,6 +33,20 @@ test('fresh joke directions vary generation rather than serving canned jokes, an
  assert.match(p.messages[0].content,/fresh small observational scene/);assert.equal(p.max_tokens,1900);
  assert.equal(jokeDirection({message:'What is your home?'}),'');
 });
+
+test('open joke requests mix classic jokes, wordplay, dialogue and stories in both languages',()=>{
+ for(const lang of ['en','ja']){
+  const input={message:lang==='ja'?'冗談を聞かせて':'Tell me a joke',lang,history:[]};
+  const directions=[0,.2,.4,.55,.72,.95].map(n=>jokeDirection(input,()=>n));
+  assert.equal(new Set(directions).size,6);
+  assert.match(directions[0],lang==='ja'?/短い前振りとオチ/:/compact classic setup/);
+  assert.match(directions[1],lang==='ja'?/問いと答え/:/question-and-answer joke/);
+  assert.match(directions[4],lang==='ja'?/3〜6文の小話/:/miniature comic story/);
+  const prompt=modelRequest(input,{pages:[]}).messages[0].content;
+  assert.match(prompt,/stories supplement the earlier joke forms, not replace them/);
+  assert.match(prompt,/do not pad a good punchline/);
+ }
+});
 test('worker rejects an old joke after one bounded repair and only marks successful jokes',async()=>{
  const cue=text=>({text,emotion:'amused',gesture:'none',destination:'none',sourceIds:[],storyTopics:[]});
  const fresh='A little cloud asked for a window seat. The plane was already sitting in its living room! I think that cloud has a very roomy house.';
@@ -46,4 +60,21 @@ test('worker rejects an old joke after one bounded repair and only marks success
   else{assert.equal(response.status,200);assert.equal(value.text,fresh);assert.equal(value.joke,true);}
  }
  assert.equal(parseModel({response:{...cue(fresh),joke:true}},{pages:[]}).joke,undefined,'model cannot forge history classification');
+});
+
+test('a visibly broken punchline uses the existing single repair and is never silently accepted',async()=>{
+ const bad='Why did the clock eat a spoon? I mixed up the punchline. Sorry!';
+ const good='Why did the music note go to school? To get a little sharper! That note has excellent study habits.';
+ const cue=text=>({text,emotion:'amused',gesture:'none',destination:'none',sourceIds:[],storyTopics:[]});
+ for(const revised of [bad,good]){
+  let calls=0,reservations=0;
+  const handler=createHandler(async url=>Response.json(url.includes('siteverify')?{success:true,hostname:'lsanderson1.github.io',action:'yuki-chat'}:{pages:[],owner:'Lloyd',bio:{en:'Portfolio owner.',ja:'作品の作者。'},skills:[]}));
+  const env={SITE_ORIGIN:'https://lsanderson1.github.io',CHAT_ENABLED:'true',FREE_PLAN_CONFIRMED:'true',TURNSTILE_SECRET:'test',IP_HASH_SECRET:'a'.repeat(40),AI:{run:async(_model,request)=>{
+   if(calls++){assert.match(request.messages[0].content,/failed premise is NOT worth preserving/);return {response:{text:revised}};}
+   return {response:cue(bad)};
+  }},QUOTA:{idFromName:n=>n,get:()=>({fetch:async()=>{reservations++;return new Response(null,{status:204});}})}};
+  const response=await handler(new Request('https://api.invalid/chat',{method:'POST',headers:{Origin:env.SITE_ORIGIN,'Content-Type':'application/json','CF-Connecting-IP':'192.0.2.1'},body:JSON.stringify({message:'Tell me a joke',lang:'en',page:'/',token:'test',history:[]})}),env);
+  const body=await response.json();assert.equal(calls,2);assert.equal(reservations,2);
+  if(revised===good){assert.equal(response.status,200);assert.equal(body.text,good);}else{assert.equal(response.status,502);assert.notEqual(body.text,bad);}
+ }
 });

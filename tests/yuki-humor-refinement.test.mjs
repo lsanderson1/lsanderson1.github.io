@@ -5,6 +5,7 @@ import {modelRequest} from '../services/yuki-api/worker.mjs';
 import {lightChatKind} from '../services/yuki-api/light-chat.mjs';
 import {needsFreshText,rememberJoke} from '../assets/yuki/runtime/reply-variety.mjs';
 import {completionRequest} from '../services/yuki-api/reply-completion.mjs';
+import {humorQualityIssues} from '../services/yuki-api/humor-quality.mjs';
 
 test('playful stories in both languages inherit the same saved joke checks on follow-up',()=>{
  for(const message of ['Tell me a playful little story','Tell me a funny short story','A silly story, please','笑える小話を聞かせて','楽しい小話を教えて']){
@@ -51,6 +52,17 @@ test('humor language repairs preserve the little story instead of inflating it i
   assert.match(repair.messages[0].content,/Do NOT expand it/);
   assert.deepEqual(repair.response_format.json_schema.required,['text']);
  }
+});
+
+test('observed failed punchlines and unsafe-food scenes get a replacement, not a polished repetition',()=>{
+ assert.deepEqual(humorQualityIssues('なんてね、そんなわけないよね。あはは、ちょっと失敗しちゃった！'),['humor-logic']);
+ assert.deepEqual(humorQualityIssues('I mixed up the punchline. Sorry!'),['humor-logic']);
+ assert.deepEqual(humorQualityIssues('最後に「にんじんの絵の具」をスープに入れちゃった。'),['humor-harmlessness']);
+ assert.deepEqual(humorQualityIssues('Why did the music note go to school? To get a little sharper!'),[]);
+ assert.deepEqual(humorQualityIssues('ウサギが「ちょっと失敗しちゃった」と言うと、時計はまた一周して待ってあげた。'),[]);
+ const p=modelRequest({message:'短いジョークを聞かせて',lang:'ja',history:[]},{pages:[]});
+ const r=completionRequest(p,{text:'ちょっと失敗しちゃった！',sources:[],storyTopics:[]},{pages:[]},{},'ja',['humor-logic']);
+ assert.match(r.messages[0].content,/failed premise is NOT worth preserving/);assert.match(r.messages[0].content,/requested format/);
 });
 
 test('sourced facts have a compact evidence-only answering stage with exact topic names in both languages',()=>{

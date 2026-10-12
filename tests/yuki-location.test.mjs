@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {YukiLocation,locationKey,locationPage,portalSection,travelPortalSection,capturePose,restorePose,poseArtwork,returnAfterSleepMs} from '../assets/yuki/home/location.mjs';
+import {YukiLocation,locationKey,locationPage,portalSection,travelPortalSection,capturePose,restorePose,poseArtwork,returnAfterSleepMs,locationLabel} from '../assets/yuki/home/location.mjs';
 import {HomeDialogue,homeLines} from '../assets/yuki/home/home-dialogue.mjs';
 import {Companion} from '../assets/yuki/runtime/companion.mjs';
 import {emotionPlayback} from '../assets/yuki/runtime/reply-cues.mjs';
@@ -10,6 +10,7 @@ import {airClips} from '../assets/yuki/runtime/air-reactions.mjs';
 import {projectFrame} from '../assets/yuki/runtime/projection.mjs';
 import {summonTiming,summonPhase,callFlightDuration,catchInFlight} from '../assets/yuki/home/summon.mjs';
 import {PageMotion} from '../assets/yuki/runtime/page-motion.mjs';
+import {roostPerch} from '../assets/yuki/home/perches.mjs';
 const {clips}=JSON.parse(fs.readFileSync(new URL('../assets/yuki/manifest.json',import.meta.url)));
 const make=()=>new Companion({rest:clips.rest.frames.map(f=>f.durationMs),flight:clips.flight.frames.map(f=>f.durationMs??60),takeoff:takeoffMs,landing:landingMs},[{id:'home',x:130,y:680},{id:'next',x:750,y:430}],{random:()=>.7,motion:contactPhases,idle:{},lifecycle:{clips,startAsleep:false,inactivityMs:90000,crashChance:0},greeting:clips.greeting.playback,emotions:emotionPlayback(clips),airClips});
 const storage=()=>{const data=new Map();return {getItem:k=>data.get(k),setItem:(k,v)=>data.set(k,v)};};
@@ -115,4 +116,105 @@ test('catching mid-flight stops at the current feet position and keeps flapping'
 test('a return-home already underway completes off-page, not a reset during unrelated navigation',()=>{
  let now=Date.now();const a=new YukiLocation(storage(),{now:()=>now});a.record({page:'/resume.html',position:{x:.6,y:700},status:'returning',pose:{route:{duration:8000,elapsed:1000}}});
  now+=3000;a.settleAway('/essays/');assert(a.here('/resume.html'));now+=5000;a.settleAway('/essays/');assert(a.here('/yuki/'));
+});
+
+// Exercise the actual live-page reconciliation, not just its storage model:
+// that model already returned home correctly while the drawing stayed hidden.
+function arrivalHarness(presence,{path='/yuki/',hidden=false,paused=false,resident=false,portalTrip=null,calling=false,callLoading=false,guiding=false,reduced=false,box={left:0,top:0,width:1200,height:800},scrollY=0}={}){
+ const c=make(),events=[];c.rover.hidden=true;
+ const garden={cancel:()=>events.push('cancel'),story:id=>events.push(id),remark:()=>events.push('thought'),say:text=>events.push(text),camera:{follow:()=>events.push('follow')}};
+ const source=fs.readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
+ const settle=source.slice(source.indexOf(' function settleAwayLocation('),source.indexOf('\n function beginRoostArrival('));
+ const place=source.slice(source.indexOf(' function placeAt('),source.indexOf('\n function replayTravel('));
+ const create=new Function('context',`
+  let {resident,portalTrip,calling,callLoading,hidden,paused}=context,pendingCue={stale:true};
+  const {presence,companion,garden,locationMap,location,journey,beginRoostArrival}=context,media={matches:context.reduced},tr=en=>en;
+  ${place}\n${settle}
+  return {settle:settleAwayLocation,get resident(){return resident;},get pendingCue(){return pendingCue;}};
+ `);
+ return {c,events,live:create({resident,portalTrip,calling,callLoading,hidden,paused,reduced,presence,companion:c,garden,beginRoostArrival:origin=>events.push({flyFrom:origin.page}),location:{pathname:path},journey:{active:guiding},locationMap:p=>({x:box.left+p.x*box.width,y:box.top+scrollY+p.y*box.height})})};
+}
+
+for(const path of ['/yuki/','/ja/yuki/'])test(`reduced-motion ${path} restores an away nap on the approved cushion without reloading`,()=>{
+ let now=1000;const presence=new YukiLocation(storage(),{now:()=>now});
+ presence.record({page:'/resume.html',position:{x:.8,y:1800},status:'rest',pose:{playing:true,life:{inactive:0}}});
+ const box={left:-240,top:-95,width:1500,height:1000},h=arrivalHarness(presence,{path,box,scrollY:25,reduced:true});
+ assert.equal(h.live.settle(),false);assert.equal(h.c.rover.hidden,true);
+ now+=90000;assert.equal(h.live.settle(),false);assert.equal(presence.state.status,'sleep');
+ now+=returnAfterSleepMs;assert.equal(h.live.settle(),true);assert.equal(h.live.resident,true);
+ assert.equal(h.c.rover.hidden,false);assert.equal(h.c.lifecycle.state,'sleep');assert.equal(h.c.rover.route,null);
+ assert.deepEqual(h.c.rover.foot,{x:box.left+roostPerch.x*box.width,y:box.top+25+roostPerch.y*box.height});
+ assert.equal(h.c.rover.at,h.c.rover.wanted);assert.equal(h.live.pendingCue,null);assert(h.events.includes('nest'));assert(h.events.includes('follow'));assert(h.events.includes('thought'));
+ run(h.c,500);assert(clips.sleep.frames.some(f=>f.file===projectFrame(h.c,clips,155).frame.file));
+ const age=h.c.lifecycle.age;assert.equal(h.live.settle(),false);assert.equal(h.c.lifecycle.age,age,'periodic checks must not restart the sleep animation');
+});
+
+test('a completed off-page departure requests a real entrance, but an unrelated page never spawns a duplicate',()=>{
+ let now=1000;const presence=new YukiLocation(storage(),{now:()=>now});
+ presence.record({page:'/resume.html',position:{x:.5,y:600},status:'returning',pose:{route:{duration:8000,elapsed:1000}}});
+ const home=arrivalHarness(presence);now+=6999;assert.equal(home.live.settle(),false);now++;assert.equal(home.live.settle(),true);
+ assert.equal(home.live.resident,false);assert.equal(home.c.rover.hidden,true);assert.deepEqual(home.events,[{flyFrom:'/resume.html'}]);
+ const other=arrivalHarness(presence,{path:'/projects/'});assert.equal(other.live.settle(),false);assert.equal(other.c.rover.hidden,true);
+});
+
+test('return-home transfer keeps the true source and returning status across reloads and languages',()=>{
+ let now=1000;const data=storage(),p=new YukiLocation(data,{now:()=>now});
+ p.record({page:'/ja/essays/example.html',position:{x:.8,y:1600},status:'sleep',pose:null});
+ const timing=summonTiming(p.state,clips),t=p.beginHomeReturn(timing,9000);
+ assert.equal(t.origin.page,'/essays/example.html');assert.equal(t.target.page,'/yuki/');assert(t.returnHome);
+ assert.equal(locationLabel(p.state),'Returning to Her Roost');assert.equal(locationLabel(p.state,true),'ねぐらへ帰るところ');
+ now+=timing.total+300;const restored=new YukiLocation(data,{now:()=>now});
+ assert.equal(restored.transit().leg,'incoming');assert.equal(restored.state.status,'flight');assert(restored.here('/ja/yuki/'));
+ assert.equal(travelPortalSection({kind:'incoming',transfer:restored.transfer},'/yuki/'),'/essays/');
+ assert.equal(locationLabel(restored.state),'Returning to Her Roost');
+ now+=9000;restored.transit();assert.equal(restored.state.status,'sleep');assert.equal(restored.transfer,null);assert.deepEqual(restored.state.position,roostPerch);
+});
+
+test('actual homecoming flies from the source header, lands on the roost, and requests bedtime instead of a greeting',async()=>{
+ let now=1000;const presence=new YukiLocation(storage(),{now:()=>now}),c=make(),motion=new PageMotion(c),events=[];
+ presence.record({page:'/resume.html',position:{x:.8,y:900},status:'sleep',pose:null});const origin={...presence.state};presence.home();
+ const garden={point:()=>({x:225,y:765}),cancel(){},story:id=>events.push(id),camera:{follow(){}},say:text=>events.push(text)};
+ const source=fs.readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
+ const part=(from,to)=>source.slice(source.indexOf(from),source.indexOf(to,source.indexOf(from)));
+ const code=[part(' function beginRoostArrival(','\n const portal='),part(' function placeAt(','\n function catchTravel('),part(' function updatePortal(','\n const sections=')].join('\n');
+ const create=new Function('ctx',`
+  const {presence,companion,motion,garden,clips,summonTiming,callFlightDuration,landingMs,portalSection,travelPortalSection,restorePose,locationPage,events}=ctx;
+  const Date={now:()=>presence.now()},media={matches:false},location={pathname:'/yuki/'},base='',portal={hidden:true,dataset:{}},tr=en=>en;
+  let resident=false,portalTrip=null,portalAfterglow=null,calling=false,hidden=false,paused=false,pendingCue=null,announceCall=false;
+  const locationMap=(p,inverse)=>inverse?{x:p.x*1000,y:p.y*1000}:{x:p.x/1000,y:p.y/1000};
+  const portalPoint=fixed=>{portal.dataset.source=fixed??travelPortalSection(portalTrip,presence.state.page);return {x:650,y:120};};
+  const prepareTravel=()=>Promise.resolve(),status=text=>events.push(text),showExitSeal=()=>{};
+  const announceCalledArrival=()=>events.push('UNWANTED_GREETING');
+  const rememberLocation=()=>presence.record({page:'/yuki/',garden:true,spot:'nest',position:locationMap(companion.rover.position),status:companion.rover.graph.state});
+  ${code}
+  return {begin:beginRoostArrival,update:updatePortal,get trip(){return portalTrip;},get resident(){return resident;},portal};
+ `);
+ const live=create({presence,companion:c,motion,garden,clips,summonTiming,callFlightDuration,landingMs,portalSection,travelPortalSection,restorePose,locationPage,events});
+ c.rover.hidden=true;live.begin(origin);await Promise.resolve();
+ assert.equal(live.trip.phase,'waiting');assert.equal(live.resident,false);assert.equal(c.rover.hidden,true);
+ now+=presence.transfer.timing.total;live.update(10);
+ assert.equal(live.trip.phase,'flying');assert.equal(live.resident,true);assert.equal(c.rover.hidden,false);
+ assert.equal(live.portal.dataset.source,'/resume.html');assert.equal(c.rover.graph.state,'flight');assert.deepEqual(c.rover.foot,{x:650,y:120});
+ for(let i=0;i<2000&&live.trip;i++){now+=10;c.update(10);live.update(10);}
+ assert.equal(live.trip,null);assert.equal(c.rover.graph.state,'rest');assert.deepEqual(c.rover.foot,{x:225,y:765});
+ assert.deepEqual(garden.pending,{id:'nest',sleep:true,hover:false});assert(!events.includes('UNWANTED_GREETING'));
+ c.lifecycle.requestSleep();run(c,20000);assert.equal(c.lifecycle.state,'sleep');
+});
+
+test('settled arrivals respect hidden and paused preferences and do not interrupt calls or guidance',()=>{
+ for(const options of [{hidden:true},{paused:true},{hidden:true,paused:true}]){
+  const h=arrivalHarness(new YukiLocation(storage()),options);assert.equal(h.live.settle(),true);
+  assert.equal(h.c.rover.hidden,Boolean(options.hidden));assert.equal(h.c.rover.playing,!options.paused);assert(!h.events.includes('follow'));
+ }
+ for(const options of [{resident:true},{portalTrip:{kind:'incoming'}},{calling:true},{callLoading:true},{guiding:true}]){
+  const h=arrivalHarness(new YukiLocation(storage()),options);assert.equal(h.live.settle(),false);assert.equal(h.events.length,0);
+ }
+});
+
+test('an unfinished transfer or saved animation is never teleported by the settled-arrival check',()=>{
+ let now=1000;const presence=new YukiLocation(storage(),{now:()=>now});
+ presence.beginTransfer({page:'/resume.html',position:{x:.5,y:600}},{total:4000},5000);
+ const h=arrivalHarness(presence);now+=1000;assert.equal(h.live.settle(),false);assert.equal(h.c.rover.hidden,true);assert(presence.transfer);
+ presence.cancelTransfer();presence.record({page:'/yuki/',position:roostPerch,status:'sleep',pose:capturePose(make())});
+ assert.equal(h.live.settle(),false);assert.equal(h.events.length,0);
 });

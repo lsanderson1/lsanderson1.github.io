@@ -18,7 +18,7 @@ import {ConversationMemory} from './runtime/conversation-memory.mjs?v=3';
 import {VisitorInterests} from './runtime/visitor-interests.mjs';
 import {expressionSequence} from './runtime/reply-beats.mjs';
 import {GardenHome} from './home/garden.mjs?v=10';
-import {YukiLocation,capturePose,restorePose,poseArtwork,locationLabel,locationPage,portalSection,travelPortalSection} from './home/location.mjs?v=5';
+import {YukiLocation,capturePose,restorePose,poseArtwork,locationLabel,locationPage,portalSection,travelPortalSection} from './home/location.mjs?v=6';
 import {summonTiming,summonPhase,callFlightDuration,catchInFlight} from './home/summon.mjs';
 import {ConversationMoments,shouldWelcomeOnRefresh,isLeavingLink} from './runtime/conversation-moments.mjs?v=1';
 import {messageRecord,translatedText,translationBatch,checkedTranslations,applyTranslations,conversationHistory} from './runtime/conversation-language.mjs?v=7';
@@ -278,6 +278,47 @@ async function start(){
   const departureDistance=a?Math.hypot(r.foot.x-(a.left+a.width/2),r.foot.y-(a.bottom+scrollY)):500;
   presence.record({page:location.pathname,title:readPageTitle(document,{path:location.pathname,base,title:root.dataset.pageTitle,lang:ja?'ja':'en'}),garden:Boolean(garden&&!journey.active),spot:garden?.spotAt(r.position),position:locationMap(r.position),status:statusName,pose:capturePose(c,p=>locationMap(p)),departureDistance});
  }
+ function settleAwayLocation(){
+  if(resident||portalTrip||calling||callLoading||journey.active)return false;
+  const origin={...presence.state};
+  presence.transit();presence.settleAway(location.pathname);
+  const s=presence.state;
+  // Off-page timers can finish a return while this garden remains open. Adopt
+  // the completed location AND drawing together, not just the status label.
+  // An active transfer/pose belongs to its travel renderer, never this shortcut.
+  if(presence.transfer||!presence.here(location.pathname)||s.pose||!['sleep','rest','awake'].includes(s.status))return false;
+  if(garden&&s.status==='sleep'&&origin.page!==s.page&&!hidden&&!paused&&!media.matches){
+   beginRoostArrival(origin);return true;
+  }
+  placeAt(locationMap(s.position,true));
+  const r=companion.rover;
+  r.setArrivalStyle('land');r.hoverRemaining=0;r.hoverClock=0;r.hoverChoice=null;
+  companion.lifecycle.activity();companion.lifecycle.enter(s.status==='sleep'?'sleep':'awake');
+  resident=true;r.hidden=hidden;r.playing=!paused;pendingCue=null;
+  if(garden){
+   garden.cancel();garden.floating=false;garden.inactive=0;garden.story(s.spot??'nest');garden.remark();
+   garden.say(s.status==='sleep'?tr('Curled up in my cozy roost… zzz.','ふわふわのねぐらで、すやすや…。'):tr('Home again! My little wings can rest.','ただいま！小さな羽も、ひと休み。'));
+   if(!hidden&&!paused)garden.camera?.follow();
+  }
+  return true;
+ }
+ function beginRoostArrival(origin){
+  // Preserve the real origin during the off-page departure. The receiving
+  // garden plays the same header entrance as a call, followed by a landing.
+  presence.write({...origin,transfer:null});
+  const timing=origin.status==='returning'?{wake:0,takeoff:0,flight:0,total:0}:summonTiming(origin,clips);
+  const target=garden.point('nest'),start=portalPoint(portalSection(origin.page));
+  const arrivalMs=callFlightDuration(start,target)+landingMs.reduce((a,b)=>a+b,0)+1000;
+  const transfer=presence.beginHomeReturn(timing,arrivalMs);
+  const trip={kind:'incoming',phase:'preparing',age:0,origin,transfer,returnHome:true};
+  portalTrip=trip;calling=true;pendingCue=null;announceCall=false;
+  garden.cancel();garden.floating=false;garden.inactive=0;garden.story('nest');garden.camera?.follow();
+  garden.say(tr('I’m flying back to my cozy roost…','ふわふわのねぐらへ、ぱたぱた帰るよ…'));
+  void prepareTravel().then(()=>{if(portalTrip===trip)continueTransfer();}).catch(()=>{
+   if(portalTrip!==trip)return;trip.phase='failed';calling=false;presence.write({...origin,transfer:null});
+   status(tr('My homeward flight couldn’t load. Please reload to try again.','帰りの飛行画像を読み込めなかったよ。再読み込みしてね。'));
+  });
+ }
  const portal=document.createElement('div');portal.className='yuki-magic';portal.setAttribute('aria-hidden','true');portal.hidden=true;
  const seal=document.createElement('img');seal.src=new URL('home/dragon-magic.svg',assets).href;seal.alt='';portal.append(seal);
  for(let n=0;n<12;n++){const spark=document.createElement('i');spark.style.setProperty('--n',n);spark.style.setProperty('--drift',(n%2?-1:1)*(18+(n*17)%42)+'px');portal.append(spark);}document.body.append(portal);
@@ -307,7 +348,8 @@ async function start(){
   }
   if(current!==t.target.page)return true;
   const target=locationMap(t.target.position,true);calling=true;
-  portalTrip={kind:'incoming',phase:step.leg==='departing'?'waiting':'flying',age:step.age,wait:t.timing.total,timing:t.timing,target,origin:t.origin,transfer:t};
+  portalTrip={kind:'incoming',phase:step.leg==='departing'?'waiting':'flying',age:step.age,wait:t.timing.total,timing:t.timing,target,origin:t.origin,transfer:t,returnHome:Boolean(t.returnHome)};
+  if(t.returnHome&&garden){companion.lifecycle.crashChance=0;garden.cancel();garden.floating=false;garden.story('nest');garden.camera?.follow();garden.say(tr('I’m flying back to my cozy roost…','ふわふわのねぐらへ、ぱたぱた帰るよ…'));}
   if(step.leg==='incoming'){resident=true;companion.rover.hidden=false;placeAt(portalPoint(),{flying:true});motion.travel(target,{duration:callFlightDuration(companion.rover.foot,target)});replayTravel(step.age);}
   return true;
  }
@@ -351,8 +393,13 @@ async function start(){
   else {portalPoint();portal.hidden=media.matches||trip.age>2400;}
   const settled=r.graph.state==='rest'&&r.at===r.wanted&&!companion.lifecycle.locked;
   const entered=trip.kind==='returning'&&(settled||Math.hypot(r.foot.x-end.x,r.foot.y-end.y)<20);
-  if(entered){presence.home();resident=false;r.hidden=true;showExitSeal();portalTrip=null;calling=false;}
-  else if(trip.kind==='incoming'&&settled){portal.hidden=true;portalTrip=null;calling=false;presence.cancelTransfer();companion.lifecycle.activity();rememberLocation();trip.resolve?.();status(tr('There you are! A little dragon magic… and lots of flapping!','見つけた！ドラゴンの魔法をちょっぴりと、たくさんのぱたぱたで到着！'));announceCalledArrival();}
+  if(entered){presence.beginHomeReturn({wake:0,takeoff:0,flight:0,total:0},9000);resident=false;r.hidden=true;showExitSeal();portalTrip=null;calling=false;}
+  else if(trip.kind==='incoming'&&settled){
+   portal.hidden=true;portalTrip=null;calling=false;presence.cancelTransfer();companion.lifecycle.activity();
+   if(trip.returnHome&&garden){garden.inactive=0;garden.pending={id:'nest',sleep:true,hover:false};status(tr('Home again… time to curl up.','ただいま…くるんと丸まって、ひと休み。'));}
+   else{status(tr('There you are! A little dragon magic… and lots of flapping!','見つけた！ドラゴンの魔法をちょっぴりと、たくさんのぱたぱたで到着！'));announceCalledArrival();}
+   rememberLocation();trip.resolve?.();
+  }
  }
 
  const sections=[...document.querySelectorAll('main [data-yuki-section]:not(h1), .fp-resume-grid h2, .fp-build-card h2, .fp-build-guide > h2, [data-yuki-interest]')].map((el,i)=>({id:'interest-'+i,name:(el.getAttribute('alt')||el.textContent).trim(),el}));
@@ -685,7 +732,7 @@ async function start(){
     else if(applyReplyCue(companion,cue).animationAccepted){if(cue.firstMeeting)personality.markMet();pendingCue.notBefore=t+(cue.pauseMs??0);pendingCue.sequence.shift();if(!pendingCue.sequence.length)pendingCue=null;}
    }
    garden?.update(dt,{settled:companion.rover.graph.state==='rest'&&companion.rover.at===companion.rover.wanted&&!companion.emotion.active&&!companion.greeting.active,hovering:companion.rover.isHovering&&companion.rover.hoverClock>600,locked:companion.lifecycle.locked,open,busy,hidden:hidden||!resident||!onScreen||paused||Boolean(portalTrip),guiding:guide.active||journey.active});
-   if(t-lastLocationSave>750){rememberLocation();if(!resident&&!portalTrip){presence.transit();presence.settleAway(location.pathname);}lastLocationSave=t;}
+   if(t-lastLocationSave>750){rememberLocation();settleAwayLocation();lastLocationSave=t;}
    if(resident&&!paused&&!hidden&&!portalTrip&&presence.shouldReturn)void returnToGarden();
    render();if(t-lastTrim>5000){trimArt();lastTrim=t;}}requestAnimationFrame(tick);}
  try{

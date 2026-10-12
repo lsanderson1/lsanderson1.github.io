@@ -249,8 +249,8 @@
     "source": {
       "file": "services/yuki-api/worker.mjs",
       "symbol": "parseModel",
-      "firstLine": 101,
-      "lastLine": 176,
+      "firstLine": 102,
+      "lastLine": 177,
       "sha256": "68cce2fe069ae50f0476271f5e38a60a78c4a87e04201d7f528cb619e6c61d23"
     }
   },
@@ -268,7 +268,7 @@
       "symbol": "completionRequest / parseCompletion",
       "firstLine": 6,
       "lastLine": 60,
-      "sha256": "a821b3c5a6d7f99784153699beed38345880a321cf34773311ba8bcd44d1e89b"
+      "sha256": "48a3362b90df15cac995454469a29f90930fd8dd7f7d2c70b9eccbed1fe0bcc8"
     }
   },
   {
@@ -313,13 +313,13 @@
       "en": "Remembering where Yuki is",
       "ja": "ゆきの居場所を覚える"
     },
-    "explanation": "YukiLocation stores one position, pose and travel record in the visitor's sessionStorage. English and Japanese versions share a canonical page path. A cross-page call keeps its origin, target, start time and two travel legs; revisiting the origin during departure resumes that journey and lets the visitor stop her. Unloaded pages use elapsed timing, not background rendering. Ordinary navigation does not send her back to the nest. After inactivity she sleeps, then returns home after 45 more seconds. This is same-browser-tab state, not server or cross-device memory.",
+    "explanation": "YukiLocation stores one position, pose and travel record in the visitor's sessionStorage. English and Japanese versions share a canonical page path. A cross-page call keeps its origin, target, start time and two travel legs; revisiting the origin during departure resumes that journey and lets the visitor stop her. Unloaded pages use elapsed timing, not background rendering. Ordinary navigation does not send her back to the nest. After inactivity she sleeps, then starts returning home after 45 more seconds. beginHomeReturn retains the origin and marks the transfer as a homecoming. An open garden plays the header entrance, flight to the cushion, landing and bedtime; the status remains returning during travel. An entirely off-page completed return settles into sleep. This is same-browser-tab state, not server or cross-device memory.",
     "source": {
       "file": "assets/yuki/home/location.mjs",
       "symbol": "YukiLocation",
       "firstLine": 23,
-      "lastLine": 54,
-      "sha256": "c8b20538f99ea49c8f5d89f74ddca42c4364f7c460f2d5fa5886eb74f73e0bd7"
+      "lastLine": 59,
+      "sha256": "cc5593c78a4cf8f1fbaa6e0aea128562f233c4522e1c64c41d6a03c995dc9762"
     }
   },
   {
