@@ -1,4 +1,6 @@
 import {discoveryKind} from './discovery.mjs?v=2';
+import {cleanGuideRecords,guideRecord,previousGuideReplies,cleanGuidePrevious,repeatedGuideReply} from './guide-variety.mjs?v=1';
+export {previousGuideReplies} from './guide-variety.mjs?v=1';
 export {discoveryKind} from './discovery.mjs?v=2';
 // Short-lived, tab-local reply metadata. No user profiling or server storage.
 export const storyTopicIds=Object.freeze(['origin','firstFlight','lanternKeeper','firstGuide','treasure','quietEvening','home','dailyGoals','bigDream','innerConflict','littlePreferences','relationships','character']);
@@ -26,7 +28,13 @@ export function cleanVariety(value){
  }
  const factTopics=[...new Set((Array.isArray(value?.factTopics)?value.factTopics:[]).map(cleanFactTopic).filter(Boolean))].slice(-128);
  const jokes=cleanJokes(value?.jokes);
- return {turn:Number.isInteger(value?.turn)&&value.turn>0?Math.min(value.turn,9999):0,topics,recent,...(factTopics.length?{factTopics}:{}),...(jokes.length?{jokes}:{})};
+ const guides=cleanGuideRecords(value?.guides);
+ return {turn:Number.isInteger(value?.turn)&&value.turn>0?Math.min(value.turn,9999):0,topics,recent,...(factTopics.length?{factTopics}:{}),...(jokes.length?{jokes}:{}),...(guides.length?{guides}:{})};
+}
+export function rememberGuideReply(value,text,event,lang){
+ const memory=cleanVariety(value),record=guideRecord(text,event,lang);
+ if(record)memory.guides=cleanGuideRecords([...(memory.guides??[]),record]);
+ return memory;
 }
 export function rememberReply(value,text,storyTopics=[]){
  const memory=cleanVariety(value);memory.turn=Math.min(9999,memory.turn+1);
@@ -105,6 +113,12 @@ export function repetitionScore(text,variety,history=[],memory=[],{discovery=fal
 export const repeatThreshold=.8;
 export function needsFreshText(text,input){
  if(wantsExactRepeat(input.message))return false;
+ if(input.guideEvent&&(Array.isArray(input.guideEvent.previous)||input.variety?.guides)){
+  // Route-specific prose is compared separately from fixed click instructions
+  // and unrelated chats, which previously caused false repeats and stale facts.
+  const local=previousGuideReplies(input.variety,input.guideEvent,input.lang??'en');
+  return repeatedGuideReply(text,{...input.guideEvent,previous:cleanGuidePrevious([...(input.guideEvent.previous??[]),...local])});
+ }
  const kind=discoveryKind(input.message,input.history),discovery=Boolean(kind);
  return repetitionScore(text,input.variety,input.history??[],input.memory??[],{discovery,joke:kind==='joke'})>=(input.guideEvent?0.75:discovery?0.72:repeatThreshold);
 }
@@ -116,7 +130,9 @@ export function wantsExactRepeat(text){
 // Keep the existing 14 KB UTF-8 request ceiling, including Japanese and the
 // verification token. Prefer recent real turns; trim metadata before history.
 export function packChatRequest(input,limit=14000){
- const body={...input,history:input.history.slice(-6),...(input.memory?{memory:input.memory.map(m=>({...m}))}:{}),variety:cleanVariety(input.variety)};
+ const body={...input,history:input.history.slice(-6),...(input.memory?{memory:input.memory.map(m=>({...m}))}:{}),variety:cleanVariety(input.variety),...(input.guideEvent?{guideEvent:{...input.guideEvent,previous:cleanGuidePrevious(input.guideEvent.previous)}}:{})};
+ // Only the selected route's examples are sent, never the whole guide archive.
+ delete body.variety.guides;
  const size=()=>new TextEncoder().encode(JSON.stringify(body)).length;
  while(size()>limit&&body.variety.recent.length>2)body.variety.recent.shift();
  while(size()>limit&&body.variety.jokes?.length>4)body.variety.jokes.shift();
@@ -125,6 +141,7 @@ export function packChatRequest(input,limit=14000){
  while(size()>limit&&body.history.length)body.history.shift();
  while(size()>limit&&body.variety.recent.length)body.variety.recent.shift();
  while(size()>limit&&body.variety.jokes?.length)body.variety.jokes.shift();
+ while(size()>limit&&body.guideEvent?.previous?.length)body.guideEvent.previous.shift();
  if(size()>limit)throw Error('Message too large');
  return JSON.stringify(body);
 }
