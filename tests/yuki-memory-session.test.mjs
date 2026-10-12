@@ -100,9 +100,9 @@ test('AI-written guide follow-up never searches or controls navigation and unind
  const unknown=fixture();assert.equal((await unknown.handler(unknown.request({guideEvent:{kind:'arrive',url:'/not-real'}}),unknown.env)).status,400);assert.equal(unknown.calls.model,0);
 });
 
-test('the real handler keeps the personal preview and appends the exact next header action once',async()=>{
+test('the real handler keeps the short introduction and appends the exact next header action once',async()=>{
  const f=fixture();
- const preview='Resume is our next little stop! I like seeing how all those different skills fit into one person’s path.';
+ const preview='Let’s take a look at the Resume together!';
  f.env.AI.run=async()=>({response:{text:preview,emotion:'delighted',gesture:'talkExplain',destination:'none',sourceIds:[],storyTopics:[]}});
  const response=await f.handler(f.request({page:'/',guideEvent:{kind:'nav',url:'/resume.html',targetUrl:'/resume.html'}}),f.env),reply=await response.json();
  assert.equal(response.status,200);assert(reply.text.startsWith(preview));assert.equal((reply.text.match(/Click the Resume header tab/g)||[]).length,1);assert.equal(reply.destination,'none');
@@ -139,7 +139,7 @@ test('UI auto-followups are route-scoped, cancelable, do not fake a visitor turn
  const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
  assert(!ui.includes('class="yuki-consent"'));assert.match(ui,/new ChatAvailability/);assert(!ui.includes('conversationMemory.clear()'));assert.match(ui,/conversationMemory.reload\(\)/);
  assert.match(ui,/routeVersion===journeySerial/);assert.match(ui,/controller\?\.guideEvent/);assert.match(ui,/if\(!guideEvent\)\{addMessage\('user'/);
- assert.match(ui,/if\(!online\|\|!permission.allowed\|\|busy\)\{fallback\(\);return;/);
+ assert.match(ui,/if\(guideStage\(step\)==='directions'\|\|!online\|\|!permission.allowed\|\|busy\)\{fallback\(\);return;/);
  const panel=ui.slice(ui.indexOf('function panel('),ui.indexOf('async function openConversation'));
  assert(!panel.includes('prepareVerification()'),'opening chat does not send messages or load the bot service');
 });

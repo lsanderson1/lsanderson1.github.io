@@ -20,7 +20,7 @@ test('a garden arrival can speak as my garden while other route destinations sta
   const input={message:'Guide arrival',lang,history:[],guideEvent:{kind:'arrive',url:prefix+'/yuki/'}};
   assert(guideReplyMatches(text,input.guideEvent,pages,lang));assert(!thirdPersonSelf(text));
   assert(!guideReplyMatches(text,{kind:'arrive',url:prefix+'/resume.html'},pages,lang));
-  const request=modelRequest(input,{pages:[pages[0]]});assert(request.messages.at(-1).content.includes(lang==='ja'?'わたしの庭':'my garden'));
+  const request=modelRequest(input,{pages:[pages[0]]});assert(request.messages[0].content.includes(lang==='ja'?'わたしの庭':'my garden'));
  }
 });
 

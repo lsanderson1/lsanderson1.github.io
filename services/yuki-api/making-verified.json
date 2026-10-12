@@ -164,9 +164,9 @@
     "source": {
       "file": "assets/yuki/runtime/guide-journey.mjs",
       "symbol": "guideTarget",
-      "firstLine": 35,
-      "lastLine": 62,
-      "sha256": "9ff4eab68ada577fe04cb7612c26f85219db347b8c192bec47668bac606a56a4"
+      "firstLine": 36,
+      "lastLine": 68,
+      "sha256": "c0bb888bed8689a2e1e9b584036edb4a74517ba8ce19cd9d43fcaa673bd5c764"
     }
   },
   {
@@ -177,13 +177,13 @@
       "en": "Carrying guidance between pages",
       "ja": "ページをまたぐ案内"
     },
-    "explanation": "GuideJourney stores target, expected next page, origin and timestamp in tab storage with a 30-minute lifetime. enter distinguishes arrival, continuation, resuming and a detour. claimStep persists the last spoken stage so repeated callbacks or a reload cannot deliver the same stage again. depart stores viewport coordinates; position scales them for a resized viewport when Yuki is already on that page. A guided page change uses her physical location and the normal timed magical summon from the previous page's header category, flying directly to the next guided perch. Guidance starts from a clear visitor request, with conversational clarification only for ambiguous destinations. Each stage can request a route-only AI explanation in Yuki's own words with a relevant personal reaction: one short route line early, a small teaser only at the penultimate stop, then the full explanation on arrival. The backend appends a precise next-step sentence for header and list stops, using the validated route and known link labels such as Read essay. Invalid, repeated or unavailable AI replies use one friendly local direction or arrival line, without quoting page descriptions. Route memory is separate from physical location memory.",
+    "explanation": "GuideJourney stores target, expected next page, origin, completed stop count and timestamp in tab storage with a 30-minute lifetime. enter distinguishes arrival, continuation, resuming and a detour. claimStep persists the last spoken stage so repeated callbacks, reloads or language switches do not count the same stop twice. progress combines completed stops with the remaining real route; no artificial steps are added. depart stores viewport coordinates; position scales them for a resized viewport when Yuki is already on that page. A guided page change uses her physical location and the normal timed magical summon from the previous page's header category, flying directly to the next guided perch. Guidance starts from a clear visitor request, with conversational clarification only for ambiguous destinations. The introduction names the destination and may express interest without explaining it. Every intermediate stop, including the penultimate one, gives only a precise Next/Then direction locally without model inference. Arrival requests the full grounded AI explanation in Yuki's own words with personal thoughts. Finally or 最後に is added only at arrival after more than three actual stops. The backend follows the same pacing and preserves it during prose repairs. Invalid, repeated or unavailable AI replies use one friendly local direction or arrival line, without quoting page descriptions. Route memory is separate from physical location memory.",
     "source": {
       "file": "assets/yuki/runtime/guide-journey.mjs",
       "symbol": "GuideJourney",
-      "firstLine": 120,
-      "lastLine": 151,
-      "sha256": "5bd9690db652ca43c164cc67d8317f678c2e356cdf2376f610487e15a382ca29"
+      "firstLine": 160,
+      "lastLine": 198,
+      "sha256": "6dfc209f4d66d267e8a2f036fcbe4bb52db17c2c4f282fd7b6a4f37697aab9c9"
     }
   },
   {
@@ -267,8 +267,8 @@
       "file": "services/yuki-api/reply-completion.mjs",
       "symbol": "completionRequest / parseCompletion",
       "firstLine": 6,
-      "lastLine": 60,
-      "sha256": "48a3362b90df15cac995454469a29f90930fd8dd7f7d2c70b9eccbed1fe0bcc8"
+      "lastLine": 61,
+      "sha256": "21bb875b681369b7ea4decc2a10ebdf410e4c98e6ab32f6803b7c32d19eaa581"
     }
   },
   {

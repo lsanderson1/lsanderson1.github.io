@@ -31,12 +31,12 @@ test('natural home invitations start the correct localized garden journey from o
  assert(isDiscoveryRequest('Show me a random project'));
 });
 
-test('journeys reserve a teaser for the penultimate stop and a full explanation for arrival',()=>{
+test('journeys introduce the destination, give only directions in between, and explain only at arrival',()=>{
  for(const lang of ['en','ja']){
   const p=lang==='ja'?'/ja':'',target=p+'/projects/example.html';
   for(const [kind,url,from,pacing,marker] of [
-   ['nav',p+'/projects/',p+'/','directions','EARLY NAVIGATION'],
-   ['link',target,p+'/projects/','preview','PENULTIMATE STOP'],
+   ['nav',p+'/projects/',p+'/','intro','INTRODUCTION'],
+   ['link',target,p+'/projects/','directions','INTERMEDIATE DIRECTIONS'],
    ['arrive',target,target,'arrival','Automatically give the full explanation NOW']
   ]){
    const guideEvent={kind,url,targetUrl:target,discovery:true},input={lang,page:from,guideEvent,history:[]};
@@ -44,12 +44,16 @@ test('journeys reserve a teaser for the penultimate stop and a full explanation 
    input.guideInstructions=guideFollowupInstructions(guideEvent,catalog,lang,from);
    assert(input.guideInstructions.includes(marker));
    const request=modelRequest(input,retrieveKnowledge(catalog,input));
-   assert.equal(request.response_format.json_schema.properties.text.maxLength,pacing==='arrival'?2300:pacing==='preview'?420:240);
-   if(pacing==='directions')assert(!JSON.stringify(request.messages).includes('Published overview for Example Project'));
+   assert.equal(request.response_format.json_schema.properties.text.maxLength,pacing==='arrival'?2300:240);
+   if(pacing!=='arrival'){
+    assert(!JSON.stringify(request.messages).includes('Published overview for Example Project'));
+    assert(!JSON.stringify(request.messages).includes('checkpoint system'));
+    assert.match(JSON.stringify(request.messages),/No facts, teaser|No teaser/);
+   }
    if(pacing==='arrival')assert(JSON.stringify(request.messages).includes('checkpoint system'));
   }
   const direct={kind:'nav',url:p+'/yuki/',targetUrl:p+'/yuki/'};
-  assert.equal(guidePacing(direct),'preview');
+  assert.equal(guidePacing(direct),'intro');
  }
 });
 

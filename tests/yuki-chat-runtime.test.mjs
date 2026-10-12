@@ -8,7 +8,7 @@ import {VisitorInterests} from '../assets/yuki/runtime/visitor-interests.mjs';
 import {ConversationMoments} from '../assets/yuki/runtime/conversation-moments.mjs';
 import {packChatRequest,rememberReply,rememberFactTopic,rememberJoke,needsFreshText} from '../assets/yuki/runtime/reply-variety.mjs';
 import {thirdPersonSelf} from '../assets/yuki/runtime/self-narration.mjs';
-import {guideReplyMatches} from '../assets/yuki/runtime/guide-journey.mjs';
+import {guideReplyMatches,guideStage} from '../assets/yuki/runtime/guide-journey.mjs';
 import {validReply,chatUnavailable,readSession} from '../assets/yuki/protocol.mjs';
 import {messageRecord,translationBatch,checkedTranslations,applyTranslations,conversationHistory} from '../assets/yuki/runtime/conversation-language.mjs';
 import {replyLanguage,replyQualityIssues,formalJapaneseVoice} from '../assets/yuki/runtime/reply-quality.mjs';
@@ -115,15 +115,16 @@ test('automatic follow-up preserves the draft, adds no synthetic user message an
  assert.equal(f.calls.fetch[0].webSearch,false);assert.equal(f.calls.fetch[0].guideEvent.kind,'arrive');assert.equal(f.context.conversationMemory.turns.length,0);
 });
 
-test('every guide step uses AI narration when available, with a single non-quoted offline fallback',async()=>{
+test('only introduction and arrival use AI prose; intermediate steps are exact local directions',async()=>{
  for(const kind of ['nav','link','arrive','detour']){
-  const requests=[],messages=[],context={online:true,busy:false,permission:{allowed:true},ja:false,journey:{state:{discovery:true}},tr:en=>en,
+  const requests=[],messages=[],context={online:true,busy:false,permission:{allowed:true},ja:false,guideStage,journey:{state:{discovery:true}},tr:en=>en,
    guideDialogue:{copy:step=>'Let’s explore '+step.title+' together!'},addMessage:(_role,text)=>messages.push(text),
    runChat:async(...args)=>requests.push(args)};
   vm.createContext(context);vm.runInContext(guideSpeak+'\nthis.speak=speakGuideFollowup;',context);
   const step={kind,url:'/essays/coding.html',title:'Coding Standards',target:{url:'/essays/coding.html'},linkLabel:'Read essay'};
-  await context.speak(step);assert.equal(requests.length,1);assert.equal(messages.length,0);assert.equal(requests[0][1].linkLabel,'Read essay');
-  context.online=false;await context.speak(step);assert.equal(requests.length,1);assert.equal(messages.length,1);assert(!messages[0].includes('site describes'));
+  const local=kind==='link';
+  await context.speak(step);assert.equal(requests.length,local?0:1);assert.equal(messages.length,local?1:0);if(!local)assert.equal(requests[0][1].linkLabel,'Read essay');
+  context.online=false;await context.speak(step);assert.equal(requests.length,local?0:1);assert.equal(messages.length,local?2:1);assert(!messages[0].includes('site describes'));
  }
 });
 test('route change or cancellation discards a late follow-up without storing it or starting another request',async()=>{

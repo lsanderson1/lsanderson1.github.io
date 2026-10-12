@@ -9,7 +9,7 @@ import {SiteGuide} from './runtime/site-guide.mjs?v=6';
 import {pageLayout,bubblePlacement,bubbleHeightLimit,pointerTarget} from './runtime/page-layout.mjs?v=9';
 import {localizedPages,localizePath,findPageTarget,pendingGuide,targetRect,curateDestinations} from './runtime/page-targets.mjs?v=9';
 import {PageObstacles,visibleSpot,guideSpot,clampFoot,fits,atFoot} from './runtime/clear-space.mjs?v=5';
-import {GuideJourney,GuideDialogue,guideReplyMatches,guideTarget as checkedGuideTarget,isGuideRequest,resolveGuideRequest,guideChoice,planGuideStep,findGuideElement} from './runtime/guide-journey.mjs?v=7';
+import {GuideJourney,GuideDialogue,guideStage,guideReplyMatches,guideTarget as checkedGuideTarget,isGuideRequest,resolveGuideRequest,guideChoice,planGuideStep,findGuideElement} from './runtime/guide-journey.mjs?v=8';
 import {PageMotion,pageProjection,inViewport,containPageRover,prepareCall} from './runtime/page-motion.mjs?v=8';
 import {CallPerches} from './runtime/call-perches.mjs?v=7';
 import {VisitorPersonality,conversationOpening,localizeGreetingMessages,replySequence,cueArtwork} from './runtime/visitor-personality.mjs?v=11';
@@ -502,7 +502,7 @@ async function start(){
  }
  function journeyArrived(d){
   if(!journey.active||d.journeySerial!==journeySerial||!journeyStep)return;
-  const step=journeyStep;
+  const step={...journeyStep,...journey.progress(journeyStep,knowledge,{lang:ja?'ja':'en',base})};
   if(!journey.claimStep(step))return;
   panel(true);void speakGuideFollowup(step);
   status(tr('Guided route · click the highlighted link yourself.','道案内中・光っているリンクをクリックしてね。'));
@@ -528,10 +528,10 @@ async function start(){
   const fallback=()=>{
    addMessage('assistant',guideDialogue.copy(step,{lang:ja?'ja':'en',detour:step.kind==='detour'}));
   };
-  // Every stop gets Yuki's own explanation and reaction when AI is available.
-  // Offline/error directions stay useful without copying the site's prose.
-  if(!online||!permission.allowed||busy){fallback();return;}
-  return runChat(tr('Respond naturally for this guided stop.','この案内地点に合う自然なひとことを。'),{kind:step.kind,url:step.url,targetUrl:step.target?.url??step.url,...(step.linkLabel?{linkLabel:step.linkLabel}:{}),...(discovery?{discovery:true}:{})},fallback);
+  // Only the introduction and arrival need prose. Intermediate stops give the
+  // exact next action locally, with no extra inference or premature explanation.
+  if(guideStage(step)==='directions'||!online||!permission.allowed||busy){fallback();return;}
+  return runChat(tr('Respond naturally for this guided stop.','この案内地点に合う自然なひとことを。'),{kind:step.kind,url:step.url,targetUrl:step.target?.url??step.url,...(step.linkLabel?{linkLabel:step.linkLabel}:{}),...(step.stepIndex?{stepIndex:step.stepIndex,stepCount:step.stepCount}:{}),...(discovery?{discovery:true}:{})},fallback);
  }
  let reactionVersion=0;
  let talkTurn=0;

@@ -15,7 +15,7 @@ import {openFactRequest,freshFactTopic,factMentionsTopic} from './random-facts.m
 import {issueChatSession,verifyChatSession} from './chat-session.mjs';
 import {cleanRecall} from '../../assets/yuki/runtime/conversation-memory.mjs';
 import {cleanInterests} from '../../assets/yuki/runtime/visitor-interests.mjs';
-import {cleanGuideEvent,guideFollowupInstructions,guideReplyRequest,guideNextAction} from './guide-followup.mjs';
+import {cleanGuideEvent,guidePacing,guideFollowupInstructions,guideReplyRequest,guideNextAction,finishGuideReply} from './guide-followup.mjs';
 import {guideReplyMatches} from '../../assets/yuki/runtime/guide-journey.mjs';
 import {validateTranslations,translationRequest,parseTranslations,translationVoiceNeedsRepair} from './conversation-translation.mjs';
 import {unfinishedReply,completionRequest,parseCompletion,completeRevision,incompleteAnswer} from './reply-completion.mjs';
@@ -239,6 +239,10 @@ export function createHandler(network=fetch,{random}={}){
     cached={origin:allowed,at:now,data:await boundedJSON(result,2000000)};
    }
    try{input.guideInstructions=guideFollowupInstructions(input.guideEvent,cached.data,input.lang,input.page);}catch{throw failure(400,'Invalid guide target');}
+   if(input.guideEvent&&guidePacing(input.guideEvent)==='directions'){
+    const text=guideNextAction(input.guideEvent,cached.data,input.lang);
+    if(text)return response(200,{...validReply({text,emotion:'neutral',gesture:'talkExplain',destination:'none',sources:[],storyTopics:[]}),...(chatSession?{chatSession}:{})});
+   }
    const knowledge=selectKnowledge(cached.data,input);
    // After the same verification/quota checks: a labeled portrait's identity
    // must not be rewritten into mascot lore, even by a repetition rewrite.
@@ -339,7 +343,7 @@ export function createHandler(network=fetch,{random}={}){
    // Never display or remember a known wrong-language/looping answer. The UI
    // shows a localized retry status and keeps the existing conversation intact.
    if(quality(reply.text).length)throw failure(502,'Reply unavailable');
-   if(input.guideEvent){const action=guideNextAction(input.guideEvent,cached.data,input.lang);if(action)reply={...reply,text:reply.text+' '+action};}
+   if(input.guideEvent)reply=finishGuideReply(reply,input.guideEvent,cached.data,input.lang);
    // Fail closed for known repeats on EVERY AI path, including sourced facts.
    // A failed/denied revision cannot quietly release the repeated draft.
    if(needsFreshReply(reply,input)){stage='VARIETY';throw failure(502,'Repeated reply');}
