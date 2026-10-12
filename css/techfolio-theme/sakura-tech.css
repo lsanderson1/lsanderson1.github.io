@@ -102,6 +102,7 @@ h1, h2, h3 { line-height: 1.12; }
 .fp-brand.is-active { color: var(--foreground); }
 .fp-nav nav a.is-active { border-bottom-color: var(--sakura-pink); }
 .fp-nav nav small { font-size: 11px; }
+.fp-nav a:focus-visible { color: var(--primary); }
 
 .fp-footer {
   display: flex;
