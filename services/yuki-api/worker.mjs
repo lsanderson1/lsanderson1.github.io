@@ -122,6 +122,9 @@ export function parseModel(data,knowledge,web={}){
 }
 export async function runModel(ai,request,timeoutMs=22000){
  const {yukiTask,...body}=request;
+ // Use the existing Japanese translation model only for a focused home-guide
+ // voice repair, within the same single quota-reserved repair slot.
+ if(yukiTask==='guide-voice-ja')return runTranslation(ai,body,timeoutMs);
  const joke=yukiTask==='joke'||yukiTask==='joke-ja';
  const model=yukiTask==='joke-ja'?CLOUDFLARE_TRANSLATION_MODEL:yukiTask==='joke'?CLOUDFLARE_HUMOR_MODEL:CLOUDFLARE_MODEL;
  return runInference(ai,model,joke?directSchema(body,'yuki_joke'):body,timeoutMs);

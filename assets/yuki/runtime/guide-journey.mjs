@@ -45,6 +45,20 @@ export function guideTarget(url,pages,lang='en',base=''){
  const pageTitle=clean(path==='/yuki'?page.title:categoryNames[path]||page.title);
  return {url:page.url+(section?'#'+section.anchor:''),title:clean(section?.title||pageTitle),pageTitle,section:section?.id??''};
 }
+// Spoken ownership is separate from catalog/control labels. Never mutate the
+// route title: links still need to match the words the visitor can click.
+export function guideSpokenTitle(target,{lang='en',base=''}={}){
+ if(guidePath(target?.url,base)!=='/yuki')return target?.title??'';
+ const anchor=target.url.split('#')[1];
+ if(!anchor)return lang==='ja'?'わたしの庭':'my garden';
+ if(anchor==='garden-nest')return lang==='ja'?'わたしのねぐら':'my roost';
+ return (target.title??'').replace(/\bYuki['’]s\s+/giu,lang==='ja'?'わたしの':'my ').replace(/(?:ゆき|ユキ)の/gu,'わたしの');
+}
+function homeNarrationMatches(text){
+ // Only used for validated home guidance, not quotations in ordinary chat.
+ // Quoting the page title must not disguise third-person self-narration.
+ return !/\bYuki['’]s\b|(?:ゆき|ユキ|Yuki)(?:の|は|が|には)|\bYuki\s+(?:is|was|has|can|lives|sleeps|rests|loves|likes|keeps|dreams|calls|enjoys)\b|\bher\s+(?:(?:own|little|cozy|cosy|bright|dragon)\s+){0,3}(?:garden|home|roost|nest|treasures|cushion|wings|glasses|tail|story|dreams)\b|\bshe\s+(?:lives|sleeps|naps|rests|curls up)\b|彼女の(?:庭|家|ねぐら|宝物|翼|眼鏡|夢)/iu.test(text);
+}
 // A guided reply must name its actual target, not recycle a different
 // portfolio item's introduction. This is a title guard, not fact verification.
 export function guideReplyMatches(text,event,pages,lang='en',base=''){
@@ -57,8 +71,14 @@ export function guideReplyMatches(text,event,pages,lang='en',base=''){
  const prose=words(text),title=words(target.title),path=guidePath(target.url,base);
  const includes=value=>/[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(value)?prose.includes(words(value)):(' '+prose+' ').includes(' '+words(value)+' ');
  const ownHome=path==='/yuki'&&!target.section&&['my garden','my home','わたしの庭','私の庭','わたしの家','私の家'].some(includes);
- if(!includes(title)&&!ownHome)return false;
+ const spokenTitle=guideSpokenTitle(target,{lang,base});
+ if(!includes(title)&&!ownHome&&!(path==='/yuki'&&includes(spokenTitle)))return false;
  const stop=guideTarget(event.url,pages,lang,base);
+ if(path==='/yuki'){
+  const action=stop?guideNavigationAction({...event,title:event.kind==='nav'&&guidePath(stop.url,base)==='/yuki'?'Yuki':stop.pageTitle},{lang}):'';
+  const narration=action&&text.endsWith(action)?text.slice(0,-action.length):text;
+  if(!homeNarrationMatches(narration)||(!target.section&&!ownHome))return false;
+ }
  if(event.kind==='nav'&&stop&&!includes(stop.title)&&!(guidePath(stop.url,base)==='/yuki'&&includes('Yuki')))return false;
  if(event.kind==='link'&&['Read essay','記事を読む'].includes(event.linkLabel)&&!includes(event.linkLabel))return false;
  const page=pages.find(p=>p.lang===lang&&guidePath(p.url,base)===path);
@@ -206,8 +226,8 @@ export class GuideDialogue {
 }
 export function guideCopy(step,{lang='en',detour=false,variant=0}={}){
  const ja=lang==='ja';
- if(detour)return ja?`あれっ、ちょっと寄り道だね。「${step.target?.title??step.title}」への道は覚えているよ。案内を続ける？`:`Oop, a little detour! I still remember the way to ${step.target?.title??step.title}. Shall we continue, or explore here?`;
- const destination=step.target?.title??step.title;
+ const destination=guideSpokenTitle(step.target??step,{lang});
+ if(detour)return ja?`あれっ、ちょっと寄り道だね。「${destination}」への道は覚えているよ。案内を続ける？`:`Oop, a little detour! I still remember the way to ${destination}. Shall we continue, or explore here?`;
  if(step.kind==='nav'||step.kind==='link'){
   const action=guideNavigationAction(step,{lang});
   if(guideStage(step)==='directions')return action;
@@ -219,11 +239,13 @@ export function guideCopy(step,{lang='en',detour=false,variant=0}={}){
   ]:[
    `Come along—let’s explore ${destination} together! ${action} I’ll keep leading you from there.`,
    `This way! Our destination is ${destination}. ${action} We’ll take the next step together.`,
-   `I’m curious about ${destination}. Let’s go have a look! ${action}`,
+   guidePath((step.target??step).url)==='/yuki'?`I’d love to show you around ${destination}! ${action}`:`I’m curious about ${destination}. Let’s go have a look! ${action}`,
    `Let’s go have a look at ${destination}! ${action} I’ll be there to show you the way.`
   ];
   return directions[Math.abs(Math.trunc(variant))%directions.length];
  }
+ // Arrival speaks about the place, not the site's third-person page label.
+ step={...step,title:destination};
  const endings=[
   [`We’ve reached ${step.title}! Let’s take a closer look together, one little detail at a time.`,`「${step.title}」に着いたよ！小さなところから、一緒にじっくり見ていこう。`],
   [`Here we are at ${step.title}. I’ll stay nearby while you have a look—there’s no hurry to rush away.`,`「${step.title}」に着いたよ！そばにいるから、ゆっくり見てね。急いで次に行かなくても大丈夫。`],
