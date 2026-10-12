@@ -2,6 +2,7 @@ import {safeSitePath} from '../protocol.mjs';
 
 export const journeyKey='yuki-journey-v1';
 const ttl=1800000;
+const spokenKey=value=>(value??'').replace(/^([^:]+:)\/ja(?=\/)/,'$1').replace(/\/(?=#|$)/,'');
 const clean=value=>typeof value==='string'?value.replace(/\s+/g,' ').trim():'';
 const words=value=>clean(value).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/([a-z0-9])(?=[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}])/gu,'$1 ').replace(/([\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}])(?=[a-z0-9])/gu,'$1 ').replace(/[^\p{L}\p{N}]+/gu,' ').trim();
 export function guidePath(value,base=''){
@@ -48,6 +49,11 @@ export function guideTarget(url,pages,lang='en',base=''){
 // portfolio item's introduction. This is a title guard, not fact verification.
 export function guideReplyMatches(text,event,pages,lang='en',base=''){
  const target=guideTarget(event.targetUrl||event.url,pages,lang,base);if(!target)return false;
+ if(guideStage(event)==='directions'){
+  const stop=guideTarget(event.url,pages,lang,base);if(!stop)return false;
+  const title=event.kind==='nav'&&guidePath(stop.url,base)==='/yuki'?'Yuki':stop.pageTitle;
+  return clean(text)===guideNavigationAction({...event,title},{lang});
+ }
  const prose=words(text),title=words(target.title),path=guidePath(target.url,base);
  const includes=value=>/[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(value)?prose.includes(words(value)):(' '+prose+' ').includes(' '+words(value)+' ');
  const ownHome=path==='/yuki'&&!target.section&&['my garden','my home','わたしの庭','私の庭','わたしの家','私の家'].some(includes);
@@ -107,6 +113,40 @@ export function planGuideStep(target,currentPath,pages,{lang='en',base=''}={}){
  if(index&&current!==group)return {kind:'nav',url:index.url,title:group==='/yuki'?'Yuki':categoryNames[group]??clean(index.title),target:checked};
  return {kind:'link',url:checked.url.split('#')[0],title:checked.pageTitle,target:checked};
 }
+// Count actual navigation stops plus arrival, never pad a short route with
+// extra clicks just to obtain a particular transition word.
+export function guideStepsRemaining(target,currentPath,pages,options={}){
+ const seen=new Set();let path=currentPath,count=0;
+ while(count<100){
+  const step=planGuideStep(target,path,pages,options);if(!step)return 0;
+  const key=step.kind+':'+step.url;if(seen.has(key))return 0;seen.add(key);count++;
+  if(step.kind==='arrive')return count;
+  path=step.url;
+ }
+ return 0;
+}
+export function guideStage(step){
+ if(step.kind==='arrive')return 'arrival';
+ if(step.kind==='detour')return 'detour';
+ return (step.stepIndex??(step.kind==='nav'?1:2))===1?'intro':'directions';
+}
+export function guideArrivalText(text,step,lang='en'){
+ if(step.kind!=='arrive')return text;
+ // The app owns this transition; a model must not label a three-stop route
+ // "Finally" or produce it twice when the app adds it.
+ const body=text.replace(/^\s*(?:finally\s*[,!:\u2014\u2013-]?\s*|最後に[、，\s]*)/iu,'');
+ if(!(step.stepCount>3&&step.stepIndex===step.stepCount))return /^\s*finally\b/i.test(text)?body.replace(/^(?:we|here|this|our|found|your|it|i)\b/,word=>word[0].toUpperCase()+word.slice(1)):body;
+ return lang==='ja'?'最後に、'+body:'Finally, '+body.replace(/^[A-Z](?=[a-z])/,c=>/^(?:We|Here|This|Our|Found|Your)\b/.test(body)?c.toLowerCase():c);
+}
+export function guideNavigationAction(step,{lang='en'}={}){
+ if(!['nav','link'].includes(step.kind))return '';
+ const ja=lang==='ja',nav=step.kind==='nav',title=step.title;
+ const separate=step.linkLabel&&!words(step.linkLabel).includes(words(title));
+ const intro=guideStage(step)==='intro',then=(step.stepIndex??2)%2===1;
+ const connector=intro?'':ja?(then?'それから、':'次は、'):(then?'Then, ':'Next, ');
+ const click=intro?'Click':'click';
+ return connector+(ja?(nav?`ヘッダーの「${title}」をクリックしてね。`:separate?`指している「${title}」の「${step.linkLabel}」リンクをクリックしてね。`:`指している「${title}」のリンクをクリックしてね。`):(nav?`${click} the ${title} header tab.`:separate?`${click} the “${step.linkLabel}” link for ${title}, where I’m pointing.`:`${click} the link for ${title}, where I’m pointing.`));
+}
 export function findGuideElement(doc,step){
  if(step.kind==='arrive'){
   if(guidePath(step.url)==='/yuki'&&!step.url.includes('#'))return doc.getElementById('garden-lookout')??doc.querySelector('main h1');
@@ -126,10 +166,17 @@ export class GuideJourney {
  persist(){try{if(this.state)this.storage?.setItem(journeyKey,JSON.stringify(this.state));else this.storage?.removeItem(journeyKey);}catch{}}
  start(target,from,{discovery=false}={}){if(!safeSitePath(target)||!safeSitePath(from))return false;this.state={target,from,expected:null,at:this.now(),paused:false,...(discovery?{discovery:true}:{})};this.persist();return true;}
  expect(url,from){if(!this.state)return;this.state.expected=url;this.state.from=from;this.state.at=this.now();this.state.paused=false;this.persist();}
+ progress(step,pages,options={}){
+  const completed=Number.isInteger(this.state?.completed)?Math.max(0,Math.min(99,this.state.completed)):0;
+  const same=spokenKey(this.state?.spoken)===spokenKey(step.kind+':'+step.url);
+  const stepIndex=Math.max(1,completed+(same?0:1));
+  const remaining=step.kind==='arrive'?0:guideStepsRemaining(step.target??{url:this.state?.target},step.url,pages,options);
+  return {stepIndex,stepCount:Math.min(100,stepIndex+remaining)};
+ }
  claimStep(step){
   if(!this.state)return false;const key=step.kind+':'+step.url;
-  if(this.state.spoken===key)return false;
-  this.state.spoken=key;this.persist();return true;
+  if(spokenKey(this.state.spoken)===spokenKey(key))return false;
+  this.state.spoken=key;this.state.completed=Math.min(100,(Number.isInteger(this.state.completed)?this.state.completed:0)+1);this.persist();return true;
  }
  enter(current,base=''){
   const s=this.state;if(!s)return 'none';
@@ -137,7 +184,7 @@ export class GuideJourney {
   if(path===guidePath(s.target,base))return 'arrived';
   if(path===guidePath(s.expected,base))return 'continue';
   if(path===guidePath(s.from,base))return s.paused?'detour':'resume';
-  s.paused=true;s.from=current;s.at=this.now();this.persist();return 'detour';
+  s.paused=true;s.from=current;s.spoken=null;s.at=this.now();this.persist();return 'detour';
  }
  depart(foot,viewport){
   if(!this.state||![foot?.x,foot?.y,viewport?.width,viewport?.height].every(Number.isFinite))return;
@@ -162,31 +209,30 @@ export function guideCopy(step,{lang='en',detour=false,variant=0}={}){
  if(detour)return ja?`あれっ、ちょっと寄り道だね。「${step.target?.title??step.title}」への道は覚えているよ。案内を続ける？`:`Oop, a little detour! I still remember the way to ${step.target?.title??step.title}. Shall we continue, or explore here?`;
  const destination=step.target?.title??step.title;
  if(step.kind==='nav'||step.kind==='link'){
-  const nav=step.kind==='nav',link=ja?`「${step.title}」`:`${step.title}`;
-  const separate=step.linkLabel&&!words(step.linkLabel).includes(words(step.title));
-  const action=ja?(nav?`ヘッダーの${link}をクリックしてね。`:separate?`${link}の「${step.linkLabel}」リンクをクリックしてね。`:`指している${link}のタイトルをクリックしてね。`):(nav?`Click the ${link} header tab.`:separate?`Click the “${step.linkLabel}” link for ${link}, where I’m pointing.`:`Click ${link} where I’m pointing.`);
+  const action=guideNavigationAction(step,{lang});
+  if(guideStage(step)==='directions')return action;
   const directions=ja?[
    `一緒に「${destination}」を見に行こう！${action}次のページでも案内するよ。`,
    `こっちだよ！「${destination}」への道は、ここから続いているんだ。${action}`,
-   `小さな寄り道、出発！行き先は「${destination}」。${action}そこから一緒に進もう。`,
-   `「${destination}」まで、もう少し！${action}開いたら、一緒に続きを見てみよう。`
+   `行き先は「${destination}」だよ。${action}そこから一緒に進もう。`,
+   `「${destination}」を一緒に見てみたいな！${action}`
   ]:[
    `Come along—let’s explore ${destination} together! ${action} I’ll keep leading you from there.`,
    `This way! Our destination is ${destination}. ${action} We’ll take the next step together.`,
-   `Ooh, a little detour for us! I’m taking you to ${destination}. ${action} We’re not at the final stop yet.`,
+   `I’m curious about ${destination}. Let’s go have a look! ${action}`,
    `Let’s go have a look at ${destination}! ${action} I’ll be there to show you the way.`
   ];
   return directions[Math.abs(Math.trunc(variant))%directions.length];
  }
  const endings=[
   [`We’ve reached ${step.title}! Let’s take a closer look together, one little detail at a time.`,`「${step.title}」に着いたよ！小さなところから、一緒にじっくり見ていこう。`],
-  [`Here we are: ${step.title}. I’ll stay nearby while you have a look—there’s no hurry to rush away.`,`「${step.title}」に到着！そばにいるから、ゆっくり見てね。急いで次に行かなくても大丈夫。`],
-  [`Found it—${step.title}! My little map can rest now. Exploring together is my favorite part.`,`見つけた、「${step.title}」だよ！小さな地図もちょっと休憩。一緒に見て回る時間が好きなんだ。`],
-  [`${step.title}, right here! We can pause and take it in together.`,`ここが「${step.title}」！ひと休みしながら、一緒に見てみよう。`],
+  [`Here we are at ${step.title}. I’ll stay nearby while you have a look—there’s no hurry to rush away.`,`「${step.title}」に着いたよ！そばにいるから、ゆっくり見てね。急いで次に行かなくても大丈夫。`],
+  [`We found ${step.title}! My little map can rest now. Exploring together is my favorite part.`,`見つけた、「${step.title}」だよ！小さな地図もちょっと休憩。一緒に見て回る時間が好きなんだ。`],
+  [`Here is ${step.title}! We can pause and take it in together.`,`ここが「${step.title}」だよ！ひと休みしながら、一緒に見てみよう。`],
   [`We’re at ${step.title}. I’m glad we followed this little trail together.`,`「${step.title}」まで来たよ。一緒にここまでたどり着けてうれしい！`],
   [`This is ${step.title}—our destination! I’ll keep you company while you explore.`,`目的地の「${step.title}」だよ！見て回るあいだ、わたしもそばにいるね。`],
   [`We made it to ${step.title}! Finding our way is lovely; taking time to look is lovely too.`,`「${step.title}」に着いたね！道を探すのも楽しいけど、ゆっくり眺める時間も好き。`],
-  [`Your stop: ${step.title}. One tiny guide, mission complete! Now we can settle in and look together.`,`「${step.title}」、到着でーす。小さな案内役、お仕事できた！落ち着いて一緒に見てみよう。`]
+  [`We’ve arrived at ${step.title}. My little guiding mission is complete! Now we can settle in and look together.`,`「${step.title}」に着いたよ。ちゃんと案内できてうれしい！落ち着いて一緒に見てみよう。`]
  ];
- return endings[Math.abs(Math.trunc(variant))%endings.length][ja?1:0];
+ return guideArrivalText(endings[Math.abs(Math.trunc(variant))%endings.length][ja?1:0],step,lang);
 }
