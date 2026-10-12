@@ -31,11 +31,16 @@ export class YukiLocation{
   const origin={...this.state,transfer:null};
   const transfer={origin,target,timing,arrivalMs,startedAt:this.now()};this.write({transfer});return transfer;
  }
+ beginHomeReturn(timing,arrivalMs){
+  const target={page:'/yuki/',title:'Yuki’s Garden',garden:true,spot:'nest',position:{...roostPerch}};
+  const transfer=this.beginTransfer(target,timing,arrivalMs);transfer.returnHome=true;
+  this.write({transfer,status:'returning'});return transfer;
+ }
  get transfer(){const t=this.state.transfer;return t&&typeof t.origin?.page==='string'&&typeof t.target?.page==='string'&&point(t.origin.position)&&point(t.target.position)&&number(t.startedAt,Number.MAX_SAFE_INTEGER)&&Number.isFinite(t.timing?.total)&&t.timing.total>=0&&t.timing.total<=30000&&Number.isFinite(t.arrivalMs)&&t.arrivalMs>0&&t.arrivalMs<=30000?t:null;}
  transit(){
   const t=this.transfer;if(!t)return null;const age=Math.max(0,this.now()-t.startedAt),departing=age<t.timing.total;
   const page=departing?t.origin:t.target;
-  if(age>=t.timing.total+t.arrivalMs){this.write({...t.target,status:'rest',pose:null,sleepSince:null,transfer:null});return null;}
+  if(age>=t.timing.total+t.arrivalMs){this.write({...t.target,status:t.returnHome?'sleep':'rest',pose:null,sleepSince:t.returnHome?this.now():null,transfer:null});return null;}
   if(this.state.page!==page.page)this.write({...page,status:departing?t.origin.status:'flight',pose:null,sleepSince:null,transfer:t});
   return {transfer:t,leg:departing?'departing':'incoming',age:departing?age:age-t.timing.total};
  }
@@ -85,7 +90,8 @@ export function restorePose(c,p,clips,unmap=p=>({...p})){
  return true;
 }
 export function locationLabel(s,ja=false){
+ if(s.transfer?.returnHome||s.status==='returning')return ja?'ねぐらへ帰るところ':'Returning to Her Roost';
  const places={nest:['Dragon Roost','ドラゴンのねぐら'],pond:['Lily Pond','スイレンの池'],lookout:['Sky Lookout','空の見晴らし台'],books:['Reading Nook','読書のコーナー'],treasures:['Little Treasures','小さな宝物']};
  const place=s.garden?(places[s.spot]?.[ja?1:0]??(ja?'ゆきの庭':'Yuki’s Garden')):s.title||s.page;
- return s.status==='sleep'?(ja?`${place}でお昼寝中`:`Sleeping in ${place}`):s.status==='returning'?(ja?'巣へ帰るところ':'Returning to Her Nest'):(ja?`${place}にいるよ`:`Currently at ${place}`);
+ return s.status==='sleep'?(ja?`${place}でお昼寝中`:`Sleeping in ${place}`):(ja?`${place}にいるよ`:`Currently at ${place}`);
 }
