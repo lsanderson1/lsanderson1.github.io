@@ -49,7 +49,9 @@ export function retrieveKnowledge(k,input){
   if(!page||(anchor&&!section))throw Error('Unknown guide target');
   const entries=[{id:page.id,url:page.url,title:page.title,text:page.summary||textChunks(page.text)[0]||''}];
   if(section)entries.push({id:`${page.id}::${section.id}`,url:path+'#'+anchor,title:section.title,text:textChunks(section.text)[0]||''});
-  return {owner:k.owner,view:{scope:path,route:input.guideEvent},pages:entries,makingOf:null};
+  // Prior wording is negative-example context, never retrieved evidence.
+  const {previous,...route}=input.guideEvent;
+  return {owner:k.owner,view:{scope:path,route},pages:entries,makingOf:null};
  }
  const current=resolve(pages,{page:input.page,section:input.context?.section});
  const lastGuided=resolve(pages,input.context?.lastGuide);

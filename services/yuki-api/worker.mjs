@@ -323,7 +323,7 @@ export function createHandler(network=fetch,{random}={}){
    // One shared quality-rewrite slot, including language and internal loops.
    // Never retry a failed provider request, increase caps, or start another search.
    const unfinished=unfinishedReply(reply.text);
-   const quality=text=>[...replyQualityIssues(text,input.replyLanguage,{allowRepetition:wantsExactRepeat(input.message)}),...(['joke','joke-ja'].includes(answerModel.yukiTask)?humorQualityIssues(text):[]),...(thirdPersonSelf(text,input.message)?['self-narration']:[]),...(input.replyLanguage==='ja'&&formalJapaneseVoice(text)?['voice']:[])];
+   const quality=text=>[...(input.guideEvent&&!guideReplyMatches(finishGuideReply({text},input.guideEvent,cached.data,input.lang).text,input.guideEvent,cached.data.pages,input.lang)?['guide-target']:[]),...replyQualityIssues(text,input.replyLanguage,{allowRepetition:wantsExactRepeat(input.message)}),...(['joke','joke-ja'].includes(answerModel.yukiTask)?humorQualityIssues(text):[]),...(thirdPersonSelf(text,input.message)?['self-narration']:[]),...(input.replyLanguage==='ja'&&formalJapaneseVoice(text)?['voice']:[])];
    const issues=[...(unfinished?['unfinished']:[]),...quality(reply.text)];
    if(!repairUsed&&(issues.length||needsFreshReply(reply,input))&&!request.signal.aborted&&Date.now()-startedAt<30000){
     try{
@@ -333,7 +333,7 @@ export function createHandler(network=fetch,{random}={}){
       const revision=issues.length?completionRequest(answerModel,reply,knowledge,answerWeb,input.replyLanguage,issues):rewriteRequest(answerModel,reply,input);
       if(['joke','joke-ja'].includes(answerModel.yukiTask))revision.yukiTask=answerModel.yukiTask;
       const result=await runModel(env.AI,revision,Math.min(12000,remaining));
-      const revised=issues.length?parseCompletion(result,reply):parseModel(result,knowledge,answerWeb);
+      const revised=issues.length||input.guideEvent?parseCompletion(result,reply):parseModel(result,knowledge,answerWeb);
       if(!unfinishedReply(revised.text)&&!quality(revised.text).length)reply=issues.length?completeRevision(reply,revised):preferFreshReply(reply,revised,input);
      }
     }catch{/* Keep a complete original, or show the explicit notice below. */}

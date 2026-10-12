@@ -6,7 +6,7 @@ import {ChatSession} from '../assets/yuki/runtime/chat-access.mjs';
 import {ConversationMemory,memoryKey} from '../assets/yuki/runtime/conversation-memory.mjs';
 import {VisitorInterests} from '../assets/yuki/runtime/visitor-interests.mjs';
 import {ConversationMoments} from '../assets/yuki/runtime/conversation-moments.mjs';
-import {packChatRequest,rememberReply,rememberFactTopic,rememberJoke,needsFreshText} from '../assets/yuki/runtime/reply-variety.mjs';
+import {packChatRequest,rememberReply,rememberFactTopic,rememberJoke,rememberGuideReply,previousGuideReplies,needsFreshText} from '../assets/yuki/runtime/reply-variety.mjs';
 import {thirdPersonSelf} from '../assets/yuki/runtime/self-narration.mjs';
 import {guideReplyMatches,guideStage} from '../assets/yuki/runtime/guide-journey.mjs';
 import {validReply,chatUnavailable,readSession} from '../assets/yuki/protocol.mjs';
@@ -28,7 +28,7 @@ function fixture({network}={}){
   chatSession:new ChatSession(storage),conversationMemory:new ConversationMemory(storage,'en'),interests:new VisitorInterests(storage),searchPermission:{allowed:true},
   verification:{takeToken:async()=>{calls.verify++;return 'single-use-test-token';},stop:()=>{calls.stop++;}},
   tr:(en,jp)=>context.ja?jp:en,$:selector=>{if(!elements.has(selector))elements.set(selector,{value:'Draft to preserve',disabled:false,readOnly:false,hidden:true,setAttribute:()=>{},focus:()=>{}});return elements.get(selector);},
-  conversationLanguage:'en',replyLanguage,replyQualityIssues,formalJapaneseVoice,conversationHistory,needsFreshText,thirdPersonSelf,guideReplyMatches,rememberFactTopic,rememberJoke,
+  conversationLanguage:'en',replyLanguage,replyQualityIssues,formalJapaneseVoice,conversationHistory,needsFreshText,thirdPersonSelf,guideReplyMatches,rememberFactTopic,rememberJoke,rememberGuideReply,previousGuideReplies,
   readingContext:()=>({}),updateReading:()=>{},translationUI:()=>{},drawMessages:()=>{},translationBatch,checkedTranslations,applyTranslations,wake:async()=>{},status:s=>calls.status.push(s),react:async()=>{},
   stopJourney:()=>{context.journeySerial++;},
   save:()=>storage.setItem('yuki-session-v1',JSON.stringify({savedAt:Date.now(),language:context.ja?'ja':'en',messages:context.messages,variety:context.variety})),
@@ -113,11 +113,12 @@ test('automatic follow-up preserves the draft, adds no synthetic user message an
  await f.send('Offer a contextual follow-up',{kind:'arrive',url:'/resume.html'});
  assert.equal(f.context.messages.length,2);assert.equal(f.context.messages[1].role,'assistant');assert.equal(f.context.$('textarea').value,'Draft to preserve');
  assert.equal(f.calls.fetch[0].webSearch,false);assert.equal(f.calls.fetch[0].guideEvent.kind,'arrive');assert.equal(f.context.conversationMemory.turns.length,0);
+ assert.equal(f.context.variety.guides[0].target,'/resume.html');f.clear();assert.equal(readSession(f.storage).variety.guides[0].stage,'arrival');
 });
 
 test('only introduction and arrival use AI prose; intermediate steps are exact local directions',async()=>{
  for(const kind of ['nav','link','arrive','detour']){
-  const requests=[],messages=[],context={online:true,busy:false,permission:{allowed:true},ja:false,guideStage,journey:{state:{discovery:true}},tr:en=>en,
+  const requests=[],messages=[],context={online:true,busy:false,permission:{allowed:true},ja:false,guideStage,journey:{state:{discovery:true}},tr:en=>en,variety:{},rememberGuideReply,previousGuideReplies,
    guideDialogue:{copy:step=>'Let’s explore '+step.title+' together!'},addMessage:(_role,text)=>messages.push(text),
    runChat:async(...args)=>requests.push(args)};
   vm.createContext(context);vm.runInContext(guideSpeak+'\nthis.speak=speakGuideFollowup;',context);

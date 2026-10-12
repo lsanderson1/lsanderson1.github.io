@@ -233,8 +233,8 @@
       "file": "services/yuki-api/knowledge.mjs",
       "symbol": "retrieveKnowledge",
       "firstLine": 41,
-      "lastLine": 104,
-      "sha256": "67a7ea665d368a154b56db288fce6ca0747269be377eefe70af39662c75549ed"
+      "lastLine": 106,
+      "sha256": "8e686c877298d146def81de34f0ce4528f80d7209d4ed6a767e3e212f5d49527"
     }
   },
   {

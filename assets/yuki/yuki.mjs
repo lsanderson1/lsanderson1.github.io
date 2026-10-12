@@ -26,9 +26,9 @@ import {replyLanguage,replyQualityIssues,formalJapaneseVoice} from './runtime/re
 import {DiscoveryGuide,isDiscoveryRequest} from './runtime/discovery-guide.mjs?v=3';
 import {CallDialogue} from './runtime/call-dialogue.mjs?v=3';
 import {ReadingMemory,readPageTitle,readingLabels,readPageDisplaySection,readPageSection,readPageImages,readGardenSpot,guideReference,followUpReference,sectionExplanation} from './runtime/reading-context.mjs?v=7';
-import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=22';
+import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=23';
 import {safeWebURL} from './runtime/web-sources.mjs?v=1';
-import {cleanVariety,rememberReply,rememberFactTopic,rememberJoke,packChatRequest,needsFreshText} from './runtime/reply-variety.mjs?v=7';
+import {cleanVariety,rememberReply,rememberFactTopic,rememberJoke,rememberGuideReply,previousGuideReplies,packChatRequest,needsFreshText} from './runtime/reply-variety.mjs?v=8';
 import {thirdPersonSelf} from './runtime/self-narration.mjs?v=1';
 
 const root=document.querySelector('#yuki-companion');
@@ -525,13 +525,18 @@ async function start(){
  }
  function speakGuideFollowup(step){
   const discovery=journey.state?.discovery===true;
+  const language=ja?'ja':'en';
+  const event={kind:step.kind,url:step.url,targetUrl:step.target?.url??step.url,...(step.linkLabel?{linkLabel:step.linkLabel}:{}),...(step.stepIndex?{stepIndex:step.stepIndex,stepCount:step.stepCount}:{}),...(discovery?{discovery:true}:{})};
+  event.previous=previousGuideReplies(variety,event,language);
   const fallback=()=>{
-   addMessage('assistant',guideDialogue.copy(step,{lang:ja?'ja':'en',detour:step.kind==='detour'}));
+   const text=guideDialogue.copy(step,{lang:language,detour:step.kind==='detour'});
+   variety=rememberGuideReply(variety,text,event,language);
+   addMessage('assistant',text);
   };
   // Only the introduction and arrival need prose. Intermediate stops give the
   // exact next action locally, with no extra inference or premature explanation.
   if(guideStage(step)==='directions'||!online||!permission.allowed||busy){fallback();return;}
-  return runChat(tr('Respond naturally for this guided stop.','この案内地点に合う自然なひとことを。'),{kind:step.kind,url:step.url,targetUrl:step.target?.url??step.url,...(step.linkLabel?{linkLabel:step.linkLabel}:{}),...(step.stepIndex?{stepIndex:step.stepIndex,stepCount:step.stepCount}:{}),...(discovery?{discovery:true}:{})},fallback);
+  return runChat(tr('Respond naturally for this guided stop.','この案内地点に合う自然なひとことを。'),event,fallback);
  }
  let reactionVersion=0;
  let talkTurn=0;
@@ -618,9 +623,10 @@ async function start(){
    // Check all retained local recall too, not only the excerpts that fit the
    // request budget. A rejected draft is never displayed or remembered.
    conversationMemory.expire();
-   if(needsFreshText(cue.text,{message:text,variety,history,memory:conversationMemory.turns,guideEvent}))throw Error('novelty');
+   if(needsFreshText(cue.text,{message:text,variety,history,memory:conversationMemory.turns,guideEvent,lang:conversationLanguage}))throw Error('novelty');
    if(guideEvent&&(replyQualityIssues(cue.text,conversationLanguage).length||!guideReplyMatches(cue.text,guideEvent,knowledge,ja?'ja':'en',base)))throw Error('request');
    if(!guideEvent){const followUp=followUpReference(cue,context.lastGuide,knowledge);if(followUp)readingMemory.set(followUp);else readingMemory.clear();conversationMemory.remember(text,cue.text);}
+   if(guideEvent)variety=rememberGuideReply(variety,cue.text,guideEvent,conversationLanguage);
    addMessage('assistant',cue.text,true,cue.sources,cue.storyTopics,undefined,conversationLanguage);
    if(cue.factTopic)variety=rememberFactTopic(variety,cue.factTopic);
    if(cue.joke)variety=rememberJoke(variety,cue.text);
