@@ -2,7 +2,7 @@
 // currently visible garden, a guessed topic, or a model's old biography.
 function explicitKind(message){
  const q=String(message??'');
- if(/\b(?:jokes?|puns?|riddles?)\b|冗談|ジョーク|なぞなぞ|ダジャレ|笑える話/iu.test(q))return 'joke';
+ if(/\b(?:jokes?|puns?|riddles?)\b|\b(?:funny|playful|silly|amusing|lighthearted)(?: little| short)? stor(?:y|ies)\b|冗談|ジョーク|なぞなぞ|ダジャレ|笑える(?:小)?話|楽しい小話/iu.test(q))return 'joke';
  if(/\b(?:facts?|trivia)\b|豆知識|雑学/iu.test(q))return 'fact';
  return '';
 }

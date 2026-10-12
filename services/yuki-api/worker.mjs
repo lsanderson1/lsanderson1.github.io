@@ -262,7 +262,7 @@ export function createHandler(network=fetch,{random}={}){
    let reply=factTopic?{webQuery:factTopic.query}:parseModel(result,knowledge,web),searched=false,repairUsed=false,answerModel=model,answerWeb=web;
    if(reply.webQuery){
     searched=true;
-    let entries=[],searchIssue='provider';
+    let entries=[],searchIssue='provider',answerIssue='';
     const remaining=()=>38000-(Date.now()-startedAt);
     // Planned searches need a second inference reserved before a search credit.
     // Random discovery has not used its first inference yet. Both budgets apply.
@@ -283,21 +283,32 @@ export function createHandler(network=fetch,{random}={}){
      if(request.signal.aborted||remaining()<5000)throw Error('Not enough time');
      const evidence={mode:'results',entries,date:day,...(factTopic?{factTopic}:{})};
      const searchedModel=modelRequest(input,knowledge,evidence);
-     let answer=parseModel(await runModel(env.AI,searchedModel,Math.min(18000,remaining())),knowledge,evidence);
-     if(!answer.sources.some(s=>entries.some(e=>e.url===s.url))||!factMentionsTopic(answer.text,factTopic)){
-      // Missing citations are an ANSWER failure, not a failed web lookup.
+     // Provider errors/timeouts are not retried. A completed but malformed
+     // answer, like a missing citation, can use the ONE existing repair slot.
+     answerIssue='provider';
+     const rawAnswer=await runModel(env.AI,searchedModel,Math.min(18000,remaining()));
+     if(rawAnswer?.error||rawAnswer?.success===false)throw Error('Answer provider rejected request');
+     let answer;
+     try{answer=parseModel(rawAnswer,knowledge,evidence);}catch{answerIssue='format';}
+     const evidenceIssue=value=>!value?'format':!value.sources.some(s=>entries.some(e=>e.url===s.url))?'citation':!factMentionsTopic(value.text,factTopic)?'topic':'';
+     answerIssue=evidenceIssue(answer);
+     if(answerIssue){
+      // Format, citation and topic errors are ANSWER failures, not failed searches.
       // Use the same single quality-repair slot, never another search or
       // automatic source attachment that could legitimize an unrelated claim.
       const repair=await quota.fetch('https://quota.invalid/reserve',{method:'POST',body:JSON.stringify({hash,minute:Math.floor(Date.now()/60000)}),signal:AbortSignal.timeout(1500)});
-      if(repair.status!==204||remaining()<6000||request.signal.aborted)throw Error('Citation repair unavailable');
+      if(repair.status!==204||remaining()<6000||request.signal.aborted)throw Error('Answer repair unavailable');
       repairUsed=true;
-      const revised={...searchedModel,messages:[...searchedModel.messages.slice(0,-1),{role:'system',content:'The previous draft omitted its evidence citation or the selected discovery subject. Answer the visitor using ONLY claims directly supported by the supplied WEB ENTRIES. Include their exact web IDs in sourceIds. If a FRESH DISCOVERY TOPIC was supplied, explain that subject and name it using its exact source spelling. Do not substitute an unrelated remembered fact or attach citations to an unsupported claim. Keep your cheerful first-person voice and finish the explanation. Return the same JSON schema; do not search again.'},searchedModel.messages.at(-1)]};
-      answer=parseModel(await runModel(env.AI,revised,Math.min(12000,remaining())),knowledge,evidence);
-      if(!answer.sources.some(s=>entries.some(e=>e.url===s.url))||!factMentionsTopic(answer.text,factTopic))throw Error('Answer omitted checked evidence or selected topic');
+      const revised={...searchedModel,messages:[...searchedModel.messages.slice(0,-1),{role:'system',content:'ANSWER REPAIR: The previous completed draft failed this check: '+answerIssue+'. Write a fresh, complete JSON object matching the response schema, not a continuation of that draft. Answer using ONLY claims directly supported by the supplied WEB ENTRIES. Include their exact web IDs in sourceIds. If a FRESH DISCOVERY TOPIC was supplied, name it once using an EXACT supplied name, even if long; in Japanese retain the original title in 「」 when no Japanese name is supplied. Do not substitute an unrelated remembered fact or attach citations to an unsupported claim. Keep your cheerful first-person voice; 4–6 complete sentences are enough, fewer if evidence is sparse. Return every required schema field; no reasoning, Markdown fences or further search.'},searchedModel.messages.at(-1)]};
+      answerIssue='provider';
+      const rawRevision=await runModel(env.AI,revised,Math.min(12000,remaining()));
+      answerIssue='format';answer=parseModel(rawRevision,knowledge,evidence);
+      answerIssue=evidenceIssue(answer);
+      if(answerIssue)throw Error('Answer omitted checked evidence or selected topic');
      }
      reply={...answer,searchStatus:'used'};answerModel=searchedModel;answerWeb=evidence;
     }catch{
-     return response(200,{...lookupNotice(input.replyLanguage,searchIssue),...(chatSession?{chatSession}:{})});
+     return response(200,{...lookupNotice(input.replyLanguage,searchIssue),...(searchIssue==='answer'&&['provider','format','citation','topic'].includes(answerIssue)?{reference:'YUKI_SEARCH_ANSWER_'+answerIssue.toUpperCase()}:{}),...(chatSession?{chatSession}:{})});
     }
    }
    // The tested model invented plausible mechanisms for unsourced trivia.

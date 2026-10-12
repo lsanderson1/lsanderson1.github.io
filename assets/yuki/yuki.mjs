@@ -14,7 +14,7 @@ import {PageMotion,pageProjection,inViewport,containPageRover,prepareCall} from 
 import {CallPerches} from './runtime/call-perches.mjs?v=7';
 import {VisitorPersonality,conversationOpening,localizeGreetingMessages,replySequence,cueArtwork} from './runtime/visitor-personality.mjs?v=11';
 import {ChatAvailability,ChatPermission,ChatSession,ChatVerification,chatEnvironment,chatEnabledKey,searchConsentKey} from './runtime/chat-access.mjs?v=3';
-import {ConversationMemory} from './runtime/conversation-memory.mjs?v=2';
+import {ConversationMemory} from './runtime/conversation-memory.mjs?v=3';
 import {VisitorInterests} from './runtime/visitor-interests.mjs';
 import {expressionSequence} from './runtime/reply-beats.mjs';
 import {GardenHome} from './home/garden.mjs?v=10';
@@ -26,9 +26,9 @@ import {replyLanguage,replyQualityIssues,formalJapaneseVoice} from './runtime/re
 import {DiscoveryGuide,isDiscoveryRequest} from './runtime/discovery-guide.mjs?v=3';
 import {CallDialogue} from './runtime/call-dialogue.mjs?v=3';
 import {ReadingMemory,readPageTitle,readingLabels,readPageDisplaySection,readPageSection,readPageImages,readGardenSpot,guideReference,followUpReference,sectionExplanation} from './runtime/reading-context.mjs?v=7';
-import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=21';
+import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=22';
 import {safeWebURL} from './runtime/web-sources.mjs?v=1';
-import {cleanVariety,rememberReply,rememberFactTopic,rememberJoke,packChatRequest,needsFreshText} from './runtime/reply-variety.mjs?v=6';
+import {cleanVariety,rememberReply,rememberFactTopic,rememberJoke,packChatRequest,needsFreshText} from './runtime/reply-variety.mjs?v=7';
 import {thirdPersonSelf} from './runtime/self-narration.mjs?v=1';
 
 const root=document.querySelector('#yuki-companion');

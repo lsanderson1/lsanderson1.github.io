@@ -1,5 +1,5 @@
-import {discoveryKind} from './discovery.mjs';
-export {discoveryKind} from './discovery.mjs';
+import {discoveryKind} from './discovery.mjs?v=2';
+export {discoveryKind} from './discovery.mjs?v=2';
 // Short-lived, tab-local reply metadata. No user profiling or server storage.
 export const storyTopicIds=Object.freeze(['origin','firstFlight','lanternKeeper','firstGuide','treasure','quietEvening','home','dailyGoals','bigDream','innerConflict','littlePreferences','relationships','character']);
 const recentLimit=12,sampleSize=32,hex=/^[a-f0-9]{8}$/;
@@ -81,6 +81,12 @@ function sameJapaneseJokeSetup(text,previous){
  let common=0;while(common<Math.min(left.length,right.length)&&left[common]===right[common])common++;
  return common>=7&&common>=Math.min(left.length,right.length)*.3;
 }
+// A narrow, observed story-template repeat: changing an acorn/stone to a
+// blanket/leaf must not pass merely because the nouns differ. This is lexical
+// detection of an explicit mix-up, not general semantic joke classification.
+export function usesMistakenObjectPlot(text){
+ return /\b(?:mistook\b.{0,100}\bfor|mistaken (?:for|it for)|had (?:thought|assumed) .{0,80}\bwas\b)|(?:だ|だった|か)と(?:思って|勘違いして).{0,55}(?:実は|本当は)|(?:実は|本当は).{0,55}(?:見間違|取り違)/iu.test(text);
+}
 function recurringFrame(text,previous){
  if(normalized(text).length<80)return false;
  // Two prior uses of an identical substantial opening/closing are enough;
@@ -94,7 +100,7 @@ export function repetitionScore(text,variety,history=[],memory=[],{discovery=fal
  const previous=[...new Set([...history.filter(item=>item.role==='assistant').map(item=>item.content),...memory.filter(item=>typeof item?.answer==='string').map(item=>item.answer),...(joke?cleanJokes(variety?.jokes):[])])];
  for(const content of previous)recent.push(replyFingerprint(content));
  const score=recent.reduce((score,item)=>Math.max(score,discovery&&fingerprint.length>=8&&fingerprint.digest===item.digest?1:replySimilarity(fingerprint,item)),0);
- return previous.reduce((score,content)=>Math.max(score,sharedPassage(text,content,discovery),discovery?discoveryIdeaScore(text,content):0,joke&&sameJapaneseJokeSetup(text,content)?.84:0),Math.max(score,recurringFrame(text,previous)? .82:0));
+ return previous.reduce((score,content)=>Math.max(score,sharedPassage(text,content,discovery),discovery?discoveryIdeaScore(text,content):0,joke&&(sameJapaneseJokeSetup(text,content)||usesMistakenObjectPlot(text)&&usesMistakenObjectPlot(content))?.84:0),Math.max(score,recurringFrame(text,previous)? .82:0));
 }
 export const repeatThreshold=.8;
 export function needsFreshText(text,input){

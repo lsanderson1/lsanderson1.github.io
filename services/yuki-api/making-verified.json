@@ -262,13 +262,13 @@
       "en": "Completing an unfinished answer",
       "ja": "途中で切れた返答を整える"
     },
-    "explanation": "completionRequest prepares a short text-only rewrite using the draft, its cited evidence and relevant character lore. parseCompletion rejects malformed, unfinished or overlong results, retains the original sources and routing metadata, and removes old sentence-animation indices. The worker may use this instead of the variety rewrite, at most once within the existing quota and deadline; it is not an unlimited retry or a new web search. If repair cannot finish safely, incompleteAnswer gives a localized retry notice rather than a fragment. These checks do not prove that every claim is accurate.",
+    "explanation": "completionRequest prepares a short text-only rewrite using the draft, its cited evidence and relevant character lore. Its humor-specific path preserves the fictional scene, setup and payoff rather than inflating a joke into an explanation. parseCompletion rejects malformed, unfinished or overlong results, retains the original sources and routing metadata, and removes old sentence-animation indices. The worker may use this instead of the variety rewrite, at most once within the existing quota and deadline; it is not an unlimited retry or a new web search. If repair cannot finish safely, incompleteAnswer gives a localized retry notice rather than a fragment. These checks do not prove that every claim is accurate.",
     "source": {
       "file": "services/yuki-api/reply-completion.mjs",
       "symbol": "completionRequest / parseCompletion",
       "firstLine": 6,
-      "lastLine": 56,
-      "sha256": "f1e7c19dbb9030e50cae7113fd49fc5d604752d83d078374f9a81a7b396f3c04"
+      "lastLine": 60,
+      "sha256": "a821b3c5a6d7f99784153699beed38345880a321cf34773311ba8bcd44d1e89b"
     }
   },
   {

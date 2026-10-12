@@ -155,8 +155,8 @@ test('search quota fault, timeout/error or provider limit do not fail chat or re
 test('extra AI budget denial does not spend search credits or break normal chat',async()=>{
  const f=fixture({extra:429});const response=await f.handler(f.request(),f.env),value=await response.json();assert.equal(response.status,200);assert.equal(f.calls.length,2);assert.equal(f.ai.length,1);assert.equal(f.reservations.length,2);assert.equal(value.searchStatus,'unavailable');assert.equal(value.searchIssue,'ai-limit');assert.match(value.text,/haven't started a lookup/);
 });
-test('final model failure returns honest fallback, not an unfinished or invented lookup',async()=>{
- for(const model of [new Error('secret error'),{}]){const f=fixture({models:[draft,model]});const value=await(await f.handler(f.request({lang:'ja',message:'公式の情報を調べて教えて'}),f.env)).json();assert.equal(value.searchStatus,'used');assert.equal(value.searchIssue,'answer');assert.equal(value.notice,true);assert.match(value.text,/検索の失敗ではなく/);assert.equal(value.sources.length,0);assert.equal(f.ai.length,2);}
+test('provider failure is not retried; malformed completed answers use just the existing repair slot',async()=>{
+ for(const model of [new Error('secret error'),{}]){const f=fixture({models:[draft,model,{}]});const value=await(await f.handler(f.request({lang:'ja',message:'公式の情報を調べて教えて'}),f.env)).json();assert.equal(value.searchStatus,'used');assert.equal(value.searchIssue,'answer');assert.equal(value.notice,true);assert.match(value.text,/検索の失敗ではなく/);assert.equal(value.sources.length,0);assert.equal(f.ai.length,model instanceof Error?2:3);assert.equal(value.reference,'YUKI_SEARCH_ANSWER_'+(model instanceof Error?'PROVIDER':'FORMAT'));assert(!JSON.stringify(value).includes('secret error'));}
 });
 test('cancellation never starts a lookup after first inference',async()=>{
  const controller=new AbortController(),f=fixture({signal:controller.signal});const run=f.env.AI.run;f.env.AI.run=async(...args)=>{const result=await run(...args);controller.abort();return result;};
@@ -171,6 +171,30 @@ test('sources resolve only against current returned evidence; arbitrary model UR
 test('missing source IDs get one evidence repair, never automatic citations on unchecked prose',async()=>{
  const f=fixture({models:[draft,{...answer,sourceIds:[]},answer]});const value=await(await f.handler(f.request(),f.env)).json();assert.equal(value.sources[0].url,results.results[0].url);assert.equal(f.ai.length,3);assert.equal(f.calls.filter(c=>c.url===TAVILY_SEARCH).length,1);
  const bad=fixture({models:[draft,{...answer,sourceIds:[]},{...answer,sourceIds:[]}]});const rejected=await(await bad.handler(bad.request(),bad.env)).json();assert.equal(rejected.searchIssue,'answer');assert.deepEqual(rejected.sources,[]);assert.equal(rejected.notice,true);assert.equal(bad.ai.length,3);
+});
+
+test('completed malformed fact answers can recover using the same evidence without another lookup',async()=>{
+ for(const malformed of [{},'```json\n{}\n```',{...answer,emotion:'invented'}]){
+  const f=fixture({models:[malformed,answer]});
+  const response=await f.handler(f.request({message:'Tell me a random fact'}),f.env),value=await response.json();
+  assert.equal(response.status,200);assert.equal(value.text,answer.text);assert.equal(value.factTopic,'wiki-en:42');
+  assert.equal(f.ai.length,2);assert.equal(f.calls.filter(c=>c.url===TAVILY_SEARCH).length,1);
+  assert.match(f.ai[1].body.messages.at(-2).content,/failed this check: format/);
+  assert.equal(value.notice,undefined);assert.equal(value.reference,undefined);
+ }
+});
+
+test('repaired facts must still cite evidence, keep their topic and pass final language checks',async()=>{
+ for(const [revised,reference] of [[{...answer,sourceIds:[]},'CITATION'],[{...answer,text:'Octopuses have three hearts.'},'TOPIC']]){
+  const f=fixture({models:[{},revised]}),value=await(await f.handler(f.request({message:'Tell me a fact'}),f.env)).json();
+  assert.equal(value.notice,true);assert.equal(value.reference,'YUKI_SEARCH_ANSWER_'+reference);assert.equal(value.factTopic,undefined);
+  assert.equal(f.ai.length,2);assert.equal(f.calls.filter(c=>c.url===TAVILY_SEARCH).length,1);
+ }
+ const wrong=fixture({models:[{}, {...answer,text:'翼は空気を動かして揚力を生み出すんだ。Wingsの形も関係しているよ。'}]});
+ const response=await wrong.handler(wrong.request({message:'Tell me a fact'}),wrong.env);
+ assert.equal(response.status,502);assert.equal(wrong.ai.length,2,'no second quality repair after format repair');
+ const denied=fixture({models:[{}],extra:429}),notice=await(await denied.handler(denied.request({message:'Tell me a fact'}),denied.env)).json();
+ assert.equal(notice.searchIssue,'answer');assert.equal(denied.ai.length,1,'a repair still needs a quota reservation');
 });
 class Storage {
  constructor(){this.m=new Map();this.queue=Promise.resolve();}
@@ -225,7 +249,7 @@ test('open facts and another one pick a live topic before inference, with only o
   assert.equal(f.calls.filter(c=>c.url===RANDOM_TOPICS_URL).length,1);
   const search=JSON.parse(f.calls.find(c=>c.url===TAVILY_SEARCH).options.body);
   assert.equal(search.query,'"Wings" facts background');assert(!search.query.includes('Octopus'));
-  assert.match(f.ai[0].body.messages[1].content,/FRESH DISCOVERY TOPIC/);
+  assert.match(f.ai[0].body.messages[0].content,/FRESH DISCOVERY TOPIC/);
  }
 });
 
