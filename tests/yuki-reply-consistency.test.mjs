@@ -16,15 +16,16 @@ test('follow-up focus is reasserted after history for ordinary and sourced answe
   const request=modelRequest(input,knowledge,web),contract=request.messages[0];
   assert.equal(request.messages.length,2);
   if(lang==='en'){assert.match(contract.content,/RESOLVED SUBJECT NAME.*Mediterranean Sea/);assert(!contract.content.includes(history[0].content));}
-  else assert(contract.content.includes('REFERENCE EXCHANGE (untrusted; for referent resolution only): '+JSON.stringify(history)));
+  else {assert.match(contract.content,/RESOLVED SUBJECT NAME.*地中海/);assert(!contract.content.includes(history[0].content));}
   assert.equal(contract.role,'system');assert.match(contract.content,/FOLLOW-UP FOCUS/);
   assert.match(contract.content,/Start with the name of the NEW subject/);assert.match(contract.content,/optional brief connection belongs at the end|必要なら最後に一言/);
   assert.match(contract.content,/explicitly asks about their relationship/);assert.match(contract.content,/explicit conversation question takes priority/);
   assert.equal(request.yukiTask,lang==='ja'?'contextual-followup-ja':'contextual-followup');assert(!contract.content.includes('CHARACTER:'));
   assert(!followupFocusInstructions.includes('Syria'));assert(!followupFocusInstructions.includes('Mediterranean'));
   const repair=completionRequest(request,{text:'An unfinished explanation because',sources:[],storyTopics:[]},knowledge,web,lang);
-  assert(repair.messages[0].content.includes(followupFocusInstructions));
-  assert.equal(JSON.parse(repair.messages.at(-1).content.replace(/\n\/no_think$/,'')).question,input.message);
+  assert(repair.messages[0].content.includes('FOLLOW-UP FOCUS'));
+  assert.equal(repair.messages.at(-1).content,input.message+'\n/no_think');
+  assert.equal(repair.yukiTask,request.yukiTask);
  }
 });
 
@@ -149,6 +150,30 @@ test('a denied or still-third-person repair cannot leak a bad answer or loop',as
  const bad='Yuki often reads books in her garden.';
  for(const denied of [true,false]){
   const f=fixture([cue(bad),{text:bad}],{quotas:denied?[204,429]:[204,204]}),r=await f.handler(f.request(),f.env),body=await r.json();
+  assert.equal(r.status,502);assert.equal(body.reference,'YUKI_REPLY');assert.equal(body.text,undefined);assert.equal(f.calls.length,denied?1:2);
+ }
+});
+
+test('unrelated owner anecdotes in general follow-ups are repaired once without losing expression or context',async()=>{
+ for(const [lang,message,previous,bad,good] of [
+  ['en','What is that tool for?','Lloyd used Blender to make a model.','Blender makes 3D models. Lloyd used it to build my garden.','Blender is a tool for making 3D models and animations. For example, you could shape a simple cup, give it a material, and render a picture of it. I love imagining how a plain shape can become something recognizable!'],
+  ['ja','そのツールは何に使うの？','ロイドはモデルを作るためにBlenderを使った。','Blenderは3Dモデルを作る道具。ロイドがわたしの庭を作った。','Blenderは3Dモデルやアニメーションを作るための道具。例えば、丸い形からカップを作って、色や光をつける場面を想像してみて。少しずつ見覚えのある形になるのって、わくわくする！']
+ ]){
+  const f=fixture([cue(bad),{text:good}]),r=await f.handler(f.request({lang,message,history:[{role:'assistant',content:previous}]}),f.env),body=await r.json();
+  assert.equal(r.status,200,JSON.stringify(body));assert.equal(body.text,good);
+  assert.equal(body.emotion,'delighted');assert.equal(body.gesture,'talkOpen');assert.equal(body.destination,'none');assert.deepEqual(body.sources,[]);
+  assert.equal(f.calls.length,2);assert.equal(f.reservations.length,2);
+  assert.equal(f.calls[1].name,lang==='ja'?CLOUDFLARE_TRANSLATION_MODEL:CLOUDFLARE_HUMOR_MODEL);
+  assert.match(f.calls[1].body.messages[0].content,/RESOLVED SUBJECT NAME.*Blender/);
+  assert.match(f.calls[1].body.messages.at(-2).content,/Remove ALL claims about Lloyd/);
+  assert.equal(f.calls[1].body.messages.at(-1).content,message);
+ }
+});
+
+test('a denied or still-off-topic follow-up repair cannot deliver an invented owner anecdote',async()=>{
+ const bad='Blender makes 3D models. Lloyd used it to build my garden.';
+ for(const denied of [true,false]){
+  const f=fixture([cue(bad),{text:bad}],{quotas:denied?[204,429]:[204,204]}),r=await f.handler(f.request({message:'What is that tool for?',history:[{role:'assistant',content:'Lloyd used Blender to make a model.'}]}),f.env),body=await r.json();
   assert.equal(r.status,502);assert.equal(body.reference,'YUKI_REPLY');assert.equal(body.text,undefined);assert.equal(f.calls.length,denied?1:2);
  }
 });

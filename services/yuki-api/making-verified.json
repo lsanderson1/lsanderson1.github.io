@@ -267,8 +267,8 @@
       "file": "services/yuki-api/reply-completion.mjs",
       "symbol": "completionRequest / parseCompletion",
       "firstLine": 7,
-      "lastLine": 72,
-      "sha256": "32d5a5e17789c7c3a9ea1c3c7746a0e337a1d12a59e352099300ddd9bbae772f"
+      "lastLine": 75,
+      "sha256": "cdc4e28ab3b2e51a39815feb609c8d7b7ea2bc3c8088cbd50aa28d90a492dbfb"
     }
   },
   {

@@ -3,7 +3,7 @@ import {validateContext,retrieveKnowledge} from './knowledge.mjs';
 import {portraitAnswer,pageEvidenceInstruction} from './page-awareness.mjs';
 import {pageAnswerRequest} from './page-answer.mjs';
 import {lightChatKind,lightChatRequest} from './light-chat.mjs';
-import {isContextualFollowup,followupAnswerRequest} from './followup-answer.mjs';
+import {isContextualFollowup,followupAnswerRequest,followupReplyIssues} from './followup-answer.mjs';
 import {humorQualityIssues} from './humor-quality.mjs';
 import {personalityInstructions,replyContract,followupFocusInstructions} from './personality.mjs';
 import {portfolioExplanationInstructions} from './portfolio-explanations.mjs';
@@ -338,7 +338,7 @@ export function createHandler(network=fetch,{random}={}){
    // One shared quality-rewrite slot, including language and internal loops.
    // Never retry a failed provider request, increase caps, or start another search.
    const unfinished=unfinishedReply(reply.text);
-   const quality=text=>[...(input.guideEvent&&!guideReplyMatches(finishGuideReply({text},input.guideEvent,cached.data,input.lang).text,input.guideEvent,cached.data.pages,input.lang)?['guide-target']:[]),...replyQualityIssues(text,input.replyLanguage,{allowRepetition:wantsExactRepeat(input.message)}),...(['joke','joke-ja'].includes(answerModel.yukiTask)?humorQualityIssues(text):[]),...(thirdPersonSelf(text,input.message)?['self-narration']:[]),...(input.replyLanguage==='ja'&&formalJapaneseVoice(text)?['voice']:[])];
+   const quality=text=>[...(input.guideEvent&&!guideReplyMatches(finishGuideReply({text},input.guideEvent,cached.data,input.lang).text,input.guideEvent,cached.data.pages,input.lang)?['guide-target']:[]),...replyQualityIssues(text,input.replyLanguage,{allowRepetition:wantsExactRepeat(input.message)}),...followupReplyIssues(text,answerModel),...(['joke','joke-ja'].includes(answerModel.yukiTask)?humorQualityIssues(text):[]),...(thirdPersonSelf(text,input.message)?['self-narration']:[]),...(input.replyLanguage==='ja'&&formalJapaneseVoice(text)?['voice']:[])];
    const issues=[...(unfinished?['unfinished']:[]),...quality(reply.text)];
    if(!repairUsed&&(issues.length||needsFreshReply(reply,input))&&!request.signal.aborted&&Date.now()-startedAt<30000){
     try{
