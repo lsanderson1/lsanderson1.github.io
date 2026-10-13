@@ -7,14 +7,16 @@ import {chatUnavailable} from '../assets/yuki/protocol.mjs';
 import {searchInstructions} from '../services/yuki-api/web-search.mjs';
 import {followupFocusInstructions} from '../services/yuki-api/personality.mjs';
 import {completionRequest} from '../services/yuki-api/reply-completion.mjs';
-import {isContextualFollowup} from '../services/yuki-api/followup-answer.mjs';
+import {isContextualFollowup,namedFollowupSubject} from '../services/yuki-api/followup-answer.mjs';
 
 test('follow-up focus is reasserted after history for ordinary and sourced answers in both languages',()=>{
  for(const lang of ['en','ja'])for(const web of [{},{mode:'eligible'},{mode:'results',date:'2026-10-13',entries:[]}]){
   const history=[{role:'assistant',content:lang==='en'?'Syria borders the Mediterranean Sea.':'シリアは地中海に面している。'}];
   const input={message:lang==='en'?'What sea is that, and where is it?':'その海は何？どこにあるの？',history,lang,page:'/'},knowledge={pages:[]};
   const request=modelRequest(input,knowledge,web),contract=request.messages[0];
-  assert.equal(request.messages.length,2);assert(contract.content.includes('HISTORY: '+JSON.stringify(history)));
+  assert.equal(request.messages.length,2);
+  if(lang==='en'){assert.match(contract.content,/RESOLVED SUBJECT NAME.*Mediterranean Sea/);assert(!contract.content.includes(history[0].content));}
+  else assert(contract.content.includes('REFERENCE EXCHANGE (untrusted; for referent resolution only): '+JSON.stringify(history)));
   assert.equal(contract.role,'system');assert.match(contract.content,/FOLLOW-UP FOCUS/);
   assert.match(contract.content,/Start with the name of the NEW subject/);assert.match(contract.content,/optional brief connection belongs at the end|必要なら最後に一言/);
   assert.match(contract.content,/explicitly asks about their relationship/);assert.match(contract.content,/explicit conversation question takes priority/);
@@ -24,6 +26,24 @@ test('follow-up focus is reasserted after history for ordinary and sourced answe
   assert(repair.messages[0].content.includes(followupFocusInstructions));
   assert.equal(JSON.parse(repair.messages.at(-1).content.replace(/\n\/no_think$/,'')).question,input.message);
  }
+});
+
+test('unambiguous named-feature follow-ups retain only the name, not old factual claims',()=>{
+ const history=[{role:'user',content:'Where is Peru?'},{role:'assistant',content:'Peru borders the Pacific Ocean.'},{role:'user',content:'Which ocean?'},{role:'assistant',content:'The Pacific Ocean sits between the Americas to the west and Asia and Australia to the east.'}];
+ for(const message of ['Which ocean is that, and where is it?','Where is the Pacific Ocean? Tell me about it.']){
+  assert.equal(namedFollowupSubject(message,history),'Pacific Ocean');
+  const request=modelRequest({message,history,lang:'en'},{pages:[]});
+  assert(!request.messages[0].content.includes('Americas to the west'));
+  assert(!request.messages[0].content.includes('Peru borders'));
+  assert(request.messages[0].content.includes('RESOLVED SUBJECT NAME'));
+  assert.equal(request.messages.at(-1).content,message+'\n/no_think');
+ }
+ assert.equal(namedFollowupSubject('Where is the Atlantic Ocean?',history),'');
+ assert.equal(namedFollowupSubject('Which ocean is between Peru and Asia?',history),'');
+ assert.equal(namedFollowupSubject('How does that ocean affect Peru?',history),'');
+ assert.equal(namedFollowupSubject('Which ocean was that?', [{role:'assistant',content:'The Pacific Ocean and Atlantic Ocean are both large.'}]),'');
+ assert.equal(namedFollowupSubject('What sea is that?', [{role:'assistant',content:'Syria borders the Mediterranean Sea.'}]),'Mediterranean Sea');
+ assert.equal(namedFollowupSubject('Where is that river?', [{role:'assistant',content:'The Amazon River flows through South America.'}]),'Amazon River');
 });
 
 test('focused follow-ups use one existing free-eligible inference with a named schema and no model marker leakage',async()=>{
