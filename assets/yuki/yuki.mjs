@@ -22,7 +22,7 @@ import {YukiLocation,capturePose,restorePose,poseArtwork,locationLabel,locationP
 import {summonTiming,summonPhase,callFlightDuration,catchInFlight} from './home/summon.mjs';
 import {ConversationMoments,shouldWelcomeOnRefresh,isLeavingLink} from './runtime/conversation-moments.mjs?v=1';
 import {messageRecord,translatedText,translationBatch,checkedTranslations,applyTranslations,conversationHistory} from './runtime/conversation-language.mjs?v=8';
-import {replyLanguage,replyQualityIssues,formalJapaneseVoice} from './runtime/reply-quality.mjs?v=3';
+import {replyLanguage,replyQualityIssues,formalJapaneseVoice} from './runtime/reply-quality.mjs?v=4';
 import {DiscoveryGuide,isDiscoveryRequest} from './runtime/discovery-guide.mjs?v=3';
 import {CallDialogue} from './runtime/call-dialogue.mjs?v=3';
 import {ReadingMemory,readPageTitle,readingLabels,readPageDisplaySection,readPageSection,readPageImages,readGardenSpot,guideReference,followUpReference,sectionExplanation} from './runtime/reading-context.mjs?v=7';

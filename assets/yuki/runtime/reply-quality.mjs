@@ -4,8 +4,9 @@ export function replyLanguage(message,pageLanguage='en'){
  const text=String(message).replace(/```[\s\S]*?```|`[^`\n]*`|「[^」]*」|『[^』]*』|“[^”]*”|"[^"\n]*"/gu,' ').trim();
  if(/\b(?:reply|answer|speak|talk|respond|explain|say (?:it|that))\b[^.!?\n]{0,60}\bin (?:English|英語)\b|英語で(?:話|答|返|説明|お願い|いい|聞)|^英語(?:で)?[。！!\s]*$/iu.test(text))return 'en';
  if(/\b(?:reply|answer|speak|talk|respond|explain|say (?:it|that))\b[^.!?\n]{0,60}\bin Japanese\b|日本語で(?:話|答|返|説明|お願い|いい|聞)|^日本語(?:で)?[。！!\s]*$/iu.test(text))return 'ja';
- if((text.match(/[\p{Script=Hiragana}\p{Script=Katakana}]/gu)||[]).length>=2)return 'ja';
- if(/\b(?:i|you|she|her|what|why|how|where|when|who|tell|explain|please|yes|no|more|hello|hi|thanks|okay)\b/iu.test(text))return 'en';
+ if((text.match(/[\p{Script=Hiragana}\p{Script=Katakana}]/gu)||[]).length>=2||/[\p{Script=Han}]/u.test(text)&&/[\p{Script=Hiragana}]/u.test(text))return 'ja';
+ if(/^(?:例|具体例|誰|理由|仕組み|出典|根拠|証拠)[。！？?\s]*$/u.test(text))return 'ja';
+ if(/\b(?:i|you|she|her|what|why|how|where|when|who|which|tell|explain|please|yes|no|more|hello|hi|thanks|okay)\b/iu.test(text)||/^(?:an? |for )?examples?[?!.\s]*$|^(?:simpler|elaborate|continue|sources?|evidence|proof)[?!.\s]*$/iu.test(text))return 'en';
  if((text.match(/\b[a-z]+\b/giu)||[]).length>=4)return 'en';
  return pageLanguage==='ja'?'ja':'en';
 }
