@@ -250,8 +250,8 @@
       "file": "services/yuki-api/worker.mjs",
       "symbol": "parseModel",
       "firstLine": 102,
-      "lastLine": 180,
-      "sha256": "ae824374c3d728e6e220bd770b5f062e263969585e89a6d59313a07278cf0d0c"
+      "lastLine": 184,
+      "sha256": "6f8d260a192554bfed1821f87dbf2c7b6914c197611de4d3daec29ae538adb75"
     }
   },
   {
@@ -262,13 +262,13 @@
       "en": "Completing an unfinished answer",
       "ja": "途中で切れた返答を整える"
     },
-    "explanation": "completionRequest prepares a short text-only rewrite using the draft, its cited evidence and relevant character lore. Its humor-specific path preserves the fictional scene, setup and payoff rather than inflating a joke into an explanation. parseCompletion rejects malformed, unfinished or overlong results, retains the original sources and routing metadata, and removes old sentence-animation indices. The worker may use this instead of the variety rewrite, at most once within the existing quota and deadline; it is not an unlimited retry or a new web search. If repair cannot finish safely, incompleteAnswer gives a localized retry notice rather than a fragment. These checks do not prove that every claim is accurate.",
+    "explanation": "completionRequest prepares a short text-only rewrite using the draft, its cited evidence and relevant character lore. A focused speaker/voice edit can use the existing translation model to keep Yuki in first person and natural Japanese without changing the supported explanation. It does not replace names or pronouns blindly. Its humor-specific path preserves the fictional scene, setup and payoff rather than inflating a joke into an explanation. parseCompletion rejects malformed, unfinished or overlong results, retains the original sources and routing metadata, and removes old sentence-animation indices. The worker may use this instead of the variety rewrite, at most once within the existing quota and deadline; it is not an unlimited retry or a new web search. If repair cannot finish safely, incompleteAnswer gives a localized retry notice rather than a fragment. These checks do not prove that every claim is accurate.",
     "source": {
       "file": "services/yuki-api/reply-completion.mjs",
       "symbol": "completionRequest / parseCompletion",
-      "firstLine": 6,
-      "lastLine": 68,
-      "sha256": "592b19e7ed5b23df63a25099c52a1217b57c17e054c7ba8ffcffa326a3dccbbb"
+      "firstLine": 7,
+      "lastLine": 72,
+      "sha256": "32d5a5e17789c7c3a9ea1c3c7746a0e337a1d12a59e352099300ddd9bbae772f"
     }
   },
   {

@@ -9,6 +9,10 @@ export const cleanFactTopic=value=>typeof value==='string'&&/^(?:(?:wiki-en|muse
 export function rememberFactTopic(value,topic){const memory=cleanVariety(value),id=cleanFactTopic(topic);if(id)memory.factTopics=[...new Set([...(memory.factTopics??[]),id])].slice(-128);return memory;}
 export const cleanJokes=value=>[...new Set((Array.isArray(value)?value:[]).filter(s=>typeof s==='string'&&s.trim().length>=8&&s.length<=1200).map(s=>s.trim()))].slice(-24);
 export function rememberJoke(value,text){const memory=cleanVariety(value);if(typeof text==='string')memory.jokes=cleanJokes([...(memory.jokes??[]),text.slice(0,1200)]);return memory;}
+// Keep delivered fact wording independently of chat history. This also covers
+// topic-specific requests, which have no random-discovery topic identifier.
+export const cleanFacts=value=>[...new Set((Array.isArray(value)?value:[]).filter(s=>typeof s==='string'&&s.trim().length>=8&&s.length<=1200).map(s=>s.trim()))].slice(-24);
+export function rememberFact(value,text){const memory=cleanVariety(value);if(typeof text==='string')memory.facts=cleanFacts([...(memory.facts??[]),text.slice(0,1200)]);return memory;}
 export const cleanStoryTopics=value=>Array.isArray(value)?[...new Set(value.filter(id=>storyTopicIds.includes(id)))].slice(0,3):[];
 const normalized=text=>text.normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
 // Similarity fingerprints, not encryption or a security boundary.
@@ -28,8 +32,9 @@ export function cleanVariety(value){
  }
  const factTopics=[...new Set((Array.isArray(value?.factTopics)?value.factTopics:[]).map(cleanFactTopic).filter(Boolean))].slice(-128);
  const jokes=cleanJokes(value?.jokes);
+ const facts=cleanFacts(value?.facts);
  const guides=cleanGuideRecords(value?.guides);
- return {turn:Number.isInteger(value?.turn)&&value.turn>0?Math.min(value.turn,9999):0,topics,recent,...(factTopics.length?{factTopics}:{}),...(jokes.length?{jokes}:{}),...(guides.length?{guides}:{})};
+ return {turn:Number.isInteger(value?.turn)&&value.turn>0?Math.min(value.turn,9999):0,topics,recent,...(factTopics.length?{factTopics}:{}),...(facts.length?{facts}:{}),...(jokes.length?{jokes}:{}),...(guides.length?{guides}:{})};
 }
 export function rememberGuideReply(value,text,event,lang){
  const memory=cleanVariety(value),record=guideRecord(text,event,lang);
@@ -67,7 +72,11 @@ function sharedPassage(text,previous,discovery){
 const ideaStop=new Set('a an the i me my we our you your it its is are was were be been has have had did does do with of to for in on at as and but or because that this those these they their can could would will about actually really just little very so now then'.split(' '));
 function ideaWords(text){
  const digits={one:'1',two:'2',three:'3',four:'4',five:'5',six:'6',seven:'7',eight:'8',nine:'9',ten:'10'};
- return new Set((String(text).normalize('NFKC').toLowerCase().match(/[a-z0-9]+/g)||[]).filter(w=>!ideaStop.has(w)).map(w=>digits[w]??(w.length>5&&w.endsWith('ses')?w.slice(0,-2):w.length>4&&w.endsWith('s')&&!/(?:us|ss)$/u.test(w)?w.slice(0,-1):w)));
+ const jpDigits={一:'1',二:'2',三:'3',四:'4',五:'5',六:'6',七:'7',八:'8',九:'9'};
+ const plain=String(text).normalize('NFKC').toLowerCase().replace(/[一二三四五六七八九](?=つ|個|本|枚|匹|頭|回)/gu,n=>jpDigits[n]);
+ // Kana grammar should not obscure the same short factual claim in Japanese.
+ // This is still lexical comparison, not a claim of semantic equivalence.
+ return new Set((plain.match(/[a-z0-9]+|[一-龠々]{2,}|[ァ-ヺー]{2,}/gu)||[]).filter(w=>!ideaStop.has(w)).map(w=>digits[w]??(w.length>5&&w.endsWith('ses')?w.slice(0,-2):w.length>4&&w.endsWith('s')&&!/(?:us|ss)$/u.test(w)?w.slice(0,-1):w)));
 }
 function discoveryIdeaScore(text,previous){
  // Compare the setup/claim AND short payoff independently of the long personal
@@ -105,7 +114,7 @@ function recurringFrame(text,previous){
 }
 export function repetitionScore(text,variety,history=[],memory=[],{discovery=false,joke=false}={}){
  const fingerprint=replyFingerprint(text),recent=cleanVariety(variety).recent;
- const previous=[...new Set([...history.filter(item=>item.role==='assistant').map(item=>item.content),...memory.filter(item=>typeof item?.answer==='string').map(item=>item.answer),...(joke?cleanJokes(variety?.jokes):[])])];
+ const previous=[...new Set([...history.filter(item=>item.role==='assistant').map(item=>item.content),...memory.filter(item=>typeof item?.answer==='string').map(item=>item.answer),...(joke?cleanJokes(variety?.jokes):discovery?cleanFacts(variety?.facts):[])])];
  for(const content of previous)recent.push(replyFingerprint(content));
  const score=recent.reduce((score,item)=>Math.max(score,discovery&&fingerprint.length>=8&&fingerprint.digest===item.digest?1:replySimilarity(fingerprint,item)),0);
  return previous.reduce((score,content)=>Math.max(score,sharedPassage(text,content,discovery),discovery?discoveryIdeaScore(text,content):0,joke&&(sameJapaneseJokeSetup(text,content)||usesMistakenObjectPlot(text)&&usesMistakenObjectPlot(content))?.84:0),Math.max(score,recurringFrame(text,previous)? .82:0));
@@ -136,11 +145,13 @@ export function packChatRequest(input,limit=14000){
  const size=()=>new TextEncoder().encode(JSON.stringify(body)).length;
  while(size()>limit&&body.variety.recent.length>2)body.variety.recent.shift();
  while(size()>limit&&body.variety.jokes?.length>4)body.variety.jokes.shift();
+ while(size()>limit&&body.variety.facts?.length>4)body.variety.facts.shift();
  while(size()>limit&&body.variety.factTopics?.length>16)body.variety.factTopics.shift();
  while(size()>limit&&body.memory?.length)body.memory.shift();
  while(size()>limit&&body.history.length)body.history.shift();
  while(size()>limit&&body.variety.recent.length)body.variety.recent.shift();
  while(size()>limit&&body.variety.jokes?.length)body.variety.jokes.shift();
+ while(size()>limit&&body.variety.facts?.length)body.variety.facts.shift();
  while(size()>limit&&body.guideEvent?.previous?.length)body.guideEvent.previous.shift();
  if(size()>limit)throw Error('Message too large');
  return JSON.stringify(body);

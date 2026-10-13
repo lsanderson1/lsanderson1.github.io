@@ -16,7 +16,7 @@ const idHash=async value=>[...new Uint8Array(await crypto.subtle.digest('SHA-256
 const unsuitable=title=>/\b(?:murder|suicide|sexual|pornograph\w*|massacre|terroris\w*|clinical|patients?|treatment|retracted|erratum|correction to)\b/iu.test(title);
 function freshCandidates(candidates,input){
  const seen=new Set(cleanVariety(input.variety).factTopics??[]);
- const prior=normal([...(input.history??[]).filter(m=>m.role==='assistant').map(m=>m.content),...(input.memory??[]).map(m=>m.answer)].join(' '));
+ const prior=normal([...(input.history??[]).filter(m=>m.role==='assistant').map(m=>m.content),...(input.memory??[]).map(m=>m.answer),...(cleanVariety(input.variety).facts??[])].join(' '));
  return candidates.filter(t=>t.title.length>=3&&t.title.length<=145&&t.query&&!unsuitable(t.title)&&!seen.has(t.id)&&!t.aliases.some(a=>a.length>=3&&prior.includes(normal(a))));
 }
 

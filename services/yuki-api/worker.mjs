@@ -118,13 +118,16 @@ export function parseModel(data,knowledge,web={}){
  const sourceUrls=new Set();
  const sources=[...new Set(Array.isArray(value.sourceIds)?value.sourceIds:[])].slice(0,3).map(id=>knowledge.pages.find(p=>p.id===id)??(web.entries??[]).find(p=>p.id===id)).filter(p=>p&&!sourceUrls.has(p.url)&&sourceUrls.add(p.url)).map(p=>({title:p.title,url:p.url}));
  // Only the server's completed discovery route can assign a seen-topic ID.
- try{return {...validReply({...value,factTopic:undefined,joke:undefined,sources}),...(web.mode==='eligible'?{webQuery:safeSearchQuery(value.webQuery)}:{})};}catch{throw failure(502,'Reply unavailable');}
+ try{return {...validReply({...value,factTopic:undefined,fact:undefined,joke:undefined,sources}),...(web.mode==='eligible'?{webQuery:safeSearchQuery(value.webQuery)}:{})};}catch{throw failure(502,'Reply unavailable');}
+}
+export function initialInferenceTimeout(startedAt,now=Date.now()){
+ return Math.max(1,Math.min(22000,38000-(now-startedAt)));
 }
 export async function runModel(ai,request,timeoutMs=22000){
  const {yukiTask,...body}=request;
- // Use the existing Japanese translation model only for a focused home-guide
- // voice repair, within the same single quota-reserved repair slot.
- if(yukiTask==='guide-voice-ja')return runTranslation(ai,body,timeoutMs);
+ // Reuse the established translation model for focused speaker/voice repairs,
+ // within the same single quota-reserved repair slot, never a provider retry.
+ if(yukiTask==='guide-voice-ja'||yukiTask==='reply-voice')return runTranslation(ai,body,timeoutMs);
  const joke=yukiTask==='joke'||yukiTask==='joke-ja';
  const model=yukiTask==='joke-ja'?CLOUDFLARE_TRANSLATION_MODEL:yukiTask==='joke'?CLOUDFLARE_HUMOR_MODEL:CLOUDFLARE_MODEL;
  return runInference(ai,model,joke?directSchema(body,'yuki_joke'):body,timeoutMs);
@@ -141,11 +144,12 @@ async function runInference(ai,model,request,timeoutMs){
  try{
   // Timeout bounds the visitor's wait. It cannot cancel an already-running
   // remote inference. Never retry it or fall back to a billable API.
-  return await Promise.race([ai.run(model,request),new Promise((_,reject)=>{timer=setTimeout(()=>reject(failure(503,'AI timeout')),timeoutMs);})]);
+  return await Promise.race([ai.run(model,request),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Object.assign(failure(503,'AI timeout'),{inferenceIssue:'timeout'})),timeoutMs);})]);
  }catch(error){
   const code=Number(error?.code);
   const exhausted=code===3036||Number(error?.status)===429||/\b3036\b|daily free allocation/i.test(String(error?.message));
-  throw failure(exhausted?429:503,'AI unavailable');
+  const inferenceIssue=error?.inferenceIssue==='timeout'?'timeout':code===3040?'capacity':'provider';
+  throw Object.assign(failure(exhausted?429:503,'AI unavailable'),{inferenceIssue});
  }finally{clearTimeout(timer);}
 }
 async function ipHash(ip,secret,day){
@@ -265,7 +269,9 @@ export function createHandler(network=fetch,{random}={}){
    const model=modelRequest(input,knowledge,web);
    // An open discovery uses a live random subject, not the model's favorite
    // trivia. Its first reserved inference is available for the sourced answer.
-   const result=factTopic?null:await runModel(env.AI,model,web.mode?14000:22000);
+   // Search being enabled does not mean the answer needs a search. Keep the
+   // same initial wait for every topic, within the total 38-second budget.
+   const result=factTopic?null:await runModel(env.AI,model,initialInferenceTimeout(startedAt));
    stage='REPLY';
    let reply=factTopic?{webQuery:factTopic.query}:parseModel(result,knowledge,web),searched=false,repairUsed=false,answerModel=model,answerWeb=web;
    if(reply.webQuery){
@@ -357,13 +363,15 @@ export function createHandler(network=fetch,{random}={}){
    if(input.guideEvent&&!guideReplyMatches(reply.text,input.guideEvent,cached.data.pages,input.lang))throw failure(502,'Guide reply does not match target');
    if(input.guideEvent)reply={...reply,destination:'none',sources:[],storyTopics:[]};
    if(discovery==='joke'&&!incomplete)reply={...reply,joke:true};
+   if(discovery==='fact'&&!incomplete&&reply.sources.length)reply={...reply,fact:true};
    return response(200,{...validReply(reply),...(chatSession?{chatSession}:{})});
   }catch(error){
    // Never expose provider responses, visitor content, stack traces or credentials.
    const code=Number.isInteger(error.status)?error.status:503;
    // A fixed stage identifier makes live failures diagnosable without logging
    // messages, tokens, IPs, provider responses, or secrets.
-   return response(code,{error:code===429?'Chat limit reached':code===400?'Invalid request':code===413?'Request too large':code===403?'Verification failed':'Chat unavailable',reference:'YUKI_'+stage,...(code===429&&['site-day','visitor-day','visitor-minute'].includes(error.limit)?{limit:error.limit}:{}),...(chatSession?{chatSession}:{})});
+   const reference=stage==='MODEL'&&code!==429&&['timeout','capacity'].includes(error.inferenceIssue)?'YUKI_MODEL_'+error.inferenceIssue.toUpperCase():'YUKI_'+stage;
+   return response(code,{error:code===429?'Chat limit reached':code===400?'Invalid request':code===413?'Request too large':code===403?'Verification failed':'Chat unavailable',reference,...(code===429&&['site-day','visitor-day','visitor-minute'].includes(error.limit)?{limit:error.limit}:{}),...(chatSession?{chatSession}:{})});
   }
  };
 }

@@ -1,6 +1,7 @@
 import {voiceInstructions,yukiStory,answerExplanationInstructions,replyContract,firstPersonInstructions,ownerNameInstructions} from './personality.mjs';
 import {validReply,cleanAssistantText} from '../../assets/yuki/protocol.mjs';
 import {unfinishedReply,unfinishedNotice} from '../../assets/yuki/runtime/reply-completion.mjs';
+import {speakerRepairRequest} from './speaker-repair.mjs';
 export {unfinishedReply};
 
 export function completionRequest(request,reply,knowledge,web,language,issues=['unfinished']){
@@ -11,6 +12,9 @@ export function completionRequest(request,reply,knowledge,web,language,issues=['
  // but give this one concise rewrite a soft prose target and fixed token cap.
  const entries=[...knowledge.pages,...(web.entries??[])];
  const sourceIds=reply.sources.map(s=>entries.find(p=>p.url===s.url)?.id).filter(Boolean);
+ // Ordinary/page/sourced replies need the same speaker repair as home guides.
+ // Keep mixed factual/language/completion issues on their full repair paths.
+ if(!request.yukiTask?.startsWith('guide-')&&!['joke','joke-ja'].includes(request.yukiTask)&&issues.includes('self-narration')&&issues.every(i=>['self-narration','voice'].includes(i)))return speakerRepairRequest(request,reply,language,schema);
  // A Japanese home caption can pull a guide repair back into narrator voice.
  // Repair that draft as a focused change of speaker, without re-reading the
  // third-person captions or broad portfolio-review prompt. Do not substitute
@@ -23,7 +27,7 @@ ${ownerNameInstructions}`},{role:'user',content:JSON.stringify({stage:request.yu
 ${replyContract(language)}
 ${language==='ja'?'小話の語りは自然な普通体にする。引用の会話は「」に入れる。語尾に「の」「なの」「だよ」を繰り返し足さない。小話と、わたしの短い感想を区別する。':'Keep the playful scene and a warm, specific reaction, not a generic closing invitation.'}
 Return only the finished piece in {"text":"..."}. Do not expose your review or any other fields.`},{role:'user',content:JSON.stringify({question:request.messages.at(-1).content.replace(/\n\/no_think$/,''),draft:reply.text})+'\n/no_think'}],stream:false,max_tokens:1200,temperature:.4,response_format:{type:'json_schema',json_schema:schema}};
- if(language==='ja'&&issues.length===1&&issues[0]==='voice')return {messages:[{role:'system',content:`これは日本語の文章を、キャラクターの声に合わせて自然に書き直す作業。あなたは、明るく無邪気で遊び心のある赤ちゃんドラゴン「ゆき」。相手と友達のように話す。
+ if(language==='ja'&&issues.length===1&&issues[0]==='voice')return {yukiTask:'reply-voice',messages:[{role:'system',content:`これは日本語の文章を、キャラクターの声に合わせて自然に書き直す作業。あなたは、明るく無邪気で遊び心のある赤ちゃんドラゴン「ゆき」。相手と友達のように話す。
 ${firstPersonInstructions}
 ${ownerNameInstructions}
 必ず普通体を使う。「です」「ます」「でした」「ました」の説明口調をやめる。ただし引用文はそのまま。「なの」「の」「だよ」を全部の文に付けない。基本は「〜る。」「〜た。」「〜い。」「〜好き。」のような自然な言い切り。「んだ」「ね」などは必要なときだけ。単純な語尾置換ではなく、文章全体を滑らかに組み直す。

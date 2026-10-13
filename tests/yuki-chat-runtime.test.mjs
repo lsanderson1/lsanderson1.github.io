@@ -6,7 +6,7 @@ import {ChatSession} from '../assets/yuki/runtime/chat-access.mjs';
 import {ConversationMemory,memoryKey} from '../assets/yuki/runtime/conversation-memory.mjs';
 import {VisitorInterests} from '../assets/yuki/runtime/visitor-interests.mjs';
 import {ConversationMoments} from '../assets/yuki/runtime/conversation-moments.mjs';
-import {packChatRequest,rememberReply,rememberFactTopic,rememberJoke,rememberGuideReply,previousGuideReplies,needsFreshText} from '../assets/yuki/runtime/reply-variety.mjs';
+import {packChatRequest,rememberReply,rememberFactTopic,rememberFact,rememberJoke,rememberGuideReply,previousGuideReplies,needsFreshText} from '../assets/yuki/runtime/reply-variety.mjs';
 import {thirdPersonSelf} from '../assets/yuki/runtime/self-narration.mjs';
 import {guideReplyMatches,guideStage} from '../assets/yuki/runtime/guide-journey.mjs';
 import {validReply,chatUnavailable,readSession} from '../assets/yuki/protocol.mjs';
@@ -28,7 +28,7 @@ function fixture({network}={}){
   chatSession:new ChatSession(storage),conversationMemory:new ConversationMemory(storage,'en'),interests:new VisitorInterests(storage),searchPermission:{allowed:true},
   verification:{takeToken:async()=>{calls.verify++;return 'single-use-test-token';},stop:()=>{calls.stop++;}},
   tr:(en,jp)=>context.ja?jp:en,$:selector=>{if(!elements.has(selector))elements.set(selector,{value:'Draft to preserve',disabled:false,readOnly:false,hidden:true,setAttribute:()=>{},focus:()=>{}});return elements.get(selector);},
-  conversationLanguage:'en',replyLanguage,replyQualityIssues,formalJapaneseVoice,conversationHistory,needsFreshText,thirdPersonSelf,guideReplyMatches,rememberFactTopic,rememberJoke,rememberGuideReply,previousGuideReplies,
+  conversationLanguage:'en',replyLanguage,replyQualityIssues,formalJapaneseVoice,conversationHistory,needsFreshText,thirdPersonSelf,guideReplyMatches,rememberFactTopic,rememberFact,rememberJoke,rememberGuideReply,previousGuideReplies,
   readingContext:()=>({}),updateReading:()=>{},translationUI:()=>{},drawMessages:()=>{},translationBatch,checkedTranslations,applyTranslations,wake:async()=>{},status:s=>calls.status.push(s),react:async()=>{},
   stopJourney:()=>{context.journeySerial++;},
   save:()=>storage.setItem('yuki-session-v1',JSON.stringify({savedAt:Date.now(),language:context.ja?'ja':'en',messages:context.messages,variety:context.variety})),
@@ -87,6 +87,17 @@ test('successful jokes get their own retained history; an older punchline is rej
  assert.equal(readSession(f.storage).variety.jokes[0],joke);
  await f.send('Tell me another joke');assert.equal(f.context.messages.filter(m=>m.role==='assistant').length,0);
  assert.equal(f.calls.fetch[1].variety.jokes[0],joke);assert.equal(f.context.variety.jokes.length,1);
+});
+
+test('topic-specific facts retain their wording after clearing and block an early rephrased repeat',async()=>{
+ const fact='Octopuses have three hearts. Two of those hearts pump blood to the gills.';
+ let sent=0;const f=fixture({network:async()=>new Response(JSON.stringify({...cue,text:sent++?'An octopus has 3 hearts! I imagine a tiny orchestra keeping time.':fact,fact:true}))});
+ await f.send('Tell me a fun fact about animals');assert.equal(f.context.variety.facts[0],fact);f.clear();
+ assert.equal(readSession(f.storage).variety.facts[0],fact);
+ await f.send('Tell me another fact');assert.equal(f.calls.fetch[1].variety.facts[0],fact);
+ assert.equal(f.context.messages.filter(m=>m.role==='assistant').length,0);assert.equal(f.context.variety.facts.length,1);
+ const bad=fixture({network:async()=>new Response(JSON.stringify({...cue,fact:true,notice:true,searchIssue:'answer'}))});
+ await bad.send('Tell me a fact');assert.equal(bad.context.variety.facts,undefined);
 });
 
 test('a wrong-language network reply cannot be displayed or saved as a new memory',async()=>{

@@ -1,5 +1,5 @@
 import {wrongReplyLanguage,formalJapaneseVoice,replyQualityIssues} from './reply-quality.mjs?v=3';
-import {thirdPersonSelf} from './self-narration.mjs?v=1';
+import {thirdPersonSelf} from './self-narration.mjs?v=2';
 const languages=['en','ja'];
 export const translationVoiceVersion=3;
 // This revision improves Japanese only; do not spend quota retranslating English.
