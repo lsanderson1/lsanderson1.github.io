@@ -120,6 +120,23 @@ export function repetitionScore(text,variety,history=[],memory=[],{discovery=fal
  return previous.reduce((score,content)=>Math.max(score,sharedPassage(text,content,discovery),discovery?discoveryIdeaScore(text,content):0,joke&&(sameJapaneseJokeSetup(text,content)||usesMistakenObjectPlot(text)&&usesMistakenObjectPlot(content))?.84:0),Math.max(score,recurringFrame(text,previous)? .82:0));
 }
 export const repeatThreshold=.8;
+// Naming an earlier subject is permission to revisit its established facts,
+// not a request for a new discovery. Ignore question/placeholder words so a
+// vague "what is that?" cannot exempt an unrelated old answer. This is bounded
+// lexical intent matching, not semantic understanding or stored user consent.
+const topicStop=new Set(('what where when which who whose why how tell explain describe remind repeat say again about please could would should does did has have want know learn understand mean means more detail details information answer question example interesting something anything another different new random fact facts trivia joke jokes fun funny story stories topic subject that this those these there here thing things place sea ocean country tool project section page site website part work works use used uses make made causes cause way same next previous earlier last current can you me my your we our they them a an the is are was were be been it its to of for and or in on at from with as do i'+ ' それ これ あれ そこ ここ どこ どれ なに なん こと もの ところ ツール プロジェクト ページ サイト テーマ 話題 場所 質問 説明 情報 豆知識 雑学 冗談 ジョーク 何 海 国 話 今 前 次 同じ 別').split(/\s+/u));
+const topicTerms=value=>[...ideaWords(value)].filter(w=>w.length>=2&&!topicStop.has(w));
+export function requestedTopicReuse(text,input){
+ if(input.guideEvent||discoveryKind(input.message,input.history))return false;
+ const question=String(input.message??'');
+ if(/\b(?:facts?|trivia|jokes?|puns?|riddles?)\b|豆知識|雑学|冗談|ジョーク|ダジャレ|なぞなぞ/iu.test(question))return false;
+ // A request for a new angle/detail still deserves genuinely new substance.
+ if(/\b(?:another|different|random|new|more|further|else|avoid|stop)\b|\b(?:don't|do not)\s+repeat|\bno repeats?\b|別|ほか|他の|新し|ランダム|もっと|詳し|繰り返さない|繰り返さず/iu.test(question))return false;
+ const terms=topicTerms(question),answerTerms=new Set(topicTerms(text));
+ const requested=terms.filter(t=>answerTerms.has(t));if(!requested.length)return false;
+ const prior=[...(input.history??[]).filter(m=>m.role==='assistant').map(m=>m.content),...(input.memory??[]).map(m=>m?.answer),...cleanFacts(input.variety?.facts),...cleanJokes(input.variety?.jokes)].filter(s=>typeof s==='string');
+ return prior.some(p=>{const old=new Set(topicTerms(p));return requested.some(t=>old.has(t));});
+}
 export function needsFreshText(text,input){
  if(wantsExactRepeat(input.message))return false;
  if(input.guideEvent&&(Array.isArray(input.guideEvent.previous)||input.variety?.guides)){
@@ -128,6 +145,7 @@ export function needsFreshText(text,input){
   const local=previousGuideReplies(input.variety,input.guideEvent,input.lang??'en');
   return repeatedGuideReply(text,{...input.guideEvent,previous:cleanGuidePrevious([...(input.guideEvent.previous??[]),...local])});
  }
+ if(requestedTopicReuse(text,input))return false;
  const kind=discoveryKind(input.message,input.history),discovery=Boolean(kind);
  return repetitionScore(text,input.variety,input.history??[],input.memory??[],{discovery,joke:kind==='joke'})>=(input.guideEvent?0.75:discovery?0.72:repeatThreshold);
 }
