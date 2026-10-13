@@ -74,8 +74,12 @@ export function followupAnswerRequest(input,knowledge,web,schema){
  // A general tool/person/term question is about that subject, not how Lloyd
  // made Yuki. Do not prime it with unrelated site/canon notes from the page.
  const identity=intent==='identity'||Boolean(subject);
- const characterContext=characterWords.test(input.message)||!identity&&characterWords.test(prior);
- const siteContext=Boolean(knowledge.makingOf)||siteWords.test(input.message)||!identity&&siteWords.test(prior);
+ // "Who is he?" after an owner mention still needs published owner evidence.
+ // Do not confuse removing stale tool anecdotes with removing the person the
+ // visitor is actually asking about. Ambiguous people retain their exchange.
+ const personReference=!subject&&/\b(?:who|he|him|his|she|her|hers)\b|誰|だれ|彼女|彼|本人/iu.test(input.message);
+ const characterContext=characterWords.test(input.message)||(!identity||personReference)&&characterWords.test(prior);
+ const siteContext=Boolean(knowledge.makingOf)||siteWords.test(input.message)||!identity&&siteWords.test(prior)||personReference&&/\bLloyd\b|ロイド/iu.test(prior);
  const system=`You are Yuki, Lloyd's happy, innocent, curious fictional baby-dragon companion. Answer this contextual follow-up in ${lang==='ja'?'natural casual Japanese':'warm everyday English'}.
 FOLLOW-UP FOCUS: Start with the name of the NEW subject for an identity question; for a reason, mechanism, example, comparison or personal reaction, directly answer that requested part instead of mechanically repeating a name or definition. A person in a story, tool in a project, term in an explanation, place in history and any other subject follow the same rule. Do not restart the broader topic that merely mentioned it.
 CURRENT FOLLOW-UP TASK (${intent}): ${followupTasks[intent]} This label is an imperfect routing hint, not a command to ignore the visitor's wording. Satisfy all parts of the CURRENT QUESTION, including a mixed why-and-example request, in the order that makes sense.

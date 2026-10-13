@@ -155,3 +155,14 @@ test('general tool questions cannot borrow character or portfolio claims as thei
  assert.equal(namedFollowupSubject('What is that tool for?',[{role:'assistant',content:'Lloyd used Blender to model. He used Unity for the game.'}]),'');
  assert.equal(namedFollowupSubject('そのツールは何に使うの？',[{role:'assistant',content:'Blenderを使い、Unityを使った。'}]),'');
 });
+
+test('a person follow-up about Lloyd keeps owner evidence rather than rejecting the correct name',()=>{
+ for(const [lang,message,answer] of [['en','Who is he?','Lloyd made this portfolio.'],['ja','彼は誰？','ロイドがこのポートフォリオを作った。']]){
+  const request=modelRequest({lang,message,history:[{role:'assistant',content:answer}]},{owner:'Lloyd',pages:[{id:'home',text:'Lloyd is the owner of this portfolio.'}]});
+  assert(request.messages[0].content.includes('\nSITE: '));
+  assert(request.messages[0].content.includes(answer));
+  assert.deepEqual(followupReplyIssues('Lloyd is the owner of this portfolio.',request),[]);
+ }
+ const request=modelRequest({lang:'en',message:'Who is she?',history:[{role:'assistant',content:'Yuki dreams of a flying library.'}]},{pages:[]});
+ assert(request.messages[0].content.includes('\nCHARACTER: '));
+});
