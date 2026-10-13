@@ -21,15 +21,15 @@ import {GardenHome} from './home/garden.mjs?v=10';
 import {YukiLocation,capturePose,restorePose,poseArtwork,locationLabel,locationPage,portalSection,travelPortalSection} from './home/location.mjs?v=6';
 import {summonTiming,summonPhase,callFlightDuration,catchInFlight} from './home/summon.mjs';
 import {ConversationMoments,shouldWelcomeOnRefresh,isLeavingLink} from './runtime/conversation-moments.mjs?v=1';
-import {messageRecord,translatedText,translationBatch,checkedTranslations,applyTranslations,conversationHistory} from './runtime/conversation-language.mjs?v=7';
+import {messageRecord,translatedText,translationBatch,checkedTranslations,applyTranslations,conversationHistory} from './runtime/conversation-language.mjs?v=8';
 import {replyLanguage,replyQualityIssues,formalJapaneseVoice} from './runtime/reply-quality.mjs?v=3';
 import {DiscoveryGuide,isDiscoveryRequest} from './runtime/discovery-guide.mjs?v=3';
 import {CallDialogue} from './runtime/call-dialogue.mjs?v=3';
 import {ReadingMemory,readPageTitle,readingLabels,readPageDisplaySection,readPageSection,readPageImages,readGardenSpot,guideReference,followUpReference,sectionExplanation} from './runtime/reading-context.mjs?v=7';
-import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=23';
+import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=24';
 import {safeWebURL} from './runtime/web-sources.mjs?v=1';
-import {cleanVariety,rememberReply,rememberFactTopic,rememberJoke,rememberGuideReply,previousGuideReplies,packChatRequest,needsFreshText} from './runtime/reply-variety.mjs?v=8';
-import {thirdPersonSelf} from './runtime/self-narration.mjs?v=1';
+import {cleanVariety,rememberReply,rememberFactTopic,rememberFact,rememberJoke,rememberGuideReply,previousGuideReplies,packChatRequest,needsFreshText} from './runtime/reply-variety.mjs?v=9';
+import {thirdPersonSelf} from './runtime/self-narration.mjs?v=2';
 
 const root=document.querySelector('#yuki-companion');
 if(root)start().catch(()=>{root.textContent='';}); // Portfolio remains usable on failure.
@@ -629,6 +629,7 @@ async function start(){
    if(guideEvent)variety=rememberGuideReply(variety,cue.text,guideEvent,conversationLanguage);
    addMessage('assistant',cue.text,true,cue.sources,cue.storyTopics,undefined,conversationLanguage);
    if(cue.factTopic)variety=rememberFactTopic(variety,cue.factTopic);
+   if(cue.fact||cue.factTopic)variety=rememberFact(variety,cue.text);
    if(cue.joke)variety=rememberJoke(variety,cue.text);
    if(!guideEvent&&isGuideRequest(text)){
     const targets=cue.sources.map(s=>checkedGuideTarget(s.url,knowledge,ja?'ja':'en',base)).filter(Boolean);
