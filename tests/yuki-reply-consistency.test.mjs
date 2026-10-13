@@ -2,9 +2,28 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {thirdPersonSelf} from '../assets/yuki/runtime/self-narration.mjs';
 import {translationVoiceNeedsRepair,parseTranslations} from '../services/yuki-api/conversation-translation.mjs';
-import {createHandler,runModel,initialInferenceTimeout,CLOUDFLARE_TRANSLATION_MODEL} from '../services/yuki-api/worker.mjs';
+import {createHandler,modelRequest,runModel,initialInferenceTimeout,CLOUDFLARE_TRANSLATION_MODEL} from '../services/yuki-api/worker.mjs';
 import {chatUnavailable} from '../assets/yuki/protocol.mjs';
 import {searchInstructions} from '../services/yuki-api/web-search.mjs';
+import {followupFocusInstructions} from '../services/yuki-api/personality.mjs';
+import {completionRequest} from '../services/yuki-api/reply-completion.mjs';
+
+test('follow-up focus is reasserted after history for ordinary and sourced answers in both languages',()=>{
+ for(const lang of ['en','ja'])for(const web of [{},{mode:'eligible'},{mode:'results',date:'2026-10-13',entries:[]}]){
+  const history=[{role:'assistant',content:lang==='en'?'Syria borders the Mediterranean Sea.':'シリアは地中海に面している。'}];
+  const input={message:lang==='en'?'What sea is that, and where is it?':'その海は何？どこにあるの？',history,lang,page:'/'},knowledge={pages:[]};
+  const request=modelRequest(input,knowledge,web),contract=request.messages.at(-2);
+  assert(request.messages[0].content.startsWith(followupFocusInstructions));
+  assert.deepEqual(request.messages.slice(1,-2),history);
+  assert.equal(contract.role,'system');assert(contract.content.includes(followupFocusInstructions));
+  assert.match(contract.content,/subject of the answer/);assert.match(contract.content,/first sentence/);assert.match(contract.content,/near the end/);
+  assert.match(contract.content,/connection or a comparison/);assert.match(contract.content,/current page evidence/);
+  assert(!followupFocusInstructions.includes('Syria'));assert(!followupFocusInstructions.includes('Mediterranean'));
+  const repair=completionRequest(request,{text:'An unfinished explanation because',sources:[],storyTopics:[]},knowledge,web,lang);
+  assert(repair.messages[0].content.includes(followupFocusInstructions));
+  assert.equal(JSON.parse(repair.messages.at(-1).content.replace(/\n\/no_think$/,'')).question,input.message);
+ }
+});
 
 test('shared speaker guard checks quoted self names, abilities, feelings and possessions, not only home',()=>{
  for(const text of [

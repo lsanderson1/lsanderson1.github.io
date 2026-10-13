@@ -4,7 +4,7 @@ import {portraitAnswer,pageEvidenceInstruction} from './page-awareness.mjs';
 import {pageAnswerRequest} from './page-answer.mjs';
 import {lightChatKind,lightChatRequest} from './light-chat.mjs';
 import {humorQualityIssues} from './humor-quality.mjs';
-import {personalityInstructions,replyContract} from './personality.mjs';
+import {personalityInstructions,replyContract,followupFocusInstructions} from './personality.mjs';
 import {portfolioExplanationInstructions} from './portfolio-explanations.mjs';
 import {cleanVariety,storyTopicIds,wantsExactRepeat} from '../../assets/yuki/runtime/reply-variety.mjs';
 import {replyLanguage,replyQualityIssues,formalJapaneseVoice} from '../../assets/yuki/runtime/reply-quality.mjs';
@@ -69,7 +69,7 @@ export function modelRequest(input,knowledge,web={}){
  if(input.guideEvent)return guideReplyRequest(input,schema,knowledge);
  if(knowledge.view?.localQuestion&&!input.guideEvent)return pageAnswerRequest({...input,lang:language},knowledge,web,schema);
  const lightKind=lightChatKind(input,knowledge);if(lightKind)return lightChatRequest(input,web,schema,lightKind);
- const instructions=`${personalityInstructions(language)}
+ const instructions=`${input.history?.length?followupFocusInstructions+'\n':''}${personalityInstructions(language)}
 ${portfolioExplanationInstructions}
 ${varietyInstructions(input)}
 READING EXPRESSIONS: For a multi-sentence reply, optionally supply beats: 2–4 expression changes with a zero-based sentence index, emotion and gesture. The first index is 0; later indices must strictly increase and refer to actual sentences. Count sentence endings . ! ? 。 ！ ？ (consecutive punctuation counts once). Never repeat the reply text inside beats. Each beat applies until the next indexed sentence. Choose contextually fitting emotions or speaking gestures, not random changes. These play complete existing animations at reading pace, not audio or phoneme lip-sync. A short answer needs no beats. Avoid performing cheerfulness during serious or uncertain explanations.
