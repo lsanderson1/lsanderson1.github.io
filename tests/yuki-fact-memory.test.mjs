@@ -1,10 +1,33 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {rememberFact,cleanVariety,needsFreshText,packChatRequest} from '../assets/yuki/runtime/reply-variety.mjs';
+import {rememberFact,rememberReply,cleanVariety,needsFreshText,packChatRequest,requestedTopicReuse} from '../assets/yuki/runtime/reply-variety.mjs';
 import {recentAnswers} from '../services/yuki-api/reply-variety.mjs';
 import {chooseFreshTopic} from '../services/yuki-api/random-facts.mjs';
 import {parseModel} from '../services/yuki-api/worker.mjs';
 import {validReply,readSession} from '../assets/yuki/protocol.mjs';
+
+test('named earlier subjects may reuse true answers, in both history and retained fact memory',()=>{
+ for(const [message,text] of [
+  ['Where is Syria?','Syria is in the Middle East, on the eastern coast of the Mediterranean Sea.'],
+  ['Tell me about Syria again.','Syria is in the Middle East, on the eastern coast of the Mediterranean Sea.'],
+  ['How many hearts do octopuses have?','Octopuses have three hearts. Two pump blood to the gills.'],
+  ['シリアはどこ？','シリアは中東にあって、西側に地中海が広がっている。首都はダマスカス。'],
+  ['タコの心臓はいくつある？','タコには心臓が三つあるんだ。二つはえらへ、残りは体へ血液を送る。'],
+  ['What is Blender used for?','Blender is a tool for creating 3D models and animations, including game assets.']
+ ])for(const context of [{history:[{role:'assistant',content:text}]},{memory:[{question:message,answer:text}]},{variety:rememberFact(rememberReply({},text),text)}]){
+  const input={message,...context};assert(requestedTopicReuse(text,input),message);assert(!needsFreshText(text,input),message);
+ }
+});
+
+test('revisiting does not exempt vague follow-ups, new facts, more detail or unrelated answers',()=>{
+ const text='Octopuses have three hearts. Two pump blood to their gills.',variety=rememberFact(rememberReply({},text),text),history=[{role:'user',content:'Tell me a fact.'},{role:'assistant',content:text}];
+ for(const message of ['Tell me a fact.','Tell me a random fact.','Tell me another.','What is a fact about octopuses?','Tell me a different fact about octopuses.','Tell me more about octopuses.','What is that?','Where is it?','What is that sea?','What is Blender?','Do not repeat that octopus fact.']){
+  const input={message,variety,history};assert(!requestedTopicReuse(text,input),message);assert(needsFreshText(text,input),message);
+ }
+ const japanese='タコには心臓が三つあるんだ。二つはえらへ、残りは体へ血液を送る。それぞれの心臓に違う役割があるということだね。';
+ for(const message of ['別の豆知識を教えて','タコについて新しい豆知識を教えて','それは何？','もっとタコの心臓について教えて'])assert(needsFreshText(japanese,{message,variety:rememberFact(rememberReply({},japanese),japanese)}),message);
+ assert(!requestedTopicReuse(text,{message:'Octopuses',variety,guideEvent:{kind:'arrive'}}));
+});
 
 test('facts survive unrelated exchanges and reject early reworded EN/JA repeats',()=>{
  for(const [old,next,message] of [

@@ -7,22 +7,43 @@ import {chatUnavailable} from '../assets/yuki/protocol.mjs';
 import {searchInstructions} from '../services/yuki-api/web-search.mjs';
 import {followupFocusInstructions} from '../services/yuki-api/personality.mjs';
 import {completionRequest} from '../services/yuki-api/reply-completion.mjs';
+import {isContextualFollowup} from '../services/yuki-api/followup-answer.mjs';
 
 test('follow-up focus is reasserted after history for ordinary and sourced answers in both languages',()=>{
  for(const lang of ['en','ja'])for(const web of [{},{mode:'eligible'},{mode:'results',date:'2026-10-13',entries:[]}]){
   const history=[{role:'assistant',content:lang==='en'?'Syria borders the Mediterranean Sea.':'シリアは地中海に面している。'}];
   const input={message:lang==='en'?'What sea is that, and where is it?':'その海は何？どこにあるの？',history,lang,page:'/'},knowledge={pages:[]};
-  const request=modelRequest(input,knowledge,web),contract=request.messages.at(-2);
-  assert(request.messages[0].content.startsWith(followupFocusInstructions));
-  assert.deepEqual(request.messages.slice(1,-2),history);
-  assert.equal(contract.role,'system');assert(contract.content.includes(followupFocusInstructions));
-  assert.match(contract.content,/subject of the answer/);assert.match(contract.content,/first sentence/);assert.match(contract.content,/near the end/);
-  assert.match(contract.content,/connection or a comparison/);assert.match(contract.content,/current page evidence/);
+  const request=modelRequest(input,knowledge,web),contract=request.messages[0];
+  assert.equal(request.messages.length,2);assert(contract.content.includes('HISTORY: '+JSON.stringify(history)));
+  assert.equal(contract.role,'system');assert.match(contract.content,/FOLLOW-UP FOCUS/);
+  assert.match(contract.content,/Start with the name of the NEW subject/);assert.match(contract.content,/optional brief connection belongs at the end|必要なら最後に一言/);
+  assert.match(contract.content,/explicitly asks about their relationship/);assert.match(contract.content,/explicit conversation question takes priority/);
+  assert.equal(request.yukiTask,'contextual-followup');assert(!contract.content.includes('CHARACTER:'));
   assert(!followupFocusInstructions.includes('Syria'));assert(!followupFocusInstructions.includes('Mediterranean'));
   const repair=completionRequest(request,{text:'An unfinished explanation because',sources:[],storyTopics:[]},knowledge,web,lang);
   assert(repair.messages[0].content.includes(followupFocusInstructions));
   assert.equal(JSON.parse(repair.messages.at(-1).content.replace(/\n\/no_think$/,'')).question,input.message);
  }
+});
+
+test('focused follow-ups use one existing free-eligible inference with a named schema and no model marker leakage',async()=>{
+ const request=modelRequest({message:'Which ocean is that?',lang:'en',history:[{role:'assistant',content:'Peru borders the Pacific Ocean.'}]},{pages:[]});
+ const calls=[];await runModel({run:async(model,body)=>{calls.push({model,body});return {response:cue('The Pacific Ocean lies between Asia and Australia to the west and the Americas to the east.')};}},request);
+ assert.equal(calls.length,1);assert.equal(calls[0].model,CLOUDFLARE_TRANSLATION_MODEL);
+ assert.equal(calls[0].body.response_format.json_schema.name,'yuki_followup');assert.equal(calls[0].body.chat_template_kwargs.enable_thinking,false);
+ assert.equal(calls[0].body.max_tokens,1900);assert(!('yukiTask' in calls[0].body));assert(!JSON.stringify(calls[0].body).includes('/no_think'));
+});
+
+test('focused follow-ups keep page, guide, new-discovery and named-question routing intact',()=>{
+ const history=[{role:'assistant',content:'Blender can make 3D models.'}];
+ for(const message of ['What is that tool for?','How does it work?','その仕組みを教えて。'])assert(isContextualFollowup({message,history},{}));
+ for(const view of [{focus:{}},{localQuestion:true},{visual:{}},{questionPage:{}}])assert(!isContextualFollowup({message:'What is that tool for?',history},{view}));
+ assert(!isContextualFollowup({message:'What is that tool for?',history,guideEvent:{}},{}));
+ assert(!isContextualFollowup({message:'What is that tool for?',history:[]},{}));
+ const named=modelRequest({message:'Where is Syria?',history,lang:'en'},{pages:[]});
+ assert(named.messages[0].content.startsWith(followupFocusInstructions));assert.deepEqual(named.messages.slice(1,-2),history);
+ const newFact=modelRequest({message:'Tell me another fact about it.',history,lang:'en'},{pages:[]});
+ assert(!newFact.messages[0].content.includes('HISTORY: '+JSON.stringify(history)));
 });
 
 test('shared speaker guard checks quoted self names, abilities, feelings and possessions, not only home',()=>{
@@ -94,6 +115,12 @@ test('sourced explanations keep their evidence while a personal aside is repaire
  const f=fixture([{...cue('I want to verify how rainbows form.'),webQuery:'rainbow refraction reflection'}, {...cue(bad),sourceIds:['web:1']},{text:good}],{search:true});
  const r=await f.handler(f.request({message:'How do rainbows form? Please check a source.'}),f.env),body=await r.json();
  assert.equal(r.status,200,JSON.stringify(body));assert.equal(body.text,good);assert.deepEqual(body.sources,[{title:'Rainbows',url:'https://example.org/rainbows'}]);assert.equal(f.calls.length,3);assert.equal(f.network.filter(u=>u.includes('tavily')).length,1);
+});
+
+test('asking a named question again accepts its established answer without a novelty rewrite',async()=>{
+ const text='Syria is in the Middle East, on the eastern coast of the Mediterranean Sea.';
+ const f=fixture([cue(text)]),r=await f.handler(f.request({message:'Where is Syria?',history:[{role:'user',content:'Where is Syria?'},{role:'assistant',content:text}]}),f.env),body=await r.json();
+ assert.equal(r.status,200,JSON.stringify(body));assert.equal(body.text,text);assert.equal(f.calls.length,1);assert.equal(f.reservations.length,1);
 });
 
 test('a denied or still-third-person repair cannot leak a bad answer or loop',async()=>{

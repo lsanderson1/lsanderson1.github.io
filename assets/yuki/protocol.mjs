@@ -1,4 +1,4 @@
-import {cleanVariety,cleanStoryTopics,cleanFactTopic} from './runtime/reply-variety.mjs?v=9';
+import {cleanVariety,cleanStoryTopics,cleanFactTopic} from './runtime/reply-variety.mjs?v=10';
 import {cleanMessages} from './runtime/conversation-language.mjs?v=8';
 import {cleanReplyBeats} from './runtime/reply-beats.mjs';
 import {cleanAssistantText} from './runtime/reply-text.mjs?v=2';

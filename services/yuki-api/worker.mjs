@@ -3,6 +3,7 @@ import {validateContext,retrieveKnowledge} from './knowledge.mjs';
 import {portraitAnswer,pageEvidenceInstruction} from './page-awareness.mjs';
 import {pageAnswerRequest} from './page-answer.mjs';
 import {lightChatKind,lightChatRequest} from './light-chat.mjs';
+import {isContextualFollowup,followupAnswerRequest} from './followup-answer.mjs';
 import {humorQualityIssues} from './humor-quality.mjs';
 import {personalityInstructions,replyContract,followupFocusInstructions} from './personality.mjs';
 import {portfolioExplanationInstructions} from './portfolio-explanations.mjs';
@@ -69,6 +70,7 @@ export function modelRequest(input,knowledge,web={}){
  if(input.guideEvent)return guideReplyRequest(input,schema,knowledge);
  if(knowledge.view?.localQuestion&&!input.guideEvent)return pageAnswerRequest({...input,lang:language},knowledge,web,schema);
  const lightKind=lightChatKind(input,knowledge);if(lightKind)return lightChatRequest(input,web,schema,lightKind);
+ if(isContextualFollowup(input,knowledge))return followupAnswerRequest(input,knowledge,web,schema);
  const instructions=`${input.history?.length?followupFocusInstructions+'\n':''}${personalityInstructions(language)}
 ${portfolioExplanationInstructions}
 ${varietyInstructions(input)}
@@ -128,6 +130,10 @@ export async function runModel(ai,request,timeoutMs=22000){
  // Reuse the established translation model for focused speaker/voice repairs,
  // within the same single quota-reserved repair slot, never a provider retry.
  if(yukiTask==='guide-voice-ja'||yukiTask==='reply-voice')return runTranslation(ai,body,timeoutMs);
+ // Focused follow-ups use the existing free-eligible Gemma model directly.
+ // Bounded EN/JA comparisons showed better referent-first answers than Qwen.
+ // This is one initial inference, not an extra call, retry or paid fallback.
+ if(yukiTask==='contextual-followup')return runInference(ai,CLOUDFLARE_TRANSLATION_MODEL,directSchema(body,'yuki_followup'),timeoutMs);
  const joke=yukiTask==='joke'||yukiTask==='joke-ja';
  const model=yukiTask==='joke-ja'?CLOUDFLARE_TRANSLATION_MODEL:yukiTask==='joke'?CLOUDFLARE_HUMOR_MODEL:CLOUDFLARE_MODEL;
  return runInference(ai,model,joke?directSchema(body,'yuki_joke'):body,timeoutMs);

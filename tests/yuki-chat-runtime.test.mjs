@@ -230,6 +230,14 @@ test('clear during a pending answer prevents transcript and memory resurrection'
  assert.equal(f.context.messages.length,0);assert.equal(readSession(f.storage).messages.length,0);assert.equal(f.storage.getItem(memoryKey),memory);assert.equal(f.context.busy,false);
 });
 
+test('a repeated named question can display the same accurate answer without losing novelty guards',async()=>{
+ const text='Syria is in the Middle East, on the eastern coast of the Mediterranean Sea.';
+ const f=fixture({network:async()=>new Response(JSON.stringify({...cue,text}))});
+ await f.send('Where is Syria?');await f.send('Where is Syria?');
+ assert.equal(f.context.messages.filter(m=>m.role==='assistant'&&m.text===text).length,2);
+ assert.equal(f.calls.fetch.length,2);assert(!f.calls.status.some(s=>s.includes('repeated an earlier reply')));
+});
+
 test('the only clearing button removes chat, not memory, and explains retention in both languages',()=>{
  assert.match(source,/data-action="clear">\$\{tr\('Clear chat','チャットを消去'\)\}/);
  assert.match(source,/if\(a==='clear'\)clearConversation\(\)/);
