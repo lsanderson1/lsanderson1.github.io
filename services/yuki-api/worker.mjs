@@ -25,7 +25,7 @@ import {unfinishedReply,completionRequest,parseCompletion,completeRevision,incom
 // route requests to a paid-only model, AI Gateway, or another provider.
 // Free-tier eligibility checked 2026-10-11; recheck before deployment.
 export const CLOUDFLARE_MODEL='@cf/qwen/qwen3-30b-a3b-fp8';
-// Focused joke generation only; bounded live EN/JA comparisons on 2026-10-11.
+// English jokes and focused follow-ups; bounded live comparisons through 2026-10-13.
 // Explicitly available on Workers Free per Cloudflare's model-access changelog.
 export const CLOUDFLARE_HUMOR_MODEL='@cf/nvidia/nemotron-3-120b-a12b';
 // Translation and Japanese jokes: better Japanese in the bounded samples.
@@ -130,10 +130,10 @@ export async function runModel(ai,request,timeoutMs=22000){
  // Reuse the established translation model for focused speaker/voice repairs,
  // within the same single quota-reserved repair slot, never a provider retry.
  if(yukiTask==='guide-voice-ja'||yukiTask==='reply-voice')return runTranslation(ai,body,timeoutMs);
- // Focused follow-ups use the existing free-eligible Gemma model directly.
- // Bounded EN/JA comparisons showed better referent-first answers than Qwen.
+ // Focused follow-ups reuse the existing free-eligible models directly.
+ // Nemotron corrected an inherited EN direction error; Gemma kept JA casual.
  // This is one initial inference, not an extra call, retry or paid fallback.
- if(yukiTask==='contextual-followup')return runInference(ai,CLOUDFLARE_TRANSLATION_MODEL,directSchema(body,'yuki_followup'),timeoutMs);
+ if(yukiTask==='contextual-followup'||yukiTask==='contextual-followup-ja')return runInference(ai,yukiTask==='contextual-followup-ja'?CLOUDFLARE_TRANSLATION_MODEL:CLOUDFLARE_HUMOR_MODEL,directSchema(body,'yuki_followup'),timeoutMs);
  const joke=yukiTask==='joke'||yukiTask==='joke-ja';
  const model=yukiTask==='joke-ja'?CLOUDFLARE_TRANSLATION_MODEL:yukiTask==='joke'?CLOUDFLARE_HUMOR_MODEL:CLOUDFLARE_MODEL;
  return runInference(ai,model,joke?directSchema(body,'yuki_joke'):body,timeoutMs);

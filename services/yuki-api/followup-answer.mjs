@@ -33,5 +33,5 @@ HISTORY: ${JSON.stringify(history)}
 PRIOR ANSWERS: ${JSON.stringify(recentAnswers(input))}
 ${siteContext?'SITE: '+JSON.stringify(knowledge):''}
 ${characterContext?'CHARACTER: '+JSON.stringify(yukiStory):''}`;
- return {yukiTask:'contextual-followup',messages:[{role:'system',content:system},{role:'user',content:input.message+'\n/no_think'}],stream:false,max_tokens:1900,temperature:.5,response_format:{type:'json_schema',json_schema:schema}};
+ return {yukiTask:lang==='ja'?'contextual-followup-ja':'contextual-followup',messages:[{role:'system',content:system},{role:'user',content:input.message+'\n/no_think'}],stream:false,max_tokens:1900,temperature:.5,response_format:{type:'json_schema',json_schema:schema}};
 }

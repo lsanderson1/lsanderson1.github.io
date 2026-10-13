@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {thirdPersonSelf} from '../assets/yuki/runtime/self-narration.mjs';
 import {translationVoiceNeedsRepair,parseTranslations} from '../services/yuki-api/conversation-translation.mjs';
-import {createHandler,modelRequest,runModel,initialInferenceTimeout,CLOUDFLARE_TRANSLATION_MODEL} from '../services/yuki-api/worker.mjs';
+import {createHandler,modelRequest,runModel,initialInferenceTimeout,CLOUDFLARE_TRANSLATION_MODEL,CLOUDFLARE_HUMOR_MODEL} from '../services/yuki-api/worker.mjs';
 import {chatUnavailable} from '../assets/yuki/protocol.mjs';
 import {searchInstructions} from '../services/yuki-api/web-search.mjs';
 import {followupFocusInstructions} from '../services/yuki-api/personality.mjs';
@@ -18,7 +18,7 @@ test('follow-up focus is reasserted after history for ordinary and sourced answe
   assert.equal(contract.role,'system');assert.match(contract.content,/FOLLOW-UP FOCUS/);
   assert.match(contract.content,/Start with the name of the NEW subject/);assert.match(contract.content,/optional brief connection belongs at the end|必要なら最後に一言/);
   assert.match(contract.content,/explicitly asks about their relationship/);assert.match(contract.content,/explicit conversation question takes priority/);
-  assert.equal(request.yukiTask,'contextual-followup');assert(!contract.content.includes('CHARACTER:'));
+  assert.equal(request.yukiTask,lang==='ja'?'contextual-followup-ja':'contextual-followup');assert(!contract.content.includes('CHARACTER:'));
   assert(!followupFocusInstructions.includes('Syria'));assert(!followupFocusInstructions.includes('Mediterranean'));
   const repair=completionRequest(request,{text:'An unfinished explanation because',sources:[],storyTopics:[]},knowledge,web,lang);
   assert(repair.messages[0].content.includes(followupFocusInstructions));
@@ -27,11 +27,13 @@ test('follow-up focus is reasserted after history for ordinary and sourced answe
 });
 
 test('focused follow-ups use one existing free-eligible inference with a named schema and no model marker leakage',async()=>{
- const request=modelRequest({message:'Which ocean is that?',lang:'en',history:[{role:'assistant',content:'Peru borders the Pacific Ocean.'}]},{pages:[]});
+ for(const lang of ['en','ja']){
+ const request=modelRequest({message:lang==='ja'?'その海はどこ？':'Which ocean is that?',lang,history:[{role:'assistant',content:'Peru borders the Pacific Ocean.'}]},{pages:[]});
  const calls=[];await runModel({run:async(model,body)=>{calls.push({model,body});return {response:cue('The Pacific Ocean lies between Asia and Australia to the west and the Americas to the east.')};}},request);
- assert.equal(calls.length,1);assert.equal(calls[0].model,CLOUDFLARE_TRANSLATION_MODEL);
+ assert.equal(calls.length,1);assert.equal(calls[0].model,lang==='ja'?CLOUDFLARE_TRANSLATION_MODEL:CLOUDFLARE_HUMOR_MODEL);
  assert.equal(calls[0].body.response_format.json_schema.name,'yuki_followup');assert.equal(calls[0].body.chat_template_kwargs.enable_thinking,false);
  assert.equal(calls[0].body.max_tokens,1900);assert(!('yukiTask' in calls[0].body));assert(!JSON.stringify(calls[0].body).includes('/no_think'));
+ }
 });
 
 test('focused follow-ups keep page, guide, new-discovery and named-question routing intact',()=>{

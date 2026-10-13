@@ -211,7 +211,7 @@
       "en": "Keeping original meaning across languages",
       "ja": "言語を変えても元の意味を保つ"
     },
-    "explanation": "Each message keeps original text and separately stored translations. translatedText returns valid wording in the requested display language; stale assistant translations or formal Japanese originals wait for a checked tone-refreshed variant. User tone and direct quotations remain separate from Yuki's casual narration. translationBatch prioritizes recent messages within size caps. applyTranslations matches checked IDs and stores a display variant without overwriting the original. Both speakers' translations are checked for wrong-language prose. Authored bilingual greetings bypass model translation. The worker uses a fixed Cloudflare-hosted Gemma translation model with thinking disabled; it also handles focused referential follow-ups, Japanese jokes and voice repairs, while the default conversation route uses Qwen. Translation shares verification and free quota, permits at most one reserved repair, and preserves already-correct items when only some need tone repair. These automated checks cannot guarantee naturalness or meaning, so translation quality still needs review.",
+    "explanation": "Each message keeps original text and separately stored translations. translatedText returns valid wording in the requested display language; stale assistant translations or formal Japanese originals wait for a checked tone-refreshed variant. User tone and direct quotations remain separate from Yuki's casual narration. translationBatch prioritizes recent messages within size caps. applyTranslations matches checked IDs and stores a display variant without overwriting the original. Both speakers' translations are checked for wrong-language prose. Authored bilingual greetings bypass model translation. The worker uses a fixed Cloudflare-hosted Gemma translation model with thinking disabled; it also handles Japanese focused follow-ups, Japanese jokes and voice repairs. English focused follow-ups and jokes use Nemotron, while the default conversation route uses Qwen. Translation shares verification and free quota, permits at most one reserved repair, and preserves already-correct items when only some need tone repair. These automated checks cannot guarantee naturalness or meaning, so translation quality still needs review.",
     "source": {
       "file": "assets/yuki/runtime/conversation-language.mjs",
       "symbol": "translatedText / translationBatch / applyTranslations",
@@ -251,7 +251,7 @@
       "symbol": "parseModel",
       "firstLine": 104,
       "lastLine": 190,
-      "sha256": "4a0b77618e1497b0252e05e299903365c57e34fbea24420de4d8e52460c215df"
+      "sha256": "5669da7a2c1d5b64b5bb93870300f8ccf9537699df2c94f8b3123385c85cc09c"
     }
   },
   {
