@@ -15,6 +15,12 @@ export function cleanReplyBeats(value,text){
 export function beatPause(text){return Math.max(3200,Math.min(12000,[...text].length*(/[\p{Script=Han}\p{Script=Hiragana}]/u.test(text)?110:48)));}
 export function expressionSequence(cue,fallback){
  const beats=cleanReplyBeats(cue.beats,cue.text);
+ // Optional talking beats must not erase the reply's chosen expression.
+ // Keep an existing later emotional beat in place; otherwise use the opening
+ // beat, without duplicating the words or interrupting the complete clip.
+ if(beats.length&&emotions.includes(cue.emotion)&&cue.emotion!=='neutral'&&!beats.some(b=>b.emotion===cue.emotion)){
+  beats[0]={...beats[0],emotion:cue.emotion,gesture:'none'};
+ }
  const sentences=replySentences(cue.text);
  return beats.length?beats.map((b,i)=>{const text=sentences.slice(b.sentence,beats[i+1]?.sentence).join(' ');return {...b,text,pauseMs:beatPause(text)};}):fallback;
 }
