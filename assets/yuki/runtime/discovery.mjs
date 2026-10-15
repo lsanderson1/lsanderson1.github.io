@@ -2,6 +2,7 @@
 // currently visible garden, a guessed topic, or a model's old biography.
 function explicitKind(message){
  const q=String(message??'');
+ if(/\b(?:make me laugh|tell me something funny|got anything funny|give me a laugh|something to make me (?:laugh|giggle)|cheer me up with (?:a |some )?(?:humou?r|something funny))\b|笑わせて|何か(?:笑える|くすっとする)(?:話|こと)|面白い冗談/iu.test(q))return 'joke';
  if(/\b(?:jokes?|puns?|riddles?)\b|\b(?:funny|playful|silly|amusing|lighthearted)(?: little| short)? stor(?:y|ies)\b|冗談|ジョーク|なぞなぞ|ダジャレ|笑える(?:小)?話|楽しい小話/iu.test(q))return 'joke';
  if(/\b(?:facts?|trivia)\b|豆知識|雑学/iu.test(q))return 'fact';
  return '';
@@ -11,7 +12,7 @@ export function isAnotherDiscovery(message){
  return /^(?:(?:ok(?:ay)?|yes|sure|please|yeah|well|and)[,!.\s]*)?(?:(?:can|could|would) you )?(?:(?:tell|give|show) me |(?:i(?:'d| would) like|let(?:'s| us) hear|do you have|have you got|got|how about|can i hear) )?(?:another(?: one)?|a different one|something (?:else|different|new)|one more|any (?:more|others))(?:[,!.?\s]*(?:please|instead|this time))?[!.?\s]*$|^(?:じゃあ|それなら|うん|ほかにも|他にも)?(?:もう(?:一|ひと)つ|もう一個|別の(?:もの|話|やつ)|ほかの(?:もの|話)|他の(?:もの|話))(?:を)?(?:聞かせて|教えて|お願い|ある|あるかな|は)?[。！？?\s]*$/iu.test(q);
 }
 export function discoveryKind(message,history=[]){
- if(/\b(?:what is (?:a |the )?(?:fact|joke)|why (?:is|was) (?:that|it|the joke) funny|explain (?:that|the) (?:joke|fact)|is (?:that|this) (?:fact )?true|how do you know)\b|(?:その|さっきの)(?:冗談|ジョーク|豆知識).*(?:意味|なぜ|どうして|説明)|それ(?:は|って)?本当/iu.test(String(message??'')))return '';
+ if(/\b(?:what is (?:a |the )?(?:fact|joke)|why (?:is|was) (?:that|it|the joke) funny|explain (?:that|this|the) (?:joke|fact)|is (?:that|this) (?:fact )?true|how do you know|(?:don't|do not|stop) (?:tell(?:ing)?(?: me)? (?:a |another )?)?jok(?:e|es|ing))\b|(?:その|さっきの)(?:冗談|ジョーク|豆知識).*(?:意味|なぜ|どうして|説明)|それ(?:は|って)?本当|冗談は(?:やめて|いらない)/iu.test(String(message??'')))return '';
  const direct=explicitKind(message);if(direct)return direct;
  // "Why?" and "Tell me more about that" ask for explanation, not a new fact.
  if(!isAnotherDiscovery(message))return '';
