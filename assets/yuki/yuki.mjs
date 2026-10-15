@@ -26,9 +26,9 @@ import {replyLanguage,replyQualityIssues,formalJapaneseVoice} from './runtime/re
 import {DiscoveryGuide,isDiscoveryRequest} from './runtime/discovery-guide.mjs?v=3';
 import {CallDialogue} from './runtime/call-dialogue.mjs?v=3';
 import {ReadingMemory,readPageTitle,readingLabels,readPageDisplaySection,readPageSection,readPageImages,readGardenSpot,guideReference,followUpReference,sectionExplanation} from './runtime/reading-context.mjs?v=7';
-import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=27';
+import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=28';
 import {safeWebURL} from './runtime/web-sources.mjs?v=1';
-import {cleanVariety,rememberReply,rememberFactTopic,rememberFact,rememberFactEvidence,rememberJoke,rememberGuideReply,previousGuideReplies,packChatRequest,needsFreshText} from './runtime/reply-variety.mjs?v=12';
+import {cleanVariety,rememberReply,rememberFactTopic,rememberFact,rememberFactEvidence,rememberJoke,rememberGuideReply,previousGuideReplies,packChatRequest,needsFreshText} from './runtime/reply-variety.mjs?v=13';
 import {thirdPersonSelf} from './runtime/self-narration.mjs?v=2';
 
 const root=document.querySelector('#yuki-companion');
@@ -623,7 +623,7 @@ async function start(){
    // Check all retained local recall too, not only the excerpts that fit the
    // request budget. A rejected draft is never displayed or remembered.
    conversationMemory.expire();
-   if(needsFreshText(cue.text,{message:text,variety,history,memory:conversationMemory.turns,guideEvent,lang:conversationLanguage,jokeCore:cue.jokeCore,jokeDiscovery:cue.joke===true}))throw Error('novelty');
+   if(needsFreshText(cue.text,{message:text,variety,history,memory:conversationMemory.turns,guideEvent,lang:conversationLanguage,jokeCore:cue.jokeCore,jokeDiscovery:cue.joke===true,page:location.pathname,pageOverview:cue.pageOverview}))throw Error('novelty');
    if(guideEvent&&(replyQualityIssues(cue.text,conversationLanguage).length||!guideReplyMatches(cue.text,guideEvent,knowledge,ja?'ja':'en',base)))throw Error('request');
    if(!guideEvent){const followUp=followUpReference(cue,context.lastGuide,knowledge);if(followUp)readingMemory.set(followUp);else readingMemory.clear();conversationMemory.remember(text,cue.text);}
    if(guideEvent)variety=rememberGuideReply(variety,cue.text,guideEvent,conversationLanguage);
