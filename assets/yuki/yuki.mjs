@@ -14,7 +14,7 @@ import {PageMotion,pageProjection,inViewport,containPageRover,prepareCall} from 
 import {CallPerches} from './runtime/call-perches.mjs?v=7';
 import {VisitorPersonality,conversationOpening,localizeGreetingMessages,replySequence,cueArtwork} from './runtime/visitor-personality.mjs?v=11';
 import {ChatAvailability,ChatPermission,ChatSession,ChatVerification,chatEnvironment,chatEnabledKey,searchConsentKey} from './runtime/chat-access.mjs?v=3';
-import {ConversationMemory} from './runtime/conversation-memory.mjs?v=3';
+import {ConversationMemory} from './runtime/conversation-memory.mjs?v=4';
 import {VisitorInterests} from './runtime/visitor-interests.mjs';
 import {expressionSequence} from './runtime/reply-beats.mjs';
 import {GardenHome} from './home/garden.mjs?v=10';
