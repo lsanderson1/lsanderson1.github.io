@@ -2,6 +2,7 @@ import {safeSitePath} from '../../assets/yuki/protocol.mjs';
 import {readingReference,sectionKey} from '../../assets/yuki/runtime/reading-context.mjs';
 import {makingKnowledge} from './making-knowledge.mjs';
 import {questionPage,questionImages,asksCurrentPage,asksPageOverview} from './page-awareness.mjs';
+import {referencesReplyExplanation} from './followup-context.mjs';
 
 const clean=value=>typeof value==='string'?value.replace(/\s+/g,' ').trim():'';
 export function validateContext(value){
@@ -59,7 +60,8 @@ export function retrieveKnowledge(k,input){
  // must not pull retrieval or the model back to an earlier, unrelated target.
  const focus=guideExplanation(input.message)?lastGuided:null;
  const mentioned=questionPage(pages,input.message),visual=focus?null:questionImages(pages,input,current,lastGuided,mentioned);
- const localQuestion=!focus&&!mentioned&&asksCurrentPage(input.message);
+ const replyExplanation=referencesReplyExplanation(input);
+ const localQuestion=!focus&&!mentioned&&!replyExplanation&&asksCurrentPage(input.message);
  const wholePage=!focus&&!visual&&(localQuestion||Boolean(mentioned))&&asksPageOverview(input.message);
  const gardenPage=pages.find(p=>p.url===current?.page&&/^\/(?:ja\/)?yuki\/$/.test(p.url));
  const gardenSection=gardenPage?.sections.find(s=>s.anchor==='garden-'+input.context?.gardenSpot);
@@ -68,7 +70,7 @@ export function retrieveKnowledge(k,input){
  // not fill the evidence budget. Broader/non-deictic questions still search all
  // indexed pages. These are request-local hints, never permanent chat memory.
  const scope=focus?.page??visual?.page??mentioned?.url??(localQuestion?current?.page:null);
- const query=queryWords(focus?focus.heading:input.message),history=focus||visual||mentioned||localQuestion?[]:queryWords((input.history??[]).filter(m=>m.role==='user').slice(-2).map(m=>m.content).join(' '));
+ const query=queryWords(focus?focus.heading:input.message),history=focus||visual||mentioned||localQuestion?[]:queryWords((input.history??[]).filter(m=>m.role==='user').slice(-2).map(m=>m.content).join(' ')+(replyExplanation?' '+((input.history??[]).findLast(m=>m.role==='assistant')?.content??''):''));
  const score=(text,words)=>words.reduce((n,w)=>n+(text.includes(w)?1:0),0);
  const chunks=[];
  for(const p of pages){

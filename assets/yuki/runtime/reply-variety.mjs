@@ -1,9 +1,9 @@
-import {discoveryKind} from './discovery.mjs?v=4';
-import {cleanJokeContext,cleanJokeRecords,cleanJokeCore,cleanJokePlan,jokeRequestContext,repeatedJokeCore} from './joke-memory.mjs?v=1';
+import {discoveryKind} from './discovery.mjs?v=5';
+import {cleanJokeContext,cleanJokeRecords,cleanJokeCore,cleanJokePlan,jokeRequestContext,repeatedJokeCore} from './joke-memory.mjs?v=2';
 import {safeWebURL} from './web-sources.mjs';
 import {cleanGuideRecords,guideRecord,previousGuideReplies,cleanGuidePrevious,repeatedGuideReply} from './guide-variety.mjs?v=1';
 export {previousGuideReplies} from './guide-variety.mjs?v=1';
-export {discoveryKind} from './discovery.mjs?v=4';
+export {discoveryKind} from './discovery.mjs?v=5';
 // Short-lived, tab-local reply metadata. No user profiling or server storage.
 export const storyTopicIds=Object.freeze(['origin','firstFlight','lanternKeeper','firstGuide','treasure','quietEvening','home','dailyGoals','bigDream','innerConflict','littlePreferences','relationships','character']);
 const recentLimit=12,sampleSize=32,hex=/^[a-f0-9]{8}$/;

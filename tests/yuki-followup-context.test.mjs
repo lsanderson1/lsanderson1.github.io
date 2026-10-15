@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {asksConversationFollowup,explicitFollowupSubject,followupHistory,followupIntent} from '../services/yuki-api/followup-context.mjs';
+import {asksConversationFollowup,explicitFollowupSubject,followupHistory,followupIntent,referencesReplyExplanation} from '../services/yuki-api/followup-context.mjs';
 import {namedFollowupSubject,isContextualFollowup,followupReplyIssues} from '../services/yuki-api/followup-answer.mjs';
 import {modelRequest,validateInput,selectKnowledge} from '../services/yuki-api/worker.mjs';
 import {replyLanguage} from '../assets/yuki/runtime/reply-quality.mjs';
@@ -19,6 +19,30 @@ const matrix=[
  ['simplify','An event loop schedules work when pending operations can proceed.','In simpler terms?','イベントループは、処理を進められる順番に作業を扱う仕組み。','もっとわかりやすく説明して'],
  ['opinion','I dream of a small flying library with comfortable reading perches.','What do you like about that?','小さな空飛ぶ図書館を作るのが夢。読む人がゆっくり座れる場所も用意したい。','そのどこが好き？']
 ];
+
+test('explanations of any visible reply do not jump to the page beneath the chat',()=>{
+ const en=['Explain this.','Could you explain this in simpler terms?','Help me understand that','Can you unpack your last answer a little more?','What does that mean?','Tell me more','Could you tell me more?','Could you tell me a bit more, please?'];
+ const ja=['これを説明して','これをもう少しわかりやすく説明して','その答えを詳しく説明して','それってどういう意味？','もっと教えて'];
+ const examples=[...matrix.map(([id,answer,,jp])=>[id,answer,jp]),['joke','The joke uses a word with two different meanings.','さっきの冗談は、一つの言葉に二つの意味があることを使っているよ。'],['fiction','In this imaginary story, a lost dragon finds a lantern.','この作り話では、迷子のドラゴンが灯りを見つけた。'],['web-answer','The source describes how a tree transports water through its trunk.','資料では、木が幹を通して水を運ぶ仕組みを説明しているよ。']];
+ for(const [kind,answer,jp] of examples)for(const [lang,prior,questions] of [['en',answer,en],['ja',jp,ja]])for(const message of questions){
+  const page=lang==='ja'?'/ja/resume.html':'/resume.html';
+  const catalog={owner:'Lloyd',bio:{en:'Owner',ja:'制作者'},pages:[{id:'resume',url:page,lang,title:'Resume',summary:'A résumé.',text:'Published résumé material.',sections:[{id:'s0',title:'Education',text:'Published education.'}]}]};
+  const input={message,lang,page,context:{section:'s0'},history:[{role:'user',content:'Tell me about this topic.'},{role:'assistant',content:prior}]};
+  const selected=selectKnowledge(catalog,input),request=modelRequest(input,selected);
+  assert(!selected.view.localQuestion,`${kind}: ${message} must not silently become a page explanation`);
+  assert.equal(request.yukiTask,lang==='ja'?'contextual-followup-ja':'contextual-followup',`${kind}: ${message}`);
+  assert(request.messages.some(m=>m.content.includes(prior)),`${kind}: retain the real reference, not just a topic label`);
+  assert.match(request.messages[0].content,/Earlier AI|History identifies the subject but is NOT evidence/);
+ }
+ for(const message of ['explain this joke','What is this joke about?','この冗談を説明して'])assert(referencesReplyExplanation({message,history:[{role:'assistant',content:'A short joke.'}]}));
+ for(const message of ['Explain this page','Explain this section','What is this place?','Explain this picture','このページを説明して','この部分を説明して'])assert(!referencesReplyExplanation({message,history:[{role:'assistant',content:'An earlier fact.'}]}),message);
+ assert(!referencesReplyExplanation({message:'explain this',history:[]}), 'Without a prior reply, the visible page remains available');
+ for(const message of ['explain this joke','What is this joke about?','Can you explain this fun fact?','この冗談を説明して','この豆知識の意味を説明して']){
+  const input={message,lang:replyLanguage(message,'en'),page:'/resume.html',history:[{role:'user',content:'Tell me a joke'},{role:'assistant',content:'The joke uses two meanings of a word.'}]};
+  assert.equal(modelRequest(input,{pages:[]}).yukiTask,input.lang==='ja'?'contextual-followup-ja':'contextual-followup',message);
+ }
+ for(const message of ['Tell me another joke about that story','Tell me a different joke about this fact'])assert.equal(modelRequest({message,lang:'en',history:[{role:'assistant',content:'An earlier story.'}]},{pages:[]}).yukiTask,'joke');
+});
 
 test('follow-up routing covers varied subjects and elliptical questions in both languages',()=>{
  for(const [id,en,qen,ja,qja] of matrix)for(const [lang,answer,message] of [['en',en,qen],['ja',ja,qja]]){

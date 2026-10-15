@@ -47,8 +47,23 @@ export function followupHistory(input){
 
 export function hasFollowupContext(input){return previousAnswers(input).length>0;}
 
+// A bare explanation request after a visible reply refers to that reply, not
+// automatically to the page behind the bubble. Explicit page/section/image
+// wording still wins. This is a routing hint; the model interprets the full
+// question and asks if multiple referents remain plausible.
+export function referencesReplyExplanation(input){
+ if(!(input.history??[]).some(m=>m.role==='assistant'&&m.content?.trim()))return false;
+ const q=clean(input.message);
+ if(/\b(?:page|section|heading|paragraph|picture|photo|image|screen|website|site|place|garden|here)\b|ページ|項目|見出し|段落|写真|画像|画面|サイト|場所|庭|ここ|この部分/iu.test(q))return false;
+ if(/\b(?:explain|clarify|unpack|elaborate on|expand on|break down|help me understand|walk me through)\s+(?:(?:this|that|it)(?:\s+(?:fun(?:ny)?\s+)?(?:joke|story|fact|answer|reply|explanation|example|point))?|your (?:(?:last|previous) )?(?:answer|reply|explanation|message))(?=\s*(?:[.!?]|$)|\s+(?:again|more|further|please|in|for|a|to|because|so)\b)/iu.test(q))return true;
+ if(/\b(?:this|that)\s+(?:joke|story|fact|answer|reply|explanation|example|point)\b/iu.test(q)&&/\b(?:mean|means|about|why|how|explain|understand)\b/iu.test(q))return true;
+ return /(?:これ|それ|さっきの返事|今の説明|(?:この|その)(?:答え|説明|冗談|ジョーク|豆知識|雑学|話|例)).{0,35}(?:説明|詳し|くわし|わかりやす|分かりやす|噛み砕|かみくだ|どういう意味|どういうこと)/u.test(q);
+}
+
 export function asksConversationFollowup(input){
  const q=clean(input.message);
+ if(referencesReplyExplanation(input))return true;
+ if(/^(?:(?:okay|ok|and|so|then|please)[,\s]+)*(?:(?:can|could|would) you )?(?:tell me|explain|say)(?: a (?:little|bit))? more(?: (?:about (?:that|it)|please))?[,\s]*(?:please)?[.!?]*$/iu.test(q))return true;
  if(/^(?:sources?|evidence|proof|例|理由|仕組み|出典|根拠|証拠)(?:は|を教えて)?\s*[.!?。！？]*$/iu.test(q)||followupIntent(q)==='correction')return true;
  if(/\b(?:it|its|that|those|these|they|them|their|this|he|she|him|her|his|hers)\b|\b(?:the) (?:tool|term|word|method|technique|mechanism|person|idea|concept|reason|difference|example)\b|それ|その|そこ|あれ|あの|あそこ|彼女|彼|本人|この(?:海|道具|言葉|方法|仕組み|人|考え|作品|例)/iu.test(q))return true;
  if(explicitFollowupSubject(q,previousAnswers(input)))return true;

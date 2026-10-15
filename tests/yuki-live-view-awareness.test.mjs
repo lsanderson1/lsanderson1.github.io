@@ -5,7 +5,7 @@ import {retrieveKnowledge,validateContext} from '../services/yuki-api/knowledge.
 import {modelRequest,parseModel} from '../services/yuki-api/worker.mjs';
 import {readGardenSpot} from '../assets/yuki/runtime/reading-context.mjs';
 
-const requests={en:["What's this?",'whats this','What is this all about?','Where are we?','What’s here?','Tell me about this place','Explain this.','What page am I on?','What is the page I am on about?','What are we looking at here?'],ja:['これ何？','これって何？','これはなに？','ここってどんなところ？','このページについて教えて','今開いてるページは？','いま見ているのは何？','ここを説明して']};
+const requests={en:["What's this?",'whats this','What is this all about?','Where are we?','What’s here?','Tell me about this place','Explain this section.','What page am I on?','What is the page I am on about?','What are we looking at here?'],ja:['これ何？','これって何？','これはなに？','ここってどんなところ？','このページについて教えて','今開いてるページは？','いま見ているのは何？','ここを説明して']};
 const spots=['nest','pond','lookout','books','treasures'];
 const history=[{role:'user',content:'Tell me how your HoverBlink.update works'},{role:'assistant',content:'Earlier we discussed animation code.'}];
 const page=(url,lang)=>({id:url,lang,url,title:url.includes('yuki')?(lang==='ja'?'ゆきの庭':'Yuki’s Garden'):'Current Project',summary:'Current published description',text:'Current published description',sections:[{id:'s0',title:'Overview',text:'Current overview.'},...spots.map((id,i)=>({id:'s'+(i+1),anchor:'garden-'+id,kind:'garden',title:id,text:'Published garden landmark: '+id})),{id:'i0',kind:'image',title:'Garden illustration',text:'Published description: a garden with a nest and pond.'}]});
@@ -40,7 +40,7 @@ test('short explanation requests include a long visible section’s continuation
   const url=lang==='ja'?'/ja/resume.html':'/resume.html';
   const longSection='Lloyd collaborated on Project Reap. '+('The entry describes gameplay work and testing. '.repeat(60))+' Blender Command-Line Integration connects a Common Lisp client to a Python socket server.';
   const current={id:'resume',url,lang,title:'Resume',summary:'Education, skills and projects.',text:'Education, skills and projects.',sections:[...Array.from({length:8},(_,i)=>({id:'s'+i,title:'Other heading '+i,text:'Other documented material.'})),{id:'s8',title:'Technical Project Experience',anchor:'experience',text:longSection}]};
-  const k=retrieveKnowledge({owner:'Lloyd',bio:{en:'Owner',ja:'制作者'},pages:[current]},{lang,page:url,message:lang==='ja'?'この部分を説明して':'explain this',context:{section:'s8'},history});
+  const k=retrieveKnowledge({owner:'Lloyd',bio:{en:'Owner',ja:'制作者'},pages:[current]},{lang,page:url,message:lang==='ja'?'この部分を説明して':'explain this',context:{section:'s8'},history:[]});
   assert(k.view.localQuestion);assert(!k.view.wholePage);assert(k.pages.length<=6);
   assert.equal(k.pages[0].id,'resume::s8');
   assert(k.pages[1].id.startsWith('resume::s8::'));
