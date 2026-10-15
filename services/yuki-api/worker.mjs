@@ -5,6 +5,8 @@ import {pageAnswerRequest} from './page-answer.mjs';
 import {lightChatKind,lightChatRequest} from './light-chat.mjs';
 import {isContextualFollowup,followupAnswerRequest,followupReplyIssues} from './followup-answer.mjs';
 import {humorQualityIssues} from './humor-quality.mjs';
+import {cleanJokeCore,jokeRequestContext} from '../../assets/yuki/runtime/joke-memory.mjs';
+import {chooseJokePlan} from './joke-direction.mjs';
 import {personalityInstructions,replyContract,followupFocusInstructions} from './personality.mjs';
 import {portfolioExplanationInstructions} from './portfolio-explanations.mjs';
 import {cleanVariety,storyTopicIds,wantsExactRepeat} from '../../assets/yuki/runtime/reply-variety.mjs';
@@ -27,7 +29,7 @@ import {unfinishedReply,completionRequest,parseCompletion,completeRevision,incom
 
 // Deliberately fixed: neither a visitor nor an environment model override can
 // route requests to a paid-only model, AI Gateway, or another provider.
-// Free-tier eligibility checked 2026-10-11; recheck before deployment.
+// Free-tier eligibility checked 2026-10-15; recheck before deployment.
 export const CLOUDFLARE_MODEL='@cf/qwen/qwen3-30b-a3b-fp8';
 // English jokes and focused follow-ups; bounded live comparisons through 2026-10-13.
 // Explicitly available on Workers Free per Cloudflare's model-access changelog.
@@ -127,8 +129,12 @@ export function parseModel(data,knowledge,web={}){
  if(value.factIntent!==undefined&&!factIntents.includes(value.factIntent))throw failure(502,'Reply unavailable');
  const sourceUrls=new Set();
  const sources=[...new Set(Array.isArray(value.sourceIds)?value.sourceIds:[])].slice(0,3).map(id=>knowledge.pages.find(p=>p.id===id)??(web.entries??[]).find(p=>p.id===id)).filter(p=>p&&!sourceUrls.has(p.url)&&sourceUrls.add(p.url)).map(p=>({title:p.title,url:p.url}));
+ // Some models put their already-resolved citation IDs after the final stop.
+ // Remove only exact, validated metadata markers; retain the real source links.
+ // Unknown IDs are NOT silently removed or promoted into supporting evidence.
+ if(typeof value.text==='string')value={...value,text:value.text.replace(/\[(?:sourceId\s*:\s*)?([^\]\n]+)\]/gu,(marker,id)=>value.sourceIds.includes(id.trim())&&[...knowledge.pages,...(web.entries??[])].some(p=>p.id===id.trim())?'':marker).trim()};
  // Only the server's completed discovery route can assign a seen-topic ID.
- try{return {...validReply({...value,factTopic:undefined,fact:undefined,joke:undefined,sources}),...(web.mode!=='results'&&value.factIntent?{factIntent:value.factIntent}:{}),...(web.mode==='eligible'?{webQuery:safeSearchQuery(value.webQuery)}:{})};}catch{throw failure(502,'Reply unavailable');}
+ try{return {...validReply({...value,factTopic:undefined,fact:undefined,joke:undefined,sources}),...(cleanJokeCore(value.jokeCore)?{jokeCore:cleanJokeCore(value.jokeCore)}:{}),...(web.mode!=='results'&&value.factIntent?{factIntent:value.factIntent}:{}),...(web.mode==='eligible'?{webQuery:safeSearchQuery(value.webQuery)}:{})};}catch{throw failure(502,'Reply unavailable');}
 }
 export function initialInferenceTimeout(startedAt,now=Date.now()){
  return Math.max(1,Math.min(22000,38000-(now-startedAt)));
@@ -138,6 +144,7 @@ export async function runModel(ai,request,timeoutMs=22000){
  // Reuse the already configured focused-answer models; no new provider or
  // answer call. The Japanese model keeps its natural casual register.
  if(yukiTask==='sourced-fact'||yukiTask==='sourced-fact-ja')return runInference(ai,yukiTask==='sourced-fact-ja'?CLOUDFLARE_TRANSLATION_MODEL:CLOUDFLARE_HUMOR_MODEL,directSchema(body,'yuki_sourced_fact'),timeoutMs);
+ if(yukiTask==='page-answer'||yukiTask==='page-answer-ja')return runInference(ai,yukiTask==='page-answer-ja'?CLOUDFLARE_TRANSLATION_MODEL:CLOUDFLARE_HUMOR_MODEL,directSchema(body,'yuki_page_answer'),timeoutMs);
  if(yukiTask==='discovery-intent')return runInference(ai,CLOUDFLARE_HUMOR_MODEL,directSchema(body,'yuki_discovery_intent'),timeoutMs);
  // Reuse the established translation model for focused speaker/voice repairs,
  // within the same single quota-reserved repair slot, never a provider retry.
@@ -278,6 +285,7 @@ export function createHandler(network=fetch,{random}={}){
    const openDiscovery=canPlanFact(input,knowledge)&&openFactRequest(input);
    const continuingFact=canPlanFact(input,knowledge)&&isAnotherDiscovery(input.message)&&input.variety?.factContext;
    let discovery=openDiscovery||continuingFact?'fact':lightChatKind(input,knowledge),checkingFunFact=discovery==='fact';
+   if(discovery==='joke')input.jokePlan=chooseJokePlan(input,random);
    if(checkingFunFact&&!web.mode){
     return response(200,{...lookupNotice(input.replyLanguage,input.webSearch?'provider':'disabled'),...(chatSession?{chatSession}:{})});
    }
@@ -294,7 +302,33 @@ export function createHandler(network=fetch,{random}={}){
    const scopedQuery=continuingFact?.scope==='subject'?safeSearchQuery(scopedFactQuery(continuingFact.subject,input,random)):'';
    const result=factTopic||scopedQuery?null:await runModel(env.AI,model,initialInferenceTimeout(startedAt));
    stage='REPLY';
-   let reply=factTopic||scopedQuery?{webQuery:factTopic?.query??scopedQuery}:parseModel(result,knowledge,web),searched=false,repairUsed=false,answerModel=model,answerWeb=web;
+   let reply,searched=false,repairUsed=false,answerModel=model,answerWeb=web;
+   if(factTopic||scopedQuery)reply={webQuery:factTopic?.query??scopedQuery};
+   else{
+    try{reply=parseModel(result,knowledge,web);}
+    catch(error){
+     // A completed malformed answer previously bypassed the existing repair
+     // slot and immediately surfaced YUKI_REPLY. Recover its structure once;
+     // never retry provider failures, refusals, tools, or an expired request.
+     if(!result||result.error||result.success===false||result.choices?.[0]?.message?.refusal||result.choices?.[0]?.message?.tool_calls?.length||request.signal.aborted)throw error;
+     const remaining=38000-(Date.now()-startedAt);if(remaining<6000)throw error;
+     const extra=await quota.fetch('https://quota.invalid/reserve',{method:'POST',body:JSON.stringify({hash,minute:Math.floor(Date.now()/60000)}),signal:AbortSignal.timeout(1500)});
+     if(extra.status!==204)throw error;
+     repairUsed=true;
+     const repair={...model,messages:[...model.messages.slice(0,-1),{role:'system',content:'RESPONSE FORMAT REPAIR: Your previous response could not be parsed safely. Answer the SAME newest request using the original evidence and voice above. Return one complete JSON object matching the supplied schema, with every required field, allowed enum values, and text containing the finished answer only. No serialized answer inside text, prose outside JSON, reasoning, Markdown fences or invented evidence. Keep it complete and concise enough to finish. This uses the one shared repair attempt, not permission for a new topic or another search.'},model.messages.at(-1)]};
+     reply=parseModel(await runModel(env.AI,repair,Math.min(12000,remaining)),knowledge,web);
+    }
+   }
+   // Unfamiliar requests can reach humor by meaning, not a closed phrase list.
+   // This flag never grants a search, navigation or client-selected model.
+   if(discovery!=='joke'&&canPlanFact(input,knowledge)&&reply.destination==='none'&&reply.factIntent==='joke'){
+    const extra=await quota.fetch('https://quota.invalid/reserve',{method:'POST',body:JSON.stringify({hash,minute:Math.floor(Date.now()/60000)}),signal:AbortSignal.timeout(1500)});
+    if(extra.status!==204)throw failure(extra.status===429?429:503,'Humor unavailable');
+    const remaining=38000-(Date.now()-startedAt);if(remaining<6000||request.signal.aborted)throw failure(503,'Humor unavailable');
+    discovery='joke';checkingFunFact=false;input.jokeDiscovery=true;input.jokePlan=chooseJokePlan(input,random);
+    answerWeb={};answerModel=modelRequest(input,knowledge,answerWeb);
+    reply=parseModel(await runModel(env.AI,answerModel,Math.min(18000,remaining)),knowledge,answerWeb);
+   }
    // Confirm unfamiliar wording with a compact task. The long answer prompt
    // sometimes calls a subject-constrained follow-up "open"; do not let that
    // silently erase the visitor's chosen subject. One bounded, quota-reserved
@@ -321,6 +355,7 @@ export function createHandler(network=fetch,{random}={}){
    // preserves strict discovery repetition checks for semantic paraphrases.
    if(checkingFunFact)input.factDiscovery=true;
    const factContext=checkingFunFact?(factTopic?{scope:'open'}:{scope:'subject',subject:scopedQuery?continuingFact.subject:reply.webQuery}):null;
+   if(discovery==='joke')delete reply.webQuery; // Creative humor is not a factual web-search request.
    if(reply.webQuery){
     searched=true;
     let entries=[],searchIssue='provider',answerIssue='';
@@ -380,8 +415,8 @@ export function createHandler(network=fetch,{random}={}){
    // One shared quality-rewrite slot, including language and internal loops.
    // Never retry a failed provider request, increase caps, or start another search.
    const unfinished=unfinishedReply(reply.text);
-   const quality=text=>[...(input.guideEvent&&!guideReplyMatches(finishGuideReply({text},input.guideEvent,cached.data,input.lang).text,input.guideEvent,cached.data.pages,input.lang)?['guide-target']:[]),...replyQualityIssues(text,input.replyLanguage,{allowRepetition:wantsExactRepeat(input.message)}),...followupReplyIssues(text,answerModel),...(searched?searchVoiceIssues(text,answerWeb.entries):[]),...(['joke','joke-ja'].includes(answerModel.yukiTask)?humorQualityIssues(text):[]),...(thirdPersonSelf(text,input.message)?['self-narration']:[]),...(input.replyLanguage==='ja'&&formalJapaneseVoice(text)?['voice']:[])];
-   const issues=[...(unfinished?['unfinished']:[]),...quality(reply.text)];
+   const quality=(text,core)=>[...(input.guideEvent&&!guideReplyMatches(finishGuideReply({text},input.guideEvent,cached.data,input.lang).text,input.guideEvent,cached.data.pages,input.lang)?['guide-target']:[]),...replyQualityIssues(text,input.replyLanguage,{allowRepetition:wantsExactRepeat(input.message)}),...followupReplyIssues(text,answerModel),...(searched?searchVoiceIssues(text,answerWeb.entries):[]),...(['joke','joke-ja'].includes(answerModel.yukiTask)?humorQualityIssues(text,core):[]),...(thirdPersonSelf(text,input.message)?['self-narration']:[]),...(input.replyLanguage==='ja'&&formalJapaneseVoice(text)?['voice']:[])];
+   const issues=[...(unfinished?['unfinished']:[]),...quality(reply.text,reply.jokeCore)];
    if(!repairUsed&&(issues.length||needsFreshReply(reply,input))&&!request.signal.aborted&&Date.now()-startedAt<30000){
     try{
      const extra=await quota.fetch('https://quota.invalid/reserve',{method:'POST',body:JSON.stringify({hash,minute:Math.floor(Date.now()/60000)}),signal:AbortSignal.timeout(1500)});
@@ -391,7 +426,7 @@ export function createHandler(network=fetch,{random}={}){
       if(['joke','joke-ja'].includes(answerModel.yukiTask))revision.yukiTask=answerModel.yukiTask;
       const result=await runModel(env.AI,revision,Math.min(12000,remaining));
       const revised=issues.length||input.guideEvent?parseCompletion(result,reply):parseModel(result,knowledge,answerWeb);
-      if(!unfinishedReply(revised.text)&&!quality(revised.text).length)reply=issues.length?completeRevision(reply,revised):preferFreshReply(reply,revised,input);
+      if(!unfinishedReply(revised.text)&&!quality(revised.text,revised.jokeCore).length)reply=issues.length?completeRevision(reply,revised):preferFreshReply(reply,revised,input);
      }
     }catch{/* Keep a complete original, or show the explicit notice below. */}
    }
@@ -399,7 +434,7 @@ export function createHandler(network=fetch,{random}={}){
    if(incomplete)reply=incompleteAnswer(input.replyLanguage);
    // Never display or remember a known wrong-language/looping answer. The UI
    // shows a localized retry status and keeps the existing conversation intact.
-   if(quality(reply.text).length)throw failure(502,'Reply unavailable');
+   if(quality(reply.text,reply.jokeCore).length)throw failure(502,'Reply unavailable');
    if(input.guideEvent)reply=finishGuideReply(reply,input.guideEvent,cached.data,input.lang);
    // Fail closed for known repeats on EVERY AI path, including sourced facts.
    // A failed/denied revision cannot quietly release the repeated draft.
@@ -410,7 +445,7 @@ export function createHandler(network=fetch,{random}={}){
    }
    if(input.guideEvent&&!guideReplyMatches(reply.text,input.guideEvent,cached.data.pages,input.lang))throw failure(502,'Guide reply does not match target');
    if(input.guideEvent)reply={...reply,destination:'none',sources:[],storyTopics:[]};
-   if(discovery==='joke'&&!incomplete)reply={...reply,joke:true};
+   if(discovery==='joke'&&!incomplete)reply={...reply,joke:true,jokeContext:jokeRequestContext(input),jokePlan:input.jokePlan};
    if(discovery==='fact'&&!incomplete&&reply.sources.length)reply={...reply,fact:true,factContext};
    return response(200,{...validReply(reply),...(chatSession?{chatSession}:{})});
   }catch(error){

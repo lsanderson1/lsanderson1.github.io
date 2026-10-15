@@ -1,8 +1,9 @@
-import {discoveryKind} from './discovery.mjs?v=3';
+import {discoveryKind} from './discovery.mjs?v=4';
+import {cleanJokeContext,cleanJokeRecords,cleanJokeCore,cleanJokePlan,jokeRequestContext,repeatedJokeCore} from './joke-memory.mjs?v=1';
 import {safeWebURL} from './web-sources.mjs';
 import {cleanGuideRecords,guideRecord,previousGuideReplies,cleanGuidePrevious,repeatedGuideReply} from './guide-variety.mjs?v=1';
 export {previousGuideReplies} from './guide-variety.mjs?v=1';
-export {discoveryKind} from './discovery.mjs?v=3';
+export {discoveryKind} from './discovery.mjs?v=4';
 // Short-lived, tab-local reply metadata. No user profiling or server storage.
 export const storyTopicIds=Object.freeze(['origin','firstFlight','lanternKeeper','firstGuide','treasure','quietEvening','home','dailyGoals','bigDream','innerConflict','littlePreferences','relationships','character']);
 const recentLimit=12,sampleSize=32,hex=/^[a-f0-9]{8}$/;
@@ -24,7 +25,15 @@ export function rememberFactEvidence(value,reply){
  return memory;
 }
 export const cleanJokes=value=>[...new Set((Array.isArray(value)?value:[]).filter(s=>typeof s==='string'&&s.trim().length>=8&&s.length<=1200).map(s=>s.trim()))].slice(-24);
-export function rememberJoke(value,text){const memory=cleanVariety(value);if(typeof text==='string')memory.jokes=cleanJokes([...(memory.jokes??[]),text.slice(0,1200)]);return memory;}
+export function rememberJoke(value,text,reply={}){
+ const memory=cleanVariety(value);
+ if(typeof text==='string')memory.jokes=cleanJokes([...(memory.jokes??[]),text.slice(0,1200)]);
+ const context=cleanJokeContext(reply.jokeContext),core=cleanJokeCore(reply.jokeCore),plan=cleanJokePlan(reply.jokePlan);
+ if(context)memory.jokeContext=context;
+ if(core||plan)memory.jokeRecords=cleanJokeRecords([...(memory.jokeRecords??[]),{core,plan}]);
+ delete memory.factContext;
+ return memory;
+}
 // Keep delivered fact wording independently of chat history. This also covers
 // topic-specific requests, which have no random-discovery topic identifier.
 export const cleanFacts=value=>[...new Set((Array.isArray(value)?value:[]).filter(s=>typeof s==='string'&&s.trim().length>=8&&s.length<=1200).map(s=>s.trim()))].slice(-24);
@@ -48,10 +57,11 @@ export function cleanVariety(value){
  }
  const factTopics=[...new Set((Array.isArray(value?.factTopics)?value.factTopics:[]).map(cleanFactTopic).filter(Boolean))].slice(-128);
  const jokes=cleanJokes(value?.jokes);
+ const jokeContext=cleanJokeContext(value?.jokeContext),jokeRecords=cleanJokeRecords(value?.jokeRecords);
  const facts=cleanFacts(value?.facts);
  const factContext=cleanFactContext(value?.factContext),factSources=cleanFactSources(value?.factSources);
  const guides=cleanGuideRecords(value?.guides);
- return {turn:Number.isInteger(value?.turn)&&value.turn>0?Math.min(value.turn,9999):0,topics,recent,...(factTopics.length?{factTopics}:{}),...(facts.length?{facts}:{}),...(factContext?{factContext}:{}),...(factSources.length?{factSources}:{}),...(jokes.length?{jokes}:{}),...(guides.length?{guides}:{})};
+ return {turn:Number.isInteger(value?.turn)&&value.turn>0?Math.min(value.turn,9999):0,topics,recent,...(factTopics.length?{factTopics}:{}),...(facts.length?{facts}:{}),...(factContext?{factContext}:{}),...(factSources.length?{factSources}:{}),...(jokes.length?{jokes}:{}),...(jokeContext?{jokeContext}:{}),...(jokeRecords.length?{jokeRecords}:{}),...(guides.length?{guides}:{})};
 }
 export function rememberGuideReply(value,text,event,lang){
  const memory=cleanVariety(value),record=guideRecord(text,event,lang);
@@ -61,6 +71,7 @@ export function rememberGuideReply(value,text,event,lang){
 export function rememberReply(value,text,storyTopics=[]){
  const memory=cleanVariety(value);memory.turn=Math.min(9999,memory.turn+1);
  delete memory.factContext; // A new ordinary reply ends discovery mode.
+ delete memory.jokeContext;
  for(const id of cleanStoryTopics(storyTopics))memory.topics[id]=Math.min(999,(memory.topics[id]??0)+1);
  memory.recent=[...memory.recent,replyFingerprint(text)].slice(-recentLimit);return memory;
 }
@@ -163,8 +174,9 @@ export function needsFreshText(text,input){
   const local=previousGuideReplies(input.variety,input.guideEvent,input.lang??'en');
   return repeatedGuideReply(text,{...input.guideEvent,previous:cleanGuidePrevious([...(input.guideEvent.previous??[]),...local])});
  }
- if(requestedTopicReuse(text,input))return false;
- const kind=discoveryKind(input.message,input.history),discovery=Boolean(kind);
+ if(!jokeRequestContext(input)&&requestedTopicReuse(text,input))return false;
+ const kind=jokeRequestContext(input)?'joke':discoveryKind(input.message,input.history),discovery=Boolean(kind);
+ if(kind==='joke'&&repeatedJokeCore(input.jokeCore,input.variety?.jokeRecords))return true;
  return repetitionScore(text,input.variety,input.history??[],input.memory??[],{discovery,joke:kind==='joke'})>=(input.guideEvent?0.75:discovery?0.72:repeatThreshold);
 }
 export function wantsExactRepeat(text){
@@ -181,6 +193,7 @@ export function packChatRequest(input,limit=14000){
  const size=()=>new TextEncoder().encode(JSON.stringify(body)).length;
  while(size()>limit&&body.variety.recent.length>2)body.variety.recent.shift();
  while(size()>limit&&body.variety.jokes?.length>4)body.variety.jokes.shift();
+ while(size()>limit&&body.variety.jokeRecords?.length>6)body.variety.jokeRecords.shift();
  while(size()>limit&&body.variety.facts?.length>4)body.variety.facts.shift();
  while(size()>limit&&body.variety.factTopics?.length>16)body.variety.factTopics.shift();
  while(size()>limit&&body.variety.factSources?.length>4)body.variety.factSources.shift();
@@ -188,6 +201,7 @@ export function packChatRequest(input,limit=14000){
  while(size()>limit&&body.history.length)body.history.shift();
  while(size()>limit&&body.variety.recent.length)body.variety.recent.shift();
  while(size()>limit&&body.variety.jokes?.length)body.variety.jokes.shift();
+ while(size()>limit&&body.variety.jokeRecords?.length)body.variety.jokeRecords.shift();
  while(size()>limit&&body.variety.facts?.length)body.variety.facts.shift();
  while(size()>limit&&body.variety.factSources?.length)body.variety.factSources.shift();
  while(size()>limit&&body.guideEvent?.previous?.length)body.guideEvent.previous.shift();

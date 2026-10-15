@@ -65,7 +65,7 @@ export function parseCompletion(data,original){
  const value=typeof content==='string'?JSON.parse(content.replace(/^\s*<think>\s*<\/think>\s*/,'')):content;
  if(!value||Object.keys(value).length!==1||typeof value.text!=='string')throw Error('Invalid completion');
  const text=cleanAssistantText(value.text);if(unfinishedReply(text))throw Error('Incomplete completion');
- const {beats,...kept}=original;
+ const {beats,jokeCore,...kept}=original;
  return validReply({...kept,text});
 }
 
@@ -74,7 +74,7 @@ export function completeRevision(original,revised){
  if(JSON.stringify(original.sources.map(s=>s.url).sort())!==JSON.stringify(revised.sources.map(s=>s.url).sort()))return original;
  if(JSON.stringify(original.storyTopics)!==JSON.stringify(revised.storyTopics))return original;
  // Revised sentences cannot use the draft's old animation indices.
- const {beats,...kept}=original;return {...kept,text:revised.text};
+ const {beats,jokeCore,...kept}=original;return {...kept,text:revised.text};
 }
 
 export function incompleteAnswer(language){

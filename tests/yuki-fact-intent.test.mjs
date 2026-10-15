@@ -9,7 +9,7 @@ const value={text:'Let me find a little discovery to explore.',emotion:'thoughtf
 test('initial intent hints understand meaning rather than an exact phrase list',()=>{
  for(const lang of ['en','ja']){
   const request=modelRequest({...input,lang},{pages:[]},{mode:'eligible'});
-  assert.deepEqual(request.response_format.json_schema.properties.factIntent.enum,['none','open','subject']);
+  assert.deepEqual(request.response_format.json_schema.properties.factIntent.enum,['none','open','subject','joke']);
   assert(request.response_format.json_schema.required.includes('factIntent'));
   assert.equal(request.messages.at(-1).role,'user');assert(request.messages.at(-2).content.includes(factIntentInstructions));
   assert.match(factIntentInstructions,/not a closed phrase list/);assert.match(factIntentInstructions,/visitor-requested subject/);
