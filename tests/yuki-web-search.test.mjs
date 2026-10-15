@@ -241,7 +241,7 @@ test('plain fact and another follow-up both enforce evidence rather than returni
 });
 
 test('open facts and another one pick a live topic before inference, with only one normal AI reservation',async()=>{
- for(const message of ['Can you tell me a fact?','Can you tell me another?']){
+ for(const message of ['Can you tell me a fact?','Can you tell me another?','Tell me a random fact for the day','What is the fact of the day?']){
   const f=fixture({models:[answer]});
   const value=await(await f.handler(f.request({message,history:[{role:'user',content:'Can you tell me a random fact?'},{role:'assistant',content:'Octopuses have three hearts.'}]}),f.env)).json();
   assert.equal(value.text,answer.text);assert.equal(value.factTopic,'wiki-en:42');assert.equal(value.searchStatus,'used');
@@ -250,6 +250,65 @@ test('open facts and another one pick a live topic before inference, with only o
   const search=JSON.parse(f.calls.find(c=>c.url===TAVILY_SEARCH).options.body);
   assert.equal(search.query,'"Wings" facts background');assert(!search.query.includes('Octopus'));
   assert.match(f.ai[0].body.messages[0].content,/FRESH DISCOVERY TOPIC/);
+ }
+});
+
+test('unfamiliar discovery wording uses semantic intent then the same source and topic checks in EN and JA',async()=>{
+ for(const [lang,message] of [['en','A little knowledge snack for my afternoon, any subject you fancy!'],['ja','へえってなる本当の話を一つ聞きたいな。題材はおまかせ！']]){
+  const sourced=lang==='en'?answer:{...answer,text:'翼は空気の流れを変えることで揚力を生むんだ。形や角度によって、その働きも変わるよ。小さな角度の違いが飛び方につながるって、じっくり考えたくなっちゃうね。'};
+  const topicData={query:{pages:[{pageid:42,ns:0,title:'Wings',langlinks:[{lang:'ja',title:'翼'}],extract:'Wings are structures that interact with air and provide lift. They occur in nature and in machines, and different shapes are suited to different kinds of flight.'}]}};
+  const planner={...draft,factIntent:'open',webQuery:'octopus hearts',text:lang==='en'?'Octopuses have three hearts.':'タコには心臓が三つあるよ。'};
+  const f=fixture({models:[planner,{...planner,text:'Intent check.',webQuery:''},sourced],topicData});
+  const response=await f.handler(f.request({message,lang}),f.env),value=await response.json();
+  assert.equal(response.status,200);assert.equal(value.text,sourced.text);assert.equal(value.fact,true);assert.equal(value.factTopic,'wiki-en:42');
+  assert.equal(value.factIntent,undefined);assert.equal(f.ai.length,3);assert.equal(f.reservations.length,4,'planner, intent check, answer and one search all budgeted');
+  assert.equal(f.calls.filter(c=>c.url===RANDOM_TOPICS_URL).length,1);
+  const search=JSON.parse(f.calls.find(c=>c.url===TAVILY_SEARCH).options.body);assert.equal(search.query,'"Wings" facts background');
+  assert.match(f.ai[2].body.messages[0].content,/Choose ONE interesting claim/);assert.equal(f.ai[2].body.response_format.json_schema.schema.properties.factIntent,undefined);
+ }
+});
+
+test('semantic subject restrictions and ordinary explanations do not become random topics',async()=>{
+ const specific=fixture({models:[{...draft,factIntent:'open'},{...draft,factIntent:'subject'},answer]});
+ const value=await(await specific.handler(specific.request({message:'A surprising nugget about aviation, if you have one!'}),specific.env)).json();
+ assert.equal(value.fact,true);assert.equal(value.factTopic,undefined);assert(!specific.calls.some(c=>c.url===RANDOM_TOPICS_URL));
+ assert.equal(JSON.parse(specific.calls.find(c=>c.url===TAVILY_SEARCH).options.body).query,draft.webQuery);
+ for(const message of ['Why does that happen?','What is a fact?','Tell me more about the octopus heart you mentioned.']){
+  const ordinary={...answer,factIntent:'none',webQuery:'',sourceIds:[]},f=fixture({models:[ordinary]});
+  const result=await(await f.handler(f.request({message}),f.env)).json();
+  assert.equal(result.text,ordinary.text);assert.equal(result.fact,undefined);assert.equal(f.ai.length,1);
+  assert(!f.calls.some(c=>c.url===RANDOM_TOPICS_URL||c.url===TAVILY_SEARCH));
+ }
+});
+
+test('semantic discovery cannot bypass search permission, topic failure or the extra inference reservation',async()=>{
+ for(const condition of ['disabled','provider','seen','budget']){
+  const f=fixture({models:[{...draft,factIntent:'open'},{...draft,factIntent:'open'}],...(condition==='provider'?{topicStatus:500}:{}),...(condition==='budget'?{extra:429}:{})});
+  const value=await(await f.handler(f.request({message:'Something true and surprising to learn, your choice!',...(condition==='disabled'?{webSearch:false}:{}),...(condition==='seen'?{variety:{factTopics:['wiki-en:42']}}:{})}),f.env)).json();
+  assert.equal(value.notice,true,condition);assert.equal(value.factTopic,undefined);assert.equal(f.ai.length,condition==='budget'?1:2);assert(!f.calls.some(c=>c.url===TAVILY_SEARCH));
+  if(condition==='disabled')assert(!f.calls.some(c=>c.url===RANDOM_TOPICS_URL));
+ }
+});
+
+test('semantic discoveries compare stored fact claims even without the word fact or visible chat history',async()=>{
+ const f=fixture({models:[{...draft,factIntent:'subject'},{...draft,factIntent:'subject'},answer,answer]});
+ const response=await f.handler(f.request({message:'A new little discovery, your choice!',variety:{facts:[answer.text]}}),f.env);
+ assert.equal(response.status,502);assert.equal((await response.json()).reference,'YUKI_VARIETY');
+ assert.equal(f.ai.length,4);assert.equal(f.calls.filter(c=>c.url===TAVILY_SEARCH).length,1);
+ assert.match(f.ai[2].body.messages[0].content,/Wings change the airflow/);
+});
+
+test('intent confirmation protects explanation follow-ups and fails closed on an invalid decision',async()=>{
+ const ordinary={...answer,sourceIds:[],webQuery:'',factIntent:'subject'};
+ const f=fixture({models:[ordinary,{...draft,factIntent:'none',webQuery:''}]});
+ const value=await(await f.handler(f.request({message:'How does that work?'}),f.env)).json();
+ assert.equal(value.text,ordinary.text);assert.equal(value.fact,undefined);assert.equal(f.ai.length,2);
+ assert(!f.calls.some(c=>c.url===RANDOM_TOPICS_URL||c.url===TAVILY_SEARCH));
+ for(const decision of [{...draft},new Error('test provider failure')]){
+  const broken=fixture({models:[{...draft,factIntent:'open'},decision]});
+  const rejected=await(await broken.handler(broken.request({message:'Teach me something surprising, any topic!'}),broken.env)).json();
+  assert.equal(rejected.notice,true);assert.equal(rejected.searchIssue,'planning');assert.equal(broken.ai.length,2);
+  assert(!broken.calls.some(c=>c.url===RANDOM_TOPICS_URL||c.url===TAVILY_SEARCH));
  }
 });
 

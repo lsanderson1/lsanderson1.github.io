@@ -20,18 +20,35 @@ function freshCandidates(candidates,input){
  return candidates.filter(t=>t.title.length>=3&&t.title.length<=145&&t.query&&!unsuitable(t.title)&&!seen.has(t.id)&&!t.aliases.some(a=>a.length>=3&&prior.includes(normal(a))));
 }
 
+// Remove only temporal REQUEST framing, not subjects such as day length,
+// daily life, the Day of the Dead, or this day in history.
+export function factRequestWording(message){
+ return String(message??'').normalize('NFKC').toLowerCase().replace(/[’]/gu,"'")
+  .replace(/\b(facts?|trivia)\s+of\s+the\s+day\b/gu,'$1')
+  .replace(/\b(?:today's|daily)\s+(?=(?:(?:random|fun|interesting|surprising)\s+)*(?:facts?|trivia)\b)/gu,'')
+  .replace(/\bfor\s+(?:the day|today)\b/gu,'')
+  .replace(/(?:今日|本日)(?:の|は|も)?(?=(?:何か|なにか|面白い|おもしろい|楽しい|ランダムな|新しい|豆知識|雑学))/gu,'');
+}
 export function openFactRequest(input){
- if(discoveryKind(input.message,input.history)!=='fact')return false;
- let q=input.message;
+ let q=factRequestWording(input.message);
+ // "What is the fact of the day?" is a request, "What is a fact?" a definition.
+ const daily=/\b(?:facts?|trivia)\s+of\s+the\s+day\b|\b(?:today['’]s|daily)\s+(?:(?:random|fun|interesting|surprising)\s+)*(?:facts?|trivia)\b/iu.test(input.message);
+ if(discoveryKind(q,input.history)!=='fact'&&!daily)return false;
+ // A follow-up with the word "fact" still inherits a chosen subject. When
+ // that scope is unclear, let the semantic check decide rather than silently
+ // treating "another fact" as permission to change fields.
+ const previous=(input.history??[]).findLast(m=>m.role==='user');
+ if(previous&&/\b(?:another|more|different)\b|もう|別|ほか|他の/iu.test(q)&&!openFactRequest({message:previous.content}))return false;
  // An implicit "another" inherits a requested subject (e.g. astronomy).
  if(!/\bfacts?\b|\btrivia\b|豆知識|雑学/iu.test(q)){
   q=[...(input.history??[])].reverse().find(m=>m.role==='user'&&/\bfacts?\b|\btrivia\b|豆知識|雑学/iu.test(m.content))?.content??'';
  }
  if(!q)return false;
- q=q.normalize('NFKC').toLowerCase().replace(/[’]/g,"'").replace(/\b(?:i'd|i'll)\b/gu,'i would');
+ q=factRequestWording(q).replace(/\b(?:i'd|i'll)\b/gu,'i would');
+ q=q.replace(/^(?:what(?:'s| is)|do you have|have you got)\s+/u,'');
  q=q.replace(/\b(?:about|on|from) (?:anything|anywhere|any subject|any topic|the internet|the web)\b/gu,' ')
   .replace(/\b(?:can|could|would|will|you|i|like|love|want|to|a|an|the|some|me|us|please|tell|give|show|share|say|find|search|for|hear|learn|know|one|another|more|new|different|random|randomly|completely|totally|just|fun|interesting|fascinating|surprising|cool|neat|true|little|fact|facts|trivia|something|anything|today|now)\b/gu,' ')
-  .replace(/(?:何でもいいから|何でも|なんでも|何か|なにか|ランダム(?:な|に)?|面白い|おもしろい|新しい|別の|ほかの|他の|楽しい|豆知識|雑学|ひとつ|一つ|もう|教えて(?:くれる|ほしい)?|聞かせて|お願い|ください|ちょうだい|くれない|くれる|くれ|を|が|な|よ|ね)/gu,'');
+  .replace(/(?:何でもいいから|何でも|なんでも|何か|なにか|ランダム(?:な|に)?|面白い|おもしろい|新しい|別の|ほかの|他の|楽しい|豆知識|雑学|ひとつ|一つ|もう|教えて(?:くれる|ほしい)?|聞かせて|お願い|ください|ちょうだい|くれない|くれる|くれ|を|が|な|よ|ね)/gu,'').replace(/^は[?？]?$/u,'');
  return !q.replace(/[\s.,!?…。！？、'"-]/gu,'');
 }
 

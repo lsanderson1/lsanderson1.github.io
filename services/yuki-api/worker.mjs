@@ -13,6 +13,7 @@ import {thirdPersonSelf} from '../../assets/yuki/runtime/self-narration.mjs';
 import {varietyInstructions,needsFreshReply,rewriteRequest,preferFreshReply} from './reply-variety.mjs';
 import {searchEnabled,safeSearchQuery,searchInstructions,searchTavilyResult,lookupNotice,reserveSearch} from './web-search.mjs';
 import {openFactRequest,freshFactTopic,factMentionsTopic} from './random-facts.mjs';
+import {addFactIntent,canPlanFact,factIntents,factIntentRequest} from './fact-intent.mjs';
 import {issueChatSession,verifyChatSession} from './chat-session.mjs';
 import {cleanRecall} from '../../assets/yuki/runtime/conversation-memory.mjs';
 import {cleanInterests} from '../../assets/yuki/runtime/visitor-interests.mjs';
@@ -63,13 +64,16 @@ export function selectKnowledge(k,input){
  try{return retrieveKnowledge(k,input);}catch{throw failure(503,'Site information unavailable');}
 }
 export function modelRequest(input,knowledge,web={}){
+ return addFactIntent(buildModelRequest(input,knowledge,web),input,knowledge,web);
+}
+function buildModelRequest(input,knowledge,web={}){
  const language=input.replyLanguage??input.lang;
  const schema={type:'object',properties:{text:{type:'string',minLength:1,maxLength:2800,description:'One reader-facing answer in plain prose. Never serialize another reply object or duplicate this answer inside the text.'},emotion:{type:'string',enum:emotions},gesture:{type:'string',enum:['none','wave','talkOpen','talkExplain']},destination:{type:'string',enum:destinations},sourceIds:{type:'array',items:{type:'string'},maxItems:3},storyTopics:{type:'array',items:{type:'string',enum:storyTopicIds},maxItems:3}},required:['text','emotion','gesture','destination','sourceIds','storyTopics'],additionalProperties:false};
  schema.properties.beats={type:'array',minItems:2,maxItems:4,items:{type:'object',properties:{sentence:{type:'integer',minimum:0,maximum:20},emotion:{type:'string',enum:emotions},gesture:{type:'string',enum:['none','talkOpen','talkExplain']}},required:['sentence','emotion','gesture'],additionalProperties:false}};
  if(web.mode==='eligible'){schema.properties.webQuery={type:'string',maxLength:180};schema.required.push('webQuery');}
  if(input.guideEvent)return guideReplyRequest(input,schema,knowledge);
  if(knowledge.view?.localQuestion&&!input.guideEvent)return pageAnswerRequest({...input,lang:language},knowledge,web,schema);
- const lightKind=lightChatKind(input,knowledge);if(lightKind)return lightChatRequest(input,web,schema,lightKind);
+ const lightKind=web.factIntent?'fact':lightChatKind(input,knowledge);if(lightKind)return lightChatRequest(input,web,schema,lightKind);
  if(isContextualFollowup(input,knowledge))return followupAnswerRequest(input,knowledge,web,schema);
  const instructions=`${input.history?.length?followupFocusInstructions+'\n':''}${personalityInstructions(language)}
 ${portfolioExplanationInstructions}
@@ -117,16 +121,21 @@ export function parseModel(data,knowledge,web={}){
  let value;try{value=typeof content==='string'?JSON.parse(content.replace(/^\s*<think>\s*<\/think>\s*/,'')):content;}catch{throw failure(502,'Reply unavailable');}
  if(!value||typeof value!=='object'||Array.isArray(value)||!emotions.includes(value.emotion)||!['none','wave','talkOpen','talkExplain'].includes(value.gesture)||!destinations.includes(value.destination)||!Array.isArray(value.sourceIds)||value.sourceIds.length>3||value.sourceIds.some(id=>typeof id!=='string'))throw failure(502,'Reply unavailable');
  if(value.storyTopics!==undefined&&(!Array.isArray(value.storyTopics)||value.storyTopics.length>3||value.storyTopics.some(id=>!storyTopicIds.includes(id))))throw failure(502,'Reply unavailable');
+ if(value.factIntent!==undefined&&!factIntents.includes(value.factIntent))throw failure(502,'Reply unavailable');
  const sourceUrls=new Set();
  const sources=[...new Set(Array.isArray(value.sourceIds)?value.sourceIds:[])].slice(0,3).map(id=>knowledge.pages.find(p=>p.id===id)??(web.entries??[]).find(p=>p.id===id)).filter(p=>p&&!sourceUrls.has(p.url)&&sourceUrls.add(p.url)).map(p=>({title:p.title,url:p.url}));
  // Only the server's completed discovery route can assign a seen-topic ID.
- try{return {...validReply({...value,factTopic:undefined,fact:undefined,joke:undefined,sources}),...(web.mode==='eligible'?{webQuery:safeSearchQuery(value.webQuery)}:{})};}catch{throw failure(502,'Reply unavailable');}
+ try{return {...validReply({...value,factTopic:undefined,fact:undefined,joke:undefined,sources}),...(web.mode!=='results'&&value.factIntent?{factIntent:value.factIntent}:{}),...(web.mode==='eligible'?{webQuery:safeSearchQuery(value.webQuery)}:{})};}catch{throw failure(502,'Reply unavailable');}
 }
 export function initialInferenceTimeout(startedAt,now=Date.now()){
  return Math.max(1,Math.min(22000,38000-(now-startedAt)));
 }
 export async function runModel(ai,request,timeoutMs=22000){
  const {yukiTask,...body}=request;
+ // Reuse the already configured focused-answer models; no new provider or
+ // answer call. The Japanese model keeps its natural casual register.
+ if(yukiTask==='sourced-fact'||yukiTask==='sourced-fact-ja')return runInference(ai,yukiTask==='sourced-fact-ja'?CLOUDFLARE_TRANSLATION_MODEL:CLOUDFLARE_HUMOR_MODEL,directSchema(body,'yuki_sourced_fact'),timeoutMs);
+ if(yukiTask==='discovery-intent')return runInference(ai,CLOUDFLARE_HUMOR_MODEL,directSchema(body,'yuki_discovery_intent'),timeoutMs);
  // Reuse the established translation model for focused speaker/voice repairs,
  // within the same single quota-reserved repair slot, never a provider retry.
  if(yukiTask==='guide-voice-ja'||yukiTask==='reply-voice')return runTranslation(ai,body,timeoutMs);
@@ -263,12 +272,13 @@ export function createHandler(network=fetch,{random}={}){
    if(portrait)return response(200,{...validReply(portrait),...(chatSession?{chatSession}:{})});
    stage='MODEL';
    const web=searchEnabled(env,input)?{mode:'eligible'}:{};
-   const discovery=lightChatKind(input,knowledge),checkingFunFact=discovery==='fact';
+   const openDiscovery=canPlanFact(input,knowledge)&&openFactRequest(input);
+   let discovery=openDiscovery?'fact':lightChatKind(input,knowledge),checkingFunFact=discovery==='fact';
    if(checkingFunFact&&!web.mode){
     return response(200,{...lookupNotice(input.replyLanguage,input.webSearch?'provider':'disabled'),...(chatSession?{chatSession}:{})});
    }
    let factTopic=null;
-   if(checkingFunFact&&openFactRequest(input)){
+   if(openDiscovery){
     try{factTopic=await freshFactTopic({network,readJSON:boundedJSON,input,random,signal:AbortSignal.any([request.signal,AbortSignal.timeout(6000)])});}catch{/* No familiar-trivia fallback when discovery fails. */}
     if(!factTopic)return response(200,{...lookupNotice(input.replyLanguage,'planning'),...(chatSession?{chatSession}:{})});
    }
@@ -280,15 +290,41 @@ export function createHandler(network=fetch,{random}={}){
    const result=factTopic?null:await runModel(env.AI,model,initialInferenceTimeout(startedAt));
    stage='REPLY';
    let reply=factTopic?{webQuery:factTopic.query}:parseModel(result,knowledge,web),searched=false,repairUsed=false,answerModel=model,answerWeb=web;
+   // Confirm unfamiliar wording with a compact task. The long answer prompt
+   // sometimes calls a subject-constrained follow-up "open"; do not let that
+   // silently erase the visitor's chosen subject. One bounded, quota-reserved
+   // check, no provider retries and no source lookup before its decision.
+   if(!factTopic&&discovery!=='joke'&&canPlanFact(input,knowledge)&&reply.destination==='none'&&['open','subject'].includes(reply.factIntent)){
+    let intent;
+    try{
+     if(request.signal.aborted||Date.now()-startedAt>18000)throw Error('Intent time budget');
+     const reserved=await quota.fetch('https://quota.invalid/reserve',{method:'POST',body:JSON.stringify({hash,minute:Math.floor(Date.now()/60000)}),signal:AbortSignal.timeout(1500)});
+     if(reserved.status!==204)return response(200,{...lookupNotice(input.replyLanguage,reserved.status===429?'ai-limit':'provider'),...(chatSession?{chatSession}:{})});
+     intent=parseModel(await runModel(env.AI,factIntentRequest(input),6000),{pages:[]},web);
+     if(!factIntents.includes(intent.factIntent))throw Error('Missing intent');
+    }catch{return response(200,{...lookupNotice(input.replyLanguage,'planning'),...(chatSession?{chatSession}:{})});}
+    discovery=intent.factIntent==='none'?'':'fact';checkingFunFact=discovery==='fact';
+    if(checkingFunFact&&!web.mode)return response(200,{...lookupNotice(input.replyLanguage,input.webSearch?'provider':'disabled'),...(chatSession?{chatSession}:{})});
+    if(intent.factIntent==='subject')reply={webQuery:intent.webQuery};
+    if(intent.factIntent==='open'){
+     try{factTopic=await freshFactTopic({network,readJSON:boundedJSON,input,random,signal:AbortSignal.any([request.signal,AbortSignal.timeout(6000)])});}catch{/* No remembered-trivia fallback. */}
+     if(!factTopic)return response(200,{...lookupNotice(input.replyLanguage,'planning'),...(chatSession?{chatSession}:{})});
+     reply={webQuery:factTopic.query};
+    }
+   }
+   // Server-only flag: validateInput never accepts this from a visitor. It
+   // preserves strict discovery repetition checks for semantic paraphrases.
+   if(checkingFunFact)input.factDiscovery=true;
    if(reply.webQuery){
     searched=true;
     let entries=[],searchIssue='provider',answerIssue='';
     const remaining=()=>38000-(Date.now()-startedAt);
     // Planned searches need a second inference reserved before a search credit.
-    // Random discovery has not used its first inference yet. Both budgets apply.
+    // Only the fast random route has its first inference still available.
+    // Semantic discovery has used its planner/check; all calls are reserved.
     try{
      if(request.signal.aborted||remaining()<14000){searchIssue='timeout';throw Error('Not enough time');}
-     if(!factTopic){
+     if(result!==null){
       const extra=await quota.fetch('https://quota.invalid/reserve',{method:'POST',body:JSON.stringify({hash,minute:Math.floor(Date.now()/60000)}),signal:AbortSignal.timeout(1500)});
       if(extra.status!==204){searchIssue=extra.status===429?'ai-limit':'provider';throw Error('No inference budget');}
      }
@@ -301,7 +337,7 @@ export function createHandler(network=fetch,{random}={}){
      if(!entries.length)throw Error('No usable search evidence');
      searchIssue='answer';
      if(request.signal.aborted||remaining()<5000)throw Error('Not enough time');
-     const evidence={mode:'results',entries,date:day,...(factTopic?{factTopic}:{})};
+     const evidence={mode:'results',entries,date:day,...(checkingFunFact?{factIntent:true}:{}),...(factTopic?{factTopic}:{})};
      const searchedModel=modelRequest(input,knowledge,evidence);
      // Provider errors/timeouts are not retried. A completed but malformed
      // answer, like a missing citation, can use the ONE existing repair slot.

@@ -12,6 +12,13 @@ test('open English/Japanese facts are random, specified subjects and other activ
  for(const [question,expected] of [['Tell me a fact',true],['Tell me a fact about space',false]])assert.equal(openFactRequest({message:'Can you tell me another?',history:[{role:'user',content:question},{role:'assistant',content:'Here is an interesting discovery.'}]}),expected);
 });
 
+test('daily request framing is open in both languages without erasing a genuine subject',()=>{
+ for(const message of ['Tell me a random fact for the day','Can you give me a random fact for today?','What is the fun fact of the day?','What is the fact of the day?','What’s today’s random fact?','What is today’s fact?','Tell me a daily fun fact','Do you have a fun fact for me today?','今日の豆知識を教えて','今日も何か面白い雑学を聞かせて','今日の雑学は？','本日の豆知識を一つ教えて'])assert(openFactRequest({message}),message);
+ for(const message of ['Tell me a random fact about space for the day','Tell me a fact about day length','Tell me a fact about daily life in ancient Rome','Tell me a fact about the Day of the Dead','Give me a fact about this day in history','今日の宇宙の豆知識を教えて','江戸時代の日常生活の豆知識を教えて','What is a fact?','Explain the fact of the day','Is today’s fact true?'])assert(!openFactRequest({message}),message);
+ for(const [question,expected] of [['Tell me a random fact for the day',true],['今日の豆知識を教えて',true],['Give me a fact about space today',false]])assert.equal(openFactRequest({message:'One more please',history:[{role:'user',content:question},{role:'assistant',content:'A discovery.'}]}),expected,question);
+ for(const message of ['Tell me another fact','Something different!','別の豆知識を教えて'])assert(!openFactRequest({message,history:[{role:'user',content:'Tell me a fact about astronomy'},{role:'assistant',content:'A discovery about Saturn.'}]}),message);
+});
+
 test('live candidates are filtered and remembered page IDs are excluded independently of language',()=>{
  const pages=[page(1,'Octopus'),page(2,'Cloud chamber'),page(3,'Sundial')];
  assert.equal(chooseFreshTopic({query:{pages}},{variety:{factTopics:['wiki-en:1','wiki-en:2']}},()=>0).title,'Sundial');
