@@ -1,4 +1,4 @@
-import {cleanVariety,cleanStoryTopics,cleanFactTopic,cleanFactContext} from './runtime/reply-variety.mjs?v=12';
+import {cleanVariety,cleanStoryTopics,cleanFactTopic,cleanFactContext} from './runtime/reply-variety.mjs?v=13';
 import {cleanJokeCore,cleanJokeContext,cleanJokePlan} from './runtime/joke-memory.mjs?v=1';
 import {cleanMessages} from './runtime/conversation-language.mjs?v=8';
 import {cleanReplyBeats} from './runtime/reply-beats.mjs';
@@ -29,9 +29,10 @@ export function validReply(value){
  const beats=text===value.text.trim()?cleanReplyBeats(value.beats,text):[];
  const factTopic=cleanFactTopic(value.factTopic),joke=value.joke===true;
  const factContext=value.fact===true?cleanFactContext(value.factContext):null;
+ const pageOverview=safeSitePath(value.pageOverview);
  const humor=joke?{jokeCore:cleanJokeCore(value.jokeCore),jokeContext:cleanJokeContext(value.jokeContext),jokePlan:cleanJokePlan(value.jokePlan)}:{};
  for(const key of Object.keys(humor))if(!humor[key])delete humor[key];
- return {text,emotion:emotions.includes(value.emotion)?value.emotion:'neutral',gesture:['none','wave','talkOpen','talkExplain'].includes(value.gesture)?value.gesture:'none',destination:destinations.includes(value.destination)?value.destination:'none',sources:Array.isArray(value.sources)?value.sources.filter(s=>s&&typeof s.title==='string'&&typeof s.url==='string').slice(0,3):[],storyTopics:cleanStoryTopics(value.storyTopics),...(factTopic?{factTopic}:{}),...(factContext?{factContext}:{}),...(joke?{joke:true,...humor}:{}),...(value.fact===true?{fact:true}:{}),...(beats.length?{beats}:{}),...(['used','limit','unavailable'].includes(value.searchStatus)?{searchStatus:value.searchStatus}:{}),...(value.notice===true&&['disabled','limit','ai-limit','no-results','answer','planning','provider','provider-limit','timeout'].includes(value.searchIssue)?{notice:true,searchIssue:value.searchIssue}:{})};
+ return {text,emotion:emotions.includes(value.emotion)?value.emotion:'neutral',gesture:['none','wave','talkOpen','talkExplain'].includes(value.gesture)?value.gesture:'none',destination:destinations.includes(value.destination)?value.destination:'none',sources:Array.isArray(value.sources)?value.sources.filter(s=>s&&typeof s.title==='string'&&typeof s.url==='string').slice(0,3):[],storyTopics:cleanStoryTopics(value.storyTopics),...(pageOverview?{pageOverview}:{}),...(factTopic?{factTopic}:{}),...(factContext?{factContext}:{}),...(joke?{joke:true,...humor}:{}),...(value.fact===true?{fact:true}:{}),...(beats.length?{beats}:{}),...(['used','limit','unavailable'].includes(value.searchStatus)?{searchStatus:value.searchStatus}:{}),...(value.notice===true&&['disabled','limit','ai-limit','no-results','answer','planning','provider','provider-limit','timeout'].includes(value.searchIssue)?{notice:true,searchIssue:value.searchIssue}:{})};
 }
 export function safeSitePath(value,base=''){
  if(typeof value!=='string'||!value.startsWith('/')||value.startsWith('//')||/[\\\u0000-\u0020]/.test(value)||value.includes('%'))return null;

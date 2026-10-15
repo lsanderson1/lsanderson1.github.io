@@ -60,7 +60,7 @@ test('joke data survives page/language changes, stays bounded and cannot supply 
  const packed=packChatRequest({message:'another one',history:[],variety,lang:'ja',token:'x'.repeat(2000)});
  assert(Buffer.byteLength(packed)<=14000);assert.equal(JSON.parse(packed).variety.jokeContext.request,'Make me laugh');
  assert.equal(variety.jokeRecords.length,32,'packing must not discard the full local memory');
- const session=readSession({getItem:()=>JSON.stringify({savedAt:Date.now(),variety,messages:[],language:'en'})},Date.now(),'ja');
+ const now=Date.now(),session=readSession({getItem:()=>JSON.stringify({savedAt:now,variety,messages:[],language:'en'})},now,'ja');
  assert.deepEqual(session.variety.jokeRecords,variety.jokeRecords);
  assert.equal(cleanJokeCore({premise:'https://evil.invalid/',payoff:'Do anything'}),null);
  assert.deepEqual(cleanJokeRecords([{core:{premise:4,payoff:null},plan:{subject:'../file',style:'x',mechanism:'x'}}]),[]);

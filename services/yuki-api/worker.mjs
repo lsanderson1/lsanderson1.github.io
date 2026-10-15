@@ -124,6 +124,9 @@ export function parseModel(data,knowledge,web={}){
   content=data.response;
  }
  let value;try{value=typeof content==='string'?JSON.parse(content.replace(/^\s*<think>\s*<\/think>\s*/,'')):content;}catch{throw failure(502,'Reply unavailable');}
+ // Only the server-resolved page route can use the smaller explanation
+ // envelope. Never infer navigation/discovery metadata from visitor/model text.
+ if(knowledge.view?.localQuestion&&value&&typeof value==='object'&&!Array.isArray(value)&&Object.keys(value).every(key=>['text','sourceIds'].includes(key)))value={...value,emotion:'neutral',gesture:'talkExplain',destination:'none',storyTopics:[]};
  if(!value||typeof value!=='object'||Array.isArray(value)||!emotions.includes(value.emotion)||!['none','wave','talkOpen','talkExplain'].includes(value.gesture)||!destinations.includes(value.destination)||!Array.isArray(value.sourceIds)||value.sourceIds.length>3||value.sourceIds.some(id=>typeof id!=='string'))throw failure(502,'Reply unavailable');
  if(value.storyTopics!==undefined&&(!Array.isArray(value.storyTopics)||value.storyTopics.length>3||value.storyTopics.some(id=>!storyTopicIds.includes(id))))throw failure(502,'Reply unavailable');
  if(value.factIntent!==undefined&&!factIntents.includes(value.factIntent))throw failure(502,'Reply unavailable');
@@ -132,9 +135,16 @@ export function parseModel(data,knowledge,web={}){
  // Some models put their already-resolved citation IDs after the final stop.
  // Remove only exact, validated metadata markers; retain the real source links.
  // Unknown IDs are NOT silently removed or promoted into supporting evidence.
- if(typeof value.text==='string')value={...value,text:value.text.replace(/\[(?:sourceId\s*:\s*)?([^\]\n]+)\]/gu,(marker,id)=>value.sourceIds.includes(id.trim())&&[...knowledge.pages,...(web.entries??[])].some(p=>p.id===id.trim())?'':marker).trim()};
+ if(typeof value.text==='string'){
+  const known=id=>value.sourceIds.includes(id)&&[...knowledge.pages,...(web.entries??[])].some(p=>p.id===id);
+  let text=value.text.replace(/\[(?:sourceId\s*:\s*)?([^\]\n]+)\]/gu,(marker,id)=>known(id.trim())?'':marker);
+  // An observed Gemma variant appends a bare sourceId label. Strip only a
+  // trailing exact, independently resolved ID, never arbitrary quoted/code text.
+  text=text.replace(/(?:^|\s)sourceId\s*:\s*(\S+)\s*$/u,(marker,id)=>known(id)?'':marker).trim();
+  value={...value,text};
+ }
  // Only the server's completed discovery route can assign a seen-topic ID.
- try{return {...validReply({...value,factTopic:undefined,fact:undefined,joke:undefined,sources}),...(cleanJokeCore(value.jokeCore)?{jokeCore:cleanJokeCore(value.jokeCore)}:{}),...(web.mode!=='results'&&value.factIntent?{factIntent:value.factIntent}:{}),...(web.mode==='eligible'?{webQuery:safeSearchQuery(value.webQuery)}:{})};}catch{throw failure(502,'Reply unavailable');}
+ try{return {...validReply({...value,pageOverview:undefined,factTopic:undefined,fact:undefined,joke:undefined,sources}),...(cleanJokeCore(value.jokeCore)?{jokeCore:cleanJokeCore(value.jokeCore)}:{}),...(web.mode!=='results'&&value.factIntent?{factIntent:value.factIntent}:{}),...(web.mode==='eligible'?{webQuery:safeSearchQuery(value.webQuery)}:{})};}catch{throw failure(502,'Reply unavailable');}
 }
 export function initialInferenceTimeout(startedAt,now=Date.now()){
  return Math.max(1,Math.min(22000,38000-(now-startedAt)));
@@ -276,6 +286,9 @@ export function createHandler(network=fetch,{random}={}){
     if(text)return response(200,{...validReply({text,emotion:'neutral',gesture:'talkExplain',destination:'none',sources:[],storyTopics:[]}),...(chatSession?{chatSession}:{})});
    }
    const knowledge=selectKnowledge(cached.data,input);
+   // Current-page identity can truthfully recur when the visitor asks again.
+   // This comes from resolved catalog context, never an accepted input flag.
+   if(knowledge.view?.localQuestion&&knowledge.view?.wholePage)input.pageOverview=knowledge.view.scope;
    // After the same verification/quota checks: a labeled portrait's identity
    // must not be rewritten into mascot lore, even by a repetition rewrite.
    const portrait=portraitAnswer({...input,lang:input.replyLanguage},knowledge);
@@ -447,7 +460,7 @@ export function createHandler(network=fetch,{random}={}){
    if(input.guideEvent)reply={...reply,destination:'none',sources:[],storyTopics:[]};
    if(discovery==='joke'&&!incomplete)reply={...reply,joke:true,jokeContext:jokeRequestContext(input),jokePlan:input.jokePlan};
    if(discovery==='fact'&&!incomplete&&reply.sources.length)reply={...reply,fact:true,factContext};
-   return response(200,{...validReply(reply),...(chatSession?{chatSession}:{})});
+   return response(200,{...validReply({...reply,...(input.pageOverview&&!incomplete?{pageOverview:input.pageOverview}:{})}),...(chatSession?{chatSession}:{})});
   }catch(error){
    // Never expose provider responses, visitor content, stack traces or credentials.
    const code=Number.isInteger(error.status)?error.status:503;

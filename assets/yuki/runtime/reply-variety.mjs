@@ -168,6 +168,12 @@ export function requestedTopicReuse(text,input){
 }
 export function needsFreshText(text,input){
  if(wantsExactRepeat(input.message))return false;
+ // A server-resolved overview is a factual explanation of this exact page,
+ // not an open-ended request for novelty. Rephrasing "what is this place?"
+ // should not turn its correct identity/content into a forbidden repeat.
+ // New details, discovery and guide requests still use their normal guards.
+ const page=typeof input.page==='string'?input.page.split('#')[0]:'';
+ if(page&&input.pageOverview===page&&!input.guideEvent&&!input.factDiscovery&&!input.jokeDiscovery&&!discoveryKind(input.message,input.history)&&!/\b(?:another|different|random|new|more|further|else|avoid|stop)\b|\b(?:don't|do not)\s+repeat|\bno repeats?\b|別|ほか|他の|新し|ランダム|もっと|詳し|繰り返さない|繰り返さず/iu.test(input.message))return false;
  if(input.guideEvent&&(Array.isArray(input.guideEvent.previous)||input.variety?.guides)){
   // Route-specific prose is compared separately from fixed click instructions
   // and unrelated chats, which previously caused false repeats and stale facts.

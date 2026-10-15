@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {asksCurrentPage,pageEvidenceInstruction} from '../services/yuki-api/page-awareness.mjs';
 import {retrieveKnowledge,validateContext} from '../services/yuki-api/knowledge.mjs';
-import {modelRequest} from '../services/yuki-api/worker.mjs';
+import {modelRequest,parseModel} from '../services/yuki-api/worker.mjs';
 import {readGardenSpot} from '../assets/yuki/runtime/reading-context.mjs';
 
 const requests={en:["What's this?",'whats this','What is this all about?','Where are we?','What’s here?','Tell me about this place','Explain this.','What page am I on?','What is the page I am on about?','What are we looking at here?'],ja:['これ何？','これって何？','これはなに？','ここってどんなところ？','このページについて教えて','今開いてるページは？','いま見ているのは何？','ここを説明して']};
@@ -20,7 +20,8 @@ test('natural current-page questions use the live page, not stale history or the
   assert.equal(k.view.scope,url,message);assert.equal(k.view.localQuestion,true);assert.equal(k.view.lastGuided,null);
   assert(k.pages.every(p=>p.url.split('#')[0]===url));assert.equal(k.makingOf,null);
   const r=modelRequest(input,k);
-  assert.deepEqual(r.response_format.json_schema.properties.destination.enum,['none']);
+  assert.deepEqual(Object.keys(r.response_format.json_schema.properties),['text','sourceIds']);
+  assert.equal(parseModel({response:{text:'This is the current page.',sourceIds:[]}},k).destination,'none');
   assert(!r.messages.some(m=>m.content===history[1].content));
   assert(!r.messages[0].content.includes('Old answer'));
   assert.match(r.messages.at(-2).content,/LIVE VIEW PRIORITY/);

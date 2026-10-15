@@ -245,13 +245,13 @@
       "en": "Validating a generated answer",
       "ja": "生成された返答の検証"
     },
-    "explanation": "parseModel extracts and parses the structured model answer, validates emotion, gesture, destination and text length, and resolves source IDs only against supplied page or web entries. Exact inline citation markers for those verified IDs are removed from prose while their real links are retained, avoiding false unfinished-sentence errors. A bounded intent label can route unfamiliar discovery or humor requests; it is not evidence or permission to bypass search budgets. Only the server can mark a delivered joke or assign a remembered discovery-topic ID. Bounded joke premise/payoff summaries are novelty hints, not factual evidence or a guarantee of humor. validReply also checks the prose: cleanAssistantText removes an unmistakably duplicated serialized text tail or a recognized nested reply envelope, and rejects ambiguous dangling response fields. Repaired wording discards stale expression indices. The display repeats this check for saved replies; user messages are not rewritten. Unsupported references are not converted into invented links. These structural safeguards do not prove every natural-language claim true. Requests still need verification, usage budget and evidence.",
+    "explanation": "parseModel extracts and parses the structured model answer, validates emotion, gesture, destination and text length, and resolves source IDs only against supplied page or web entries. For a server-resolved local page explanation, the smaller text-and-sources envelope receives a fixed speaking gesture and no navigation; ordinary routes still require their control fields. Exact inline citation markers and trailing sourceId labels for verified IDs are removed from prose while their real links are retained. A bounded intent label can route unfamiliar discovery or humor requests; it is not evidence or permission to bypass search budgets. Only the server can mark a delivered joke, assign a remembered discovery-topic ID or identify a resolved page overview. Bounded joke premise/payoff summaries are novelty hints, not factual evidence or a guarantee of humor. validReply also checks the prose: cleanAssistantText removes an unmistakably duplicated serialized text tail or a recognized nested reply envelope, and rejects ambiguous dangling response fields. Repaired wording discards stale expression indices. The display repeats this check for saved replies; user messages are not rewritten. Unsupported references are not converted into invented links. These structural safeguards do not prove every natural-language claim true. Requests still need verification, usage budget and evidence.",
     "source": {
       "file": "services/yuki-api/worker.mjs",
       "symbol": "parseModel",
       "firstLine": 113,
-      "lastLine": 209,
-      "sha256": "8276d0740845df19ad25b90504c3c9ed60beca8697583a4e4ae610c387f1314a"
+      "lastLine": 219,
+      "sha256": "54d586dce7de6015fe758937df4a4b3591076249b104e0ecb0507d62099f46bb"
     }
   },
   {
