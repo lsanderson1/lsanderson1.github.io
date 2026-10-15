@@ -114,7 +114,7 @@
       "en": "Expressions at reading pace",
       "ja": "読む速さに合わせた表情"
     },
-    "explanation": "cleanReplyBeats accepts two to four ordered sentence indices, validates allowed emotions/gestures, and requires index zero first. expressionSequence associates each beat with its text; beatPause clamps reading time between 3.2 and 12 seconds using character count and language. Existing full clips play instead of splicing isolated hands or mouths. There is no voice audio or phoneme lip-sync."
+    "explanation": "cleanReplyBeats accepts two to four ordered sentence indices, validates allowed emotions/gestures, and requires index zero first. expressionSequence associates each beat with its text and preserves a selected non-neutral reply emotion: if no beat includes it, the opening beat uses it; an existing later occurrence stays in place. beatPause clamps reading time between 3.2 and 12 seconds using character count and language. Existing full clips play instead of splicing isolated hands or mouths. There is no voice audio or phoneme lip-sync."
   },
   {
     "id": "guide",

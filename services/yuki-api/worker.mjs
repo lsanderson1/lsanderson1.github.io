@@ -5,6 +5,7 @@ import {pageAnswerRequest} from './page-answer.mjs';
 import {lightChatKind,lightChatRequest} from './light-chat.mjs';
 import {isContextualFollowup,followupAnswerRequest,followupReplyIssues} from './followup-answer.mjs';
 import {humorQualityIssues} from './humor-quality.mjs';
+import {withExpressionGuidance} from './expression-guidance.mjs';
 import {cleanJokeCore,jokeRequestContext} from '../../assets/yuki/runtime/joke-memory.mjs';
 import {chooseJokePlan} from './joke-direction.mjs';
 import {personalityInstructions,replyContract,followupFocusInstructions} from './personality.mjs';
@@ -69,7 +70,7 @@ export function selectKnowledge(k,input){
  try{return retrieveKnowledge(k,input);}catch{throw failure(503,'Site information unavailable');}
 }
 export function modelRequest(input,knowledge,web={}){
- return addFactIntent(buildModelRequest(input,knowledge,web),input,knowledge,web);
+ return withExpressionGuidance(addFactIntent(buildModelRequest(input,knowledge,web),input,knowledge,web),input);
 }
 function buildModelRequest(input,knowledge,web={}){
  const language=input.replyLanguage??input.lang;

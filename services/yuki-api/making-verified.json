@@ -143,13 +143,13 @@
       "en": "Expressions at reading pace",
       "ja": "読む速さに合わせた表情"
     },
-    "explanation": "cleanReplyBeats accepts two to four ordered sentence indices, validates allowed emotions/gestures, and requires index zero first. expressionSequence associates each beat with its text; beatPause clamps reading time between 3.2 and 12 seconds using character count and language. Existing full clips play instead of splicing isolated hands or mouths. There is no voice audio or phoneme lip-sync.",
+    "explanation": "cleanReplyBeats accepts two to four ordered sentence indices, validates allowed emotions/gestures, and requires index zero first. expressionSequence associates each beat with its text and preserves a selected non-neutral reply emotion: if no beat includes it, the opening beat uses it; an existing later occurrence stays in place. beatPause clamps reading time between 3.2 and 12 seconds using character count and language. Existing full clips play instead of splicing isolated hands or mouths. There is no voice audio or phoneme lip-sync.",
     "source": {
       "file": "assets/yuki/runtime/reply-beats.mjs",
       "symbol": "cleanReplyBeats / expressionSequence",
       "firstLine": 5,
-      "lastLine": 20,
-      "sha256": "d0781dc8d42051f42fb957eeb9432ef0d8465d688f4407e2d02b06bb1e651152"
+      "lastLine": 26,
+      "sha256": "87ad9533a8b89760274a93f2650ccfecc620e80c01d9da92cacbd37eca3a8852"
     }
   },
   {
@@ -249,8 +249,8 @@
     "source": {
       "file": "services/yuki-api/worker.mjs",
       "symbol": "parseModel",
-      "firstLine": 113,
-      "lastLine": 219,
+      "firstLine": 114,
+      "lastLine": 220,
       "sha256": "54d586dce7de6015fe758937df4a4b3591076249b104e0ecb0507d62099f46bb"
     }
   },
