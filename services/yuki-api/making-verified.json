@@ -249,8 +249,8 @@
     "source": {
       "file": "services/yuki-api/worker.mjs",
       "symbol": "parseModel",
-      "firstLine": 108,
-      "lastLine": 199,
+      "firstLine": 111,
+      "lastLine": 202,
       "sha256": "44da7c35b90d3775bfcf074c99936182f909057746d8ad0fc939e3b22708c303"
     }
   },
@@ -266,9 +266,9 @@
     "source": {
       "file": "services/yuki-api/reply-completion.mjs",
       "symbol": "completionRequest / parseCompletion",
-      "firstLine": 7,
-      "lastLine": 75,
-      "sha256": "cdc4e28ab3b2e51a39815feb609c8d7b7ea2bc3c8088cbd50aa28d90a492dbfb"
+      "firstLine": 8,
+      "lastLine": 82,
+      "sha256": "14e3ebe83b6905d161ecefc531d9c9137eaa3305b847e20340d61e948c1cf83d"
     }
   },
   {

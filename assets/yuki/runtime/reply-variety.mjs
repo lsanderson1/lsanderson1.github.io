@@ -1,12 +1,28 @@
-import {discoveryKind} from './discovery.mjs?v=2';
+import {discoveryKind} from './discovery.mjs?v=3';
+import {safeWebURL} from './web-sources.mjs';
 import {cleanGuideRecords,guideRecord,previousGuideReplies,cleanGuidePrevious,repeatedGuideReply} from './guide-variety.mjs?v=1';
 export {previousGuideReplies} from './guide-variety.mjs?v=1';
-export {discoveryKind} from './discovery.mjs?v=2';
+export {discoveryKind} from './discovery.mjs?v=3';
 // Short-lived, tab-local reply metadata. No user profiling or server storage.
 export const storyTopicIds=Object.freeze(['origin','firstFlight','lanternKeeper','firstGuide','treasure','quietEvening','home','dailyGoals','bigDream','innerConflict','littlePreferences','relationships','character']);
 const recentLimit=12,sampleSize=32,hex=/^[a-f0-9]{8}$/;
-export const cleanFactTopic=value=>typeof value==='string'&&/^(?:(?:wiki-en|museum):[1-9]\d{0,9}|crossref:[a-f0-9]{24})$/.test(value)?value:'';
-export function rememberFactTopic(value,topic){const memory=cleanVariety(value),id=cleanFactTopic(topic);if(id)memory.factTopics=[...new Set([...(memory.factTopics??[]),id])].slice(-128);return memory;}
+export const cleanFactTopic=value=>typeof value==='string'&&/^(?:(?:wiki-en|museum):[1-9]\d{0,9}|crossref:[a-f0-9]{24}|open-web:[a-z-]{3,32})$/.test(value)?value:'';
+export function rememberFactTopic(value,topic){const memory=cleanVariety(value),id=cleanFactTopic(topic);if(id)memory.factTopics=[...(memory.factTopics??[]).filter(t=>t!==id),id].slice(-128);return memory;}
+// A task hint, not permission or factual evidence. Retain the visitor's scope
+// after the original question falls outside the six-message request window.
+export function cleanFactContext(value){
+ if(value?.scope==='open')return {scope:'open'};
+ if(value?.scope==='subject'&&typeof value.subject==='string'&&value.subject.length>=4&&value.subject.length<=180&&!/[\u0000-\u001f\u007f]|https?:|www\.|@|\b(?:password|secret|token|api.?key|Bearer|tvly-|sk-)|(?:\d[\s().+-]*){7,}/iu.test(value.subject))return {scope:'subject',subject:value.subject.trim()};
+ return null;
+}
+export const cleanFactSources=value=>[...new Set((Array.isArray(value)?value:[]).filter(s=>typeof s==='string'&&s.length<=500).map(s=>{const url=safeWebURL(s);if(!url)return '';const u=new URL(url);u.search='';return u.href;}).filter(Boolean))].slice(-24);
+export function rememberFactEvidence(value,reply){
+ const memory=cleanVariety(value),context=cleanFactContext(reply.factContext);
+ if(context)memory.factContext=context;else delete memory.factContext;
+ const added=cleanFactSources((reply.sources??[]).map(s=>s.url));
+ memory.factSources=cleanFactSources([...(memory.factSources??[]).filter(s=>!added.includes(s)),...added]);
+ return memory;
+}
 export const cleanJokes=value=>[...new Set((Array.isArray(value)?value:[]).filter(s=>typeof s==='string'&&s.trim().length>=8&&s.length<=1200).map(s=>s.trim()))].slice(-24);
 export function rememberJoke(value,text){const memory=cleanVariety(value);if(typeof text==='string')memory.jokes=cleanJokes([...(memory.jokes??[]),text.slice(0,1200)]);return memory;}
 // Keep delivered fact wording independently of chat history. This also covers
@@ -33,8 +49,9 @@ export function cleanVariety(value){
  const factTopics=[...new Set((Array.isArray(value?.factTopics)?value.factTopics:[]).map(cleanFactTopic).filter(Boolean))].slice(-128);
  const jokes=cleanJokes(value?.jokes);
  const facts=cleanFacts(value?.facts);
+ const factContext=cleanFactContext(value?.factContext),factSources=cleanFactSources(value?.factSources);
  const guides=cleanGuideRecords(value?.guides);
- return {turn:Number.isInteger(value?.turn)&&value.turn>0?Math.min(value.turn,9999):0,topics,recent,...(factTopics.length?{factTopics}:{}),...(facts.length?{facts}:{}),...(jokes.length?{jokes}:{}),...(guides.length?{guides}:{})};
+ return {turn:Number.isInteger(value?.turn)&&value.turn>0?Math.min(value.turn,9999):0,topics,recent,...(factTopics.length?{factTopics}:{}),...(facts.length?{facts}:{}),...(factContext?{factContext}:{}),...(factSources.length?{factSources}:{}),...(jokes.length?{jokes}:{}),...(guides.length?{guides}:{})};
 }
 export function rememberGuideReply(value,text,event,lang){
  const memory=cleanVariety(value),record=guideRecord(text,event,lang);
@@ -43,6 +60,7 @@ export function rememberGuideReply(value,text,event,lang){
 }
 export function rememberReply(value,text,storyTopics=[]){
  const memory=cleanVariety(value);memory.turn=Math.min(9999,memory.turn+1);
+ delete memory.factContext; // A new ordinary reply ends discovery mode.
  for(const id of cleanStoryTopics(storyTopics))memory.topics[id]=Math.min(999,(memory.topics[id]??0)+1);
  memory.recent=[...memory.recent,replyFingerprint(text)].slice(-recentLimit);return memory;
 }
@@ -165,11 +183,13 @@ export function packChatRequest(input,limit=14000){
  while(size()>limit&&body.variety.jokes?.length>4)body.variety.jokes.shift();
  while(size()>limit&&body.variety.facts?.length>4)body.variety.facts.shift();
  while(size()>limit&&body.variety.factTopics?.length>16)body.variety.factTopics.shift();
+ while(size()>limit&&body.variety.factSources?.length>4)body.variety.factSources.shift();
  while(size()>limit&&body.memory?.length)body.memory.shift();
  while(size()>limit&&body.history.length)body.history.shift();
  while(size()>limit&&body.variety.recent.length)body.variety.recent.shift();
  while(size()>limit&&body.variety.jokes?.length)body.variety.jokes.shift();
  while(size()>limit&&body.variety.facts?.length)body.variety.facts.shift();
+ while(size()>limit&&body.variety.factSources?.length)body.variety.factSources.shift();
  while(size()>limit&&body.guideEvent?.previous?.length)body.guideEvent.previous.shift();
  if(size()>limit)throw Error('Message too large');
  return JSON.stringify(body);

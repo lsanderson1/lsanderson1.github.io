@@ -13,6 +13,9 @@ import {thirdPersonSelf} from '../../assets/yuki/runtime/self-narration.mjs';
 import {varietyInstructions,needsFreshReply,rewriteRequest,preferFreshReply} from './reply-variety.mjs';
 import {searchEnabled,safeSearchQuery,searchInstructions,searchTavilyResult,lookupNotice,reserveSearch} from './web-search.mjs';
 import {openFactRequest,freshFactTopic,factMentionsTopic} from './random-facts.mjs';
+import {isAnotherDiscovery} from '../../assets/yuki/runtime/discovery.mjs';
+import {searchVoiceIssues} from './search-voice.mjs';
+import {scopedFactQuery} from './discovery-directions.mjs';
 import {addFactIntent,canPlanFact,factIntents,factIntentRequest} from './fact-intent.mjs';
 import {issueChatSession,verifyChatSession} from './chat-session.mjs';
 import {cleanRecall} from '../../assets/yuki/runtime/conversation-memory.mjs';
@@ -273,7 +276,8 @@ export function createHandler(network=fetch,{random}={}){
    stage='MODEL';
    const web=searchEnabled(env,input)?{mode:'eligible'}:{};
    const openDiscovery=canPlanFact(input,knowledge)&&openFactRequest(input);
-   let discovery=openDiscovery?'fact':lightChatKind(input,knowledge),checkingFunFact=discovery==='fact';
+   const continuingFact=canPlanFact(input,knowledge)&&isAnotherDiscovery(input.message)&&input.variety?.factContext;
+   let discovery=openDiscovery||continuingFact?'fact':lightChatKind(input,knowledge),checkingFunFact=discovery==='fact';
    if(checkingFunFact&&!web.mode){
     return response(200,{...lookupNotice(input.replyLanguage,input.webSearch?'provider':'disabled'),...(chatSession?{chatSession}:{})});
    }
@@ -287,9 +291,10 @@ export function createHandler(network=fetch,{random}={}){
    // trivia. Its first reserved inference is available for the sourced answer.
    // Search being enabled does not mean the answer needs a search. Keep the
    // same initial wait for every topic, within the total 38-second budget.
-   const result=factTopic?null:await runModel(env.AI,model,initialInferenceTimeout(startedAt));
+   const scopedQuery=continuingFact?.scope==='subject'?safeSearchQuery(scopedFactQuery(continuingFact.subject,input,random)):'';
+   const result=factTopic||scopedQuery?null:await runModel(env.AI,model,initialInferenceTimeout(startedAt));
    stage='REPLY';
-   let reply=factTopic?{webQuery:factTopic.query}:parseModel(result,knowledge,web),searched=false,repairUsed=false,answerModel=model,answerWeb=web;
+   let reply=factTopic||scopedQuery?{webQuery:factTopic?.query??scopedQuery}:parseModel(result,knowledge,web),searched=false,repairUsed=false,answerModel=model,answerWeb=web;
    // Confirm unfamiliar wording with a compact task. The long answer prompt
    // sometimes calls a subject-constrained follow-up "open"; do not let that
    // silently erase the visitor's chosen subject. One bounded, quota-reserved
@@ -315,6 +320,7 @@ export function createHandler(network=fetch,{random}={}){
    // Server-only flag: validateInput never accepts this from a visitor. It
    // preserves strict discovery repetition checks for semantic paraphrases.
    if(checkingFunFact)input.factDiscovery=true;
+   const factContext=checkingFunFact?(factTopic?{scope:'open'}:{scope:'subject',subject:scopedQuery?continuingFact.subject:reply.webQuery}):null;
    if(reply.webQuery){
     searched=true;
     let entries=[],searchIssue='provider',answerIssue='';
@@ -332,7 +338,7 @@ export function createHandler(network=fetch,{random}={}){
      const budget=await monthly.fetch('https://quota.invalid/search',{method:'POST',body:JSON.stringify({hash,day}),signal:AbortSignal.timeout(1500)});
      if(budget.status===429)searchIssue='limit';
      if(budget.status===204&&!request.signal.aborted){
-      try{const found=await searchTavilyResult({network,readJSON:boundedJSON,env,query:reply.webQuery,lang:input.replyLanguage,message:input.message,signal:AbortSignal.any([request.signal,AbortSignal.timeout(7000)])});entries=found.entries;searchIssue=found.issue||'provider';}catch(error){searchIssue=/Timeout|Abort/u.test(error?.name)?'timeout':'provider';}
+      try{const found=await searchTavilyResult({network,readJSON:boundedJSON,env,query:reply.webQuery,lang:input.replyLanguage,message:input.message,...(checkingFunFact?{discoveryInput:input}:{}),signal:AbortSignal.any([request.signal,AbortSignal.timeout(7000)])});entries=found.entries;searchIssue=found.issue||'provider';}catch(error){searchIssue=/Timeout|Abort/u.test(error?.name)?'timeout':'provider';}
      }
      if(!entries.length)throw Error('No usable search evidence');
      searchIssue='answer';
@@ -374,7 +380,7 @@ export function createHandler(network=fetch,{random}={}){
    // One shared quality-rewrite slot, including language and internal loops.
    // Never retry a failed provider request, increase caps, or start another search.
    const unfinished=unfinishedReply(reply.text);
-   const quality=text=>[...(input.guideEvent&&!guideReplyMatches(finishGuideReply({text},input.guideEvent,cached.data,input.lang).text,input.guideEvent,cached.data.pages,input.lang)?['guide-target']:[]),...replyQualityIssues(text,input.replyLanguage,{allowRepetition:wantsExactRepeat(input.message)}),...followupReplyIssues(text,answerModel),...(['joke','joke-ja'].includes(answerModel.yukiTask)?humorQualityIssues(text):[]),...(thirdPersonSelf(text,input.message)?['self-narration']:[]),...(input.replyLanguage==='ja'&&formalJapaneseVoice(text)?['voice']:[])];
+   const quality=text=>[...(input.guideEvent&&!guideReplyMatches(finishGuideReply({text},input.guideEvent,cached.data,input.lang).text,input.guideEvent,cached.data.pages,input.lang)?['guide-target']:[]),...replyQualityIssues(text,input.replyLanguage,{allowRepetition:wantsExactRepeat(input.message)}),...followupReplyIssues(text,answerModel),...(searched?searchVoiceIssues(text,answerWeb.entries):[]),...(['joke','joke-ja'].includes(answerModel.yukiTask)?humorQualityIssues(text):[]),...(thirdPersonSelf(text,input.message)?['self-narration']:[]),...(input.replyLanguage==='ja'&&formalJapaneseVoice(text)?['voice']:[])];
    const issues=[...(unfinished?['unfinished']:[]),...quality(reply.text)];
    if(!repairUsed&&(issues.length||needsFreshReply(reply,input))&&!request.signal.aborted&&Date.now()-startedAt<30000){
     try{
@@ -405,7 +411,7 @@ export function createHandler(network=fetch,{random}={}){
    if(input.guideEvent&&!guideReplyMatches(reply.text,input.guideEvent,cached.data.pages,input.lang))throw failure(502,'Guide reply does not match target');
    if(input.guideEvent)reply={...reply,destination:'none',sources:[],storyTopics:[]};
    if(discovery==='joke'&&!incomplete)reply={...reply,joke:true};
-   if(discovery==='fact'&&!incomplete&&reply.sources.length)reply={...reply,fact:true};
+   if(discovery==='fact'&&!incomplete&&reply.sources.length)reply={...reply,fact:true,factContext};
    return response(200,{...validReply(reply),...(chatSession?{chatSession}:{})});
   }catch(error){
    // Never expose provider responses, visitor content, stack traces or credentials.

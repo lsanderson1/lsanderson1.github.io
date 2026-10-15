@@ -186,7 +186,7 @@ test('initial wait uses a shared bounded budget rather than whether search is sw
   assert.equal(r.status,200);assert.equal(f.calls.length,1);assert(delays.includes(22000));delays.length=0;
  }
  assert.match(searchInstructions({mode:'eligible'}),/CONTEXTUAL FOLLOW-UPS/);
- assert.match(searchInstructions({mode:'eligible'}),/familiar, stable definition, location or mechanism/);
+ assert.match(searchInstructions({mode:'eligible'}),/including stable definitions and locations/);
 });
 
 test('provider failures and timeouts are safe, distinct, and never automatically retried',async()=>{

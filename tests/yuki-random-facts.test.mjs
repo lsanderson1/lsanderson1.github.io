@@ -35,7 +35,7 @@ test('topic discovery uses one fixed public request, no visitor data, redirects 
  assert.equal(topic.id,'wiki-en:8');assert.equal(topic.query,'"Sundial" facts background');assert.equal(calls.length,1);
  assert.equal(calls[0].url,RANDOM_TOPICS_URL);assert.equal(calls[0].options.redirect,'manual');assert.equal(calls[0].options.headers['User-Agent'],TOPIC_AGENT);
  assert(!JSON.stringify(calls).includes('private'));assert.equal(calls[0].options.body,undefined);
- assert.equal(await freshFactTopic({network:async()=>new Response(null,{status:302}),readJSON:boundedJSON,input}),null);
+ assert.equal(await freshFactTopic({network:async()=>new Response(null,{status:302}),readJSON:boundedJSON,input,random:()=>0}),null);
  assert.equal(await freshFactTopic({network:async()=>new Response('x'.repeat(65000)),readJSON:boundedJSON,input,random:()=>0}),null);
 });
 
@@ -55,13 +55,13 @@ test('research and museum discovery spans dates, validates identities and does n
 
 test('providers rotate away from the last successful collection and museum pagination uses its live size',async()=>{
  assert.equal(topicProvider({},()=>0),'wiki-en');assert.equal(topicProvider({variety:{factTopics:['wiki-en:1']}},()=>0),'crossref');
- assert.equal(topicProvider({variety:{factTopics:['museum:1']}},()=>.99),'crossref');
+ assert.equal(topicProvider({variety:{factTopics:['museum:1']}},()=>.99),'open-web');
  const calls=[];
- const museum=await freshFactTopic({input:{},random:()=>.99,readJSON:boundedJSON,network:async(url,options)=>{
+ let roll=0;const museum=await freshFactTopic({input:{},random:()=>roll++===0?.3:.99,readJSON:boundedJSON,network:async(url,options)=>{
   calls.push({url,options});return Response.json(calls.length===1?{info:{total:500}}:{data:[{id:9,title:'Bronze bell',description:'A historical object with a detailed public description of its craftsmanship and use across different cultural traditions.'}]});
  }});
  assert.equal(museum.id,'museum:9');assert.equal(calls.length,2);assert(calls.every(c=>c.url.startsWith(MUSEUM_TOPICS_URL)&&!c.options.body));assert.match(calls[1].url,/skip=484/);
- const researchCalls=[];await freshFactTopic({input:{},random:()=>.5,readJSON:boundedJSON,network:async url=>{researchCalls.push(url);return Response.json({message:{items:[]}});}});
+ const researchCalls=[];await freshFactTopic({input:{},random:()=>.2,readJSON:boundedJSON,network:async url=>{researchCalls.push(url);return Response.json({message:{items:[]}});}});
  assert.deepEqual(researchCalls,[RESEARCH_TOPICS_URL]);
  const translated=chooseFreshTopic({query:{pages:[{...page(9,'Sundial'),langlinks:[{lang:'ja',title:'日時計'}]}]}},{},()=>0);
  assert(factMentionsTopic('日時計は影の位置で時間を示すんだ。',translated));

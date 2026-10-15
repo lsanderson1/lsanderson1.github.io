@@ -1,4 +1,4 @@
-import {discoveryKind} from './discovery.mjs?v=2';
+import {discoveryKind} from './discovery.mjs?v=3';
 // Bounded, same-tab conversation recall. Never a server-side visitor profile.
 export const memoryKey='yuki-conversation-memory-v1';
 const lifetime=86400000;

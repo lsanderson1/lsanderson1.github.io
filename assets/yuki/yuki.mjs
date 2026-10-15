@@ -26,9 +26,9 @@ import {replyLanguage,replyQualityIssues,formalJapaneseVoice} from './runtime/re
 import {DiscoveryGuide,isDiscoveryRequest} from './runtime/discovery-guide.mjs?v=3';
 import {CallDialogue} from './runtime/call-dialogue.mjs?v=3';
 import {ReadingMemory,readPageTitle,readingLabels,readPageDisplaySection,readPageSection,readPageImages,readGardenSpot,guideReference,followUpReference,sectionExplanation} from './runtime/reading-context.mjs?v=7';
-import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=25';
+import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=26';
 import {safeWebURL} from './runtime/web-sources.mjs?v=1';
-import {cleanVariety,rememberReply,rememberFactTopic,rememberFact,rememberJoke,rememberGuideReply,previousGuideReplies,packChatRequest,needsFreshText} from './runtime/reply-variety.mjs?v=10';
+import {cleanVariety,rememberReply,rememberFactTopic,rememberFact,rememberFactEvidence,rememberJoke,rememberGuideReply,previousGuideReplies,packChatRequest,needsFreshText} from './runtime/reply-variety.mjs?v=11';
 import {thirdPersonSelf} from './runtime/self-narration.mjs?v=2';
 
 const root=document.querySelector('#yuki-companion');
@@ -629,7 +629,7 @@ async function start(){
    if(guideEvent)variety=rememberGuideReply(variety,cue.text,guideEvent,conversationLanguage);
    addMessage('assistant',cue.text,true,cue.sources,cue.storyTopics,undefined,conversationLanguage);
    if(cue.factTopic)variety=rememberFactTopic(variety,cue.factTopic);
-   if(cue.fact||cue.factTopic)variety=rememberFact(variety,cue.text);
+   if(cue.fact||cue.factTopic){variety=rememberFact(variety,cue.text);variety=rememberFactEvidence(variety,cue);}
    if(cue.joke)variety=rememberJoke(variety,cue.text);
    if(!guideEvent&&isGuideRequest(text)){
     const targets=cue.sources.map(s=>checkedGuideTarget(s.url,knowledge,ja?'ja':'en',base)).filter(Boolean);

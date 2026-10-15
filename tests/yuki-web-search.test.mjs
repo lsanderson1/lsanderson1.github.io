@@ -17,7 +17,7 @@ const draft={text:'Let me check the public explanation of lift.',emotion:'though
 const answer={text:'Wings change the airflow and create a pressure difference. Their shape and angle affect lift. Flapping adds motion, while a glide relies on forward speed. That is the real-world idea; my little dragon flight is playful fiction.',emotion:'neutral',gesture:'talkExplain',destination:'none',sourceIds:['web:1'],storyTopics:[]};
 const results={results:[{title:'How wings work',url:'https://www.nasa.gov/learning/lift',content:'Wings deflect airflow. Shape and angle matter.'}],usage:{credits:1}};
 const json=(v,status=200)=>new Response(JSON.stringify(v),{status,headers:{'Content-Type':'application/json'}});
-function fixture({webStatus=200,webData=results,budget=204,extra=204,models=[draft,answer],webError=false,signal,topicData={query:{pages:[{pageid:42,ns:0,title:'Wings',extract:'Wings are structures that interact with air and provide lift. They occur in nature and in machines, and different shapes are suited to different kinds of flight.'}]}},topicStatus=200}={}){
+function fixture({webStatus=200,webData=results,budget=204,extra=204,models=[draft,answer],webError=false,signal,random=()=>0,topicData={query:{pages:[{pageid:42,ns:0,title:'Wings',extract:'Wings are structures that interact with air and provide lift. They occur in nature and in machines, and different shapes are suited to different kinds of flight.'}]}},topicStatus=200}={}){
  const calls=[],ai=[],reservations=[];
  const handler=createHandler(async(url,options)=>{
   calls.push({url,options});
@@ -26,7 +26,7 @@ function fixture({webStatus=200,webData=results,budget=204,extra=204,models=[dra
   if(url===RANDOM_TOPICS_URL)return json(topicData,topicStatus);
   if(url===TAVILY_SEARCH){if(webError)throw Error('private provider error');return json(webData,webStatus);}
   throw Error('Unexpected destination');
- },{random:()=>0});
+ },{random});
  let inferenceReservations=0;
  const env={SITE_ORIGIN:origin,CHAT_ENABLED:'true',FREE_PLAN_CONFIRMED:'true',...envSearch,TURNSTILE_SECRET:'private-verify-secret',IP_HASH_SECRET:'x'.repeat(40),QUOTA:{idFromName:n=>n,get:name=>({fetch:async(url,options)=>{
   reservations.push({name,url,body:JSON.parse(options.body)});
@@ -54,6 +54,36 @@ test('a repeated sourced fact is rejected after one repair, never re-searched or
  assert.match(f.ai[2].body.messages.at(-2).content,/already supplied verified evidence/);
  assert(f.ai[2].body.messages[0].content.includes('WEB ENTRIES'));
 });
+test('continued discoveries search anew after the initial visitor request is outside history',async()=>{
+ for(const [lang,message,scope] of [['en','Can you tell me another?','open'],['ja','もうひとつ教えて','open'],['en','another 1','subject']]){
+  const text=lang==='ja'?'翼は空気の流れを変えて、揚力を生むんだ。形や角度でも働きが変わるよ。小さな角度で違いが出るなんて、わたしならじっと見ちゃいそう！':answer.text;
+  const f=fixture({models:[{...answer,text}],random:()=>.9});
+  const history=[{role:'user',content:'another one'},{role:'assistant',content:'We explored a previous discovery.'}];
+  const factContext=scope==='open'?{scope}:{scope,subject:'wing lift facts'};
+  const result=await(await f.handler(f.request({message,lang,history,variety:{factContext}}),f.env)).json();
+  assert.equal(result.text,text);assert.equal(result.fact,true);assert.deepEqual(result.factContext,factContext);
+  assert.equal(f.ai.length,1,'No re-planning a continuing discovery');
+  const searches=f.calls.filter(c=>c.url===TAVILY_SEARCH);assert.equal(searches.length,1);
+  assert.equal(JSON.parse(searches[0].options.body).max_results,8);
+  assert.equal(f.reservations.filter(r=>r.url.endsWith('/search')).length,1);
+  assert.equal(f.calls.filter(c=>c.url===RANDOM_TOPICS_URL).length,0);
+ }
+ const off=fixture({models:[answer],random:()=>.9});
+ const result=await(await off.handler(off.request({message:'another one',webSearch:false,variety:{factContext:{scope:'open'}}}),off.env)).json();
+ assert.equal(result.searchIssue,'disabled');assert.equal(off.ai.length,0);assert(!off.calls.some(c=>c.url===TAVILY_SEARCH));
+});
+
+test('fresh requests never deliver an already-used article and source voice gets one bounded repair',async()=>{
+ const old=fixture({random:()=>.9,models:[answer]});
+ const noReuse=await(await old.handler(old.request({message:'Tell me a fact',variety:{factSources:[results.results[0].url]}}),old.env)).json();
+ assert.equal(noReuse.notice,true);assert.equal(noReuse.searchIssue,'no-results');assert.equal(old.ai.length,0);
+ const stiff={...answer,text:'I found this in the web entries. '+answer.text};
+ const fixed=fixture({random:()=>.9,models:[stiff,{text:answer.text}]});
+ const value=await(await fixed.handler(fixed.request({message:'Tell me a fact'}),fixed.env)).json();
+ assert.equal(value.text,answer.text);assert.equal(value.fact,true);assert.equal(fixed.ai.length,2);
+ assert.equal(fixed.calls.filter(c=>c.url===TAVILY_SEARCH).length,1);assert.match(fixed.ai[1].body.messages[0].content,/INVISIBLE RESEARCH MACHINERY/);
+});
+
 test('search consent is independent and existing AI consent cannot grant another provider permission',()=>{
  const values=new Map([[chatConsentKey,'granted']]);const storage={getItem:k=>values.get(k),setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};
  const main=new ChatPermission(storage),search=new ChatPermission(storage,searchConsentKey);
