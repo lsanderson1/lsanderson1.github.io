@@ -101,6 +101,11 @@ export function retrieveKnowledge(k,input){
  // A live-view question must not reserve space for a stale guided stop.
  // Ordinary follow-ups can still use the recent, published guide reference.
  for(const ref of wholePage?[]:focus?[focus]:localQuestion?[current]:[current,lastGuided])if(ref){const c=ranked.find(c=>c.page===ref.page&&c.section===ref.section);add(c);if(c)ref.sourceId=c.id;}
+ // "Explain this" at a long section needs its continuation, not just its
+ // first excerpt followed by unrelated headings. Preserve document order
+ // within the existing six-passage limit; do not increase the request budget.
+ const sectionFocus=!wholePage&&!visual&&(focus??(localQuestion?current:null));
+ if(sectionFocus?.section)for(const c of ranked.filter(c=>c.page===sectionFocus.page&&c.section===sectionFocus.section).sort((a,b)=>a.part-b.part))add(c);
  for(const c of ranked)add(c);
  return {owner:k.owner,bio:clean(k.bio[input.lang]).slice(0,2000),skills:JSON.stringify(k.skills||[]).slice(0,2000),view:{current:wholePage?resolve(pages,{page:current?.page}):current,lastGuided:localQuestion?null:lastGuided,focus,...(scope?{scope}:{}),...(localQuestion?{localQuestion:true}:{}),...(wholePage?{wholePage:true}:{}),...(mentioned?{questionPage:{page:mentioned.url,title:mentioned.title}}:{}),...(visual?{visual}:{}),...(gardenSpot&&!wholePage?{gardenSpot}:{} )},pages:chosen.map(({id,url,title,text})=>({id,url,title,text})),makingOf:focus||wholePage?null:makingKnowledge(localQuestion?{...input,history:[]}:input)};
 }

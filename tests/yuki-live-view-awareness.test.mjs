@@ -34,6 +34,21 @@ test('explicit other pages and actual conversational follow-ups keep their inten
  const followup=retrieveKnowledge(catalog,{lang:'en',page:'/yuki/',message:'How does it work?',history,context:{section:'s0'}});
  assert(followup.makingOf);assert(!followup.view.localQuestion);
 });
+
+test('short explanation requests include a long visible section’s continuation before unrelated headings',()=>{
+ for(const lang of ['en','ja']){
+  const url=lang==='ja'?'/ja/resume.html':'/resume.html';
+  const longSection='Lloyd collaborated on Project Reap. '+('The entry describes gameplay work and testing. '.repeat(60))+' Blender Command-Line Integration connects a Common Lisp client to a Python socket server.';
+  const current={id:'resume',url,lang,title:'Resume',summary:'Education, skills and projects.',text:'Education, skills and projects.',sections:[...Array.from({length:8},(_,i)=>({id:'s'+i,title:'Other heading '+i,text:'Other documented material.'})),{id:'s8',title:'Technical Project Experience',anchor:'experience',text:longSection}]};
+  const k=retrieveKnowledge({owner:'Lloyd',bio:{en:'Owner',ja:'制作者'},pages:[current]},{lang,page:url,message:lang==='ja'?'この部分を説明して':'explain this',context:{section:'s8'},history});
+  assert(k.view.localQuestion);assert(!k.view.wholePage);assert(k.pages.length<=6);
+  assert.equal(k.pages[0].id,'resume::s8');
+  assert(k.pages[1].id.startsWith('resume::s8::'));
+  assert(k.pages.some(p=>p.text.includes('Common Lisp client')),'Do not lose later projects behind unrelated headings');
+  const prompt=modelRequest({lang,message:'explain this',history:[]},k).messages[0].content;
+  assert.match(prompt,/one team project does not make adjacent projects collaborative/);
+ }
+});
 test('each verified garden perch gets its own evidence, but stale or invented spots do not',()=>{
  for(const lang of ['en','ja'])for(const id of spots){
   const path=(lang==='ja'?'/ja':'')+'/yuki/';
