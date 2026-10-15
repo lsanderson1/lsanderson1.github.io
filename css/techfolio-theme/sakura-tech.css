@@ -112,7 +112,7 @@ h1, h2, h3 { line-height: 1.12; }
    transform: animates the change to the links visual position or shape
    text-shadow: animates the shadow behind the text, making the glow fade in and out
 */
-.fp-nav nav a {
+.fp-nav .fp-brand {
   transition:
     color 280ms ease,
     transform 280ms ease,
@@ -125,10 +125,10 @@ h1, h2, h3 { line-height: 1.12; }
 /* :not(.is-active) excludes links with the is-active class - the current tab that is opened 
     hover means the pointer is over the link 
 */
-.fp-nav nav a:not(.is-active):hover,
+.fp-nav .fp-brand:not(.is-active):hover,
 
 /* Applies the same appearance when someone reaches the link using keyboard navigation (Usually the Tab). Makes the effect useful beyond mouse users */
-.fp-nav nav a:not(.is-active):focus-visible {
+.fp-nav .fp-brand:not(.is-active):focus-visible {
   color: var(--primary); /* Reads the existing CSS variable primary which is the theme color of blue */
   transform: translateY(-2px); /* Visually moves the link 2px upwards, translateY() moves something vertically, negative moves values up, positive moves it down */
   text-shadow:                 /* Starts the shadow shading for the letters */
@@ -141,12 +141,12 @@ h1, h2, h3 { line-height: 1.12; }
 
 /* Respect reduced motion settings */
 @media (prefers-reduced-motion: reduce) {    /* Applies everything inside only when the visitor's device requests reduced motion */
-  .fp-nav nav a {
+  .fp-nav .fp-brand {
     transition: none;                        /* Disables the animated fades and movements */
   }
 
-  .fp-nav nav a:not(.is-active):hover,
-  .fp-nav nav a:not(.is-active):focus-visible {
+  .fp-nav .fp-brand:not(.is-active):hover,
+  .fp-nav .fp-brand:not(.is-active):focus-visible {
     transition: none;
   }
 }
