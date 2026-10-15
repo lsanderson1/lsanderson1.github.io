@@ -1,5 +1,6 @@
 import {wrongReplyLanguage,formalJapaneseVoice,replyQualityIssues} from './reply-quality.mjs?v=3';
 import {thirdPersonSelf} from './self-narration.mjs?v=2';
+import {referencedExchange} from './discovery.mjs?v=6';
 const languages=['en','ja'];
 export const translationVoiceVersion=3;
 // This revision improves Japanese only; do not spend quota retranslating English.
@@ -36,8 +37,13 @@ export function translatedText(message,language){
  const text=message.translations?.[language];
  return text&&!wrongReplyLanguage(text,language)&&(!reviewVoice||!needsVoiceRefresh(text,language))?text:null;
 }
-export function conversationHistory(messages,language){
- return messages.slice(-6).map(m=>{const display=translatedText(m,language),limit=m.role==='assistant'?3000:1000;return {role:m.role,content:display&&display.length<=limit?display:m.text};});
+export function conversationHistory(messages,language,question=''){
+ const available=messages.map(m=>{const display=translatedText(m,language),limit=m.role==='assistant'?3000:1000;return {role:m.role,content:display&&display.length<=limit?display:m.text};});
+ const reference=referencedExchange(question,available),recent=available.slice(-6);
+ // Explicitly requested earlier jokes/stories survive the six-message window.
+ // Keep chronological order; do not move an older answer into the latest slot.
+ if(reference.length&&reference.some(m=>!recent.includes(m)))return [...new Set([...reference,...available.slice(-4)])];
+ return recent;
 }
 // Prioritize what is currently visible (latest reply), then older history.
 export function translationBatch(messages,language){

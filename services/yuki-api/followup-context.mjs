@@ -1,5 +1,6 @@
 // Bounded conversation routing, not a semantic classifier or factual evidence.
 // Never infer a referent from Yuki's perch or an unrelated remembered answer.
+import {explanationKind,referencedExchange} from '../../assets/yuki/runtime/discovery.mjs';
 const clean=value=>String(value??'').normalize('NFKC').replace(/[’]/gu,"'").trim();
 const previousAnswers=input=>[...(input.history??[]).filter(m=>m.role==='assistant').map(m=>m.content),...(input.memory??[]).map(m=>m.answer)].filter(v=>typeof v==='string');
 const generic=/^(?:(?:a|an|the)\s+)?(?:it|this|that|they|those|these|he|she|his|her|their|my|your|something|anything|one|thing|place|person|tool|term|word|idea|concept|method|example|reason|difference|sea|ocean|river|lake|mountain|desert|book|project|section|page)(?:\s|$)|^(?:それ|これ|あれ|その|この|あの|そこ|ここ|どれ|何|なに|理由|具体例|例えば|仕組み|違い|例|彼女|彼|本人)/iu;
@@ -34,11 +35,13 @@ export function followupIntent(message){
 }
 
 export function refersToEarlier(message){
- return /\b(?:compare|comparison|difference|different|first|earlier|previous|before|other one|back to|remember|again)\b|比べ|比較|違い|違う|どっち|どちら|最初|前の|さっき|覚えて|もう一度|戻って/iu.test(message);
+ return /\b(?:compare|comparison|difference|different|first|earlier|previous(?:ly)?|before|other one|back to|remember|again)\b|比べ|比較|違い|違う|どっち|どちら|最初|前の|さっき|覚えて|もう一度|戻って/iu.test(message);
 }
 
 export function followupHistory(input){
  const supplied=input.history??[],at=supplied.findLastIndex(m=>m.role==='assistant');
+ const reference=referencedExchange(input.message,supplied);
+ if(reference.length&&!/\b(?:first|compare|between)\b|最初|比較|比べ/iu.test(input.message))return reference;
  if(refersToEarlier(input.message))return supplied;
  if(at<0)return [];
  const user=supplied.slice(0,at).findLast(m=>m.role==='user');
@@ -52,9 +55,11 @@ export function hasFollowupContext(input){return previousAnswers(input).length>0
 // wording still wins. This is a routing hint; the model interprets the full
 // question and asks if multiple referents remain plausible.
 export function referencesReplyExplanation(input){
- if(!(input.history??[]).some(m=>m.role==='assistant'&&m.content?.trim()))return false;
  const q=clean(input.message);
  if(/\b(?:page|section|heading|paragraph|picture|photo|image|screen|website|site|place|garden|here)\b|ページ|項目|見出し|段落|写真|画像|画面|サイト|場所|庭|ここ|この部分/iu.test(q))return false;
+ if(explanationKind(q))return true;
+ if(!(input.history??[]).some(m=>m.role==='assistant'&&m.content?.trim()))return false;
+ if(/\bwhat (?:does|did) (?:this|that|it) mean\b|\b(?:what you (?:just |previously )?said|your (?:last|previous) (?:message|answer|reply))\b|(?:これ|それ)(?:は|って)?どういう意味/iu.test(q))return true;
  if(/\b(?:explain|clarify|unpack|elaborate on|expand on|break down|help me understand|walk me through)\s+(?:(?:this|that|it)(?:\s+(?:fun(?:ny)?\s+)?(?:joke|story|fact|answer|reply|explanation|example|point))?|your (?:(?:last|previous) )?(?:answer|reply|explanation|message))(?=\s*(?:[.!?]|$)|\s+(?:again|more|further|please|in|for|a|to|because|so)\b)/iu.test(q))return true;
  if(/\b(?:this|that)\s+(?:joke|story|fact|answer|reply|explanation|example|point)\b/iu.test(q)&&/\b(?:mean|means|about|why|how|explain|understand)\b/iu.test(q))return true;
  return /(?:これ|それ|さっきの返事|今の説明|(?:この|その)(?:答え|説明|冗談|ジョーク|豆知識|雑学|話|例)).{0,35}(?:説明|詳し|くわし|わかりやす|分かりやす|噛み砕|かみくだ|どういう意味|どういうこと)/u.test(q);

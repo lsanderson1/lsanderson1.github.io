@@ -78,7 +78,7 @@ test('third-person self narration gets one whole-answer repair, with the same so
  ]){
   const f=fixture({outputs:[cue(bad),{text:good}]}),response=await f.handler(f.request({lang,message}),f.env),reply=await response.json();
   assert.equal(response.status,200);assert.equal(reply.text,good);assert.equal(f.calls.length,2);
-  assert.match(f.calls[1].body.messages[0].content,/FIRST-PERSON CORRECTION/);assert.equal(reply.destination,'none');
+  assert.match(f.calls[1].body.messages.map(m=>m.content).join('\n'),/FIRST-PERSON CORRECTION|PAGE EXPLANATION REPAIR/);assert.equal(reply.destination,'none');
   const denied=fixture({outputs:[cue(bad)],quotas:[204,429]});assert.equal((await denied.handler(denied.request({lang,message}),denied.env)).status,502);
  }
 });

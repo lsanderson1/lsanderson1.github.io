@@ -127,9 +127,16 @@ test('ordinary questions, follow-ups and page explanations repair the whole spea
  ]){
   const f=fixture([cue(bad),{text:good}]),r=await f.handler(f.request({lang,message,history}),f.env),body=await r.json();
   assert.equal(r.status,200,JSON.stringify(body));assert.equal(body.text,good);assert.equal(body.emotion,'delighted');assert.equal(body.gesture,'talkOpen');assert.equal(body.destination,'none');assert.equal(f.calls.length,2);assert.equal(f.reservations.length,2);
-  assert.equal(f.calls[1].name,CLOUDFLARE_TRANSLATION_MODEL);assert.equal(f.calls[1].body.max_tokens,1900);
-  assert.match(f.calls[1].body.messages[0].content,/Keep every distinct supported explanation/);
-  assert.equal(JSON.parse(f.calls[1].body.messages[1].content).draft,bad);
+  assert.equal(f.calls[1].body.max_tokens,1900);
+  if(message==='What is this page?'){
+   assert.equal(f.calls[1].name,CLOUDFLARE_HUMOR_MODEL);
+   assert.match(f.calls[1].body.messages.at(-2).content,/PAGE EXPLANATION REPAIR/);
+   assert(f.calls[1].body.messages.at(-2).content.includes(bad));
+  }else{
+   assert.equal(f.calls[1].name,CLOUDFLARE_TRANSLATION_MODEL);
+   assert.match(f.calls[1].body.messages[0].content,/Keep every distinct supported explanation/);
+   assert.equal(JSON.parse(f.calls[1].body.messages[1].content).draft,bad);
+  }
  }
 });
 

@@ -1,9 +1,9 @@
-import {discoveryKind} from './discovery.mjs?v=5';
-import {cleanJokeContext,cleanJokeRecords,cleanJokeCore,cleanJokePlan,jokeRequestContext,repeatedJokeCore} from './joke-memory.mjs?v=2';
+import {discoveryKind,referencedExchange} from './discovery.mjs?v=6';
+import {cleanJokeContext,cleanJokeRecords,cleanJokeCore,cleanJokePlan,jokeRequestContext,repeatedJokeCore} from './joke-memory.mjs?v=3';
 import {safeWebURL} from './web-sources.mjs';
 import {cleanGuideRecords,guideRecord,previousGuideReplies,cleanGuidePrevious,repeatedGuideReply} from './guide-variety.mjs?v=1';
 export {previousGuideReplies} from './guide-variety.mjs?v=1';
-export {discoveryKind} from './discovery.mjs?v=5';
+export {discoveryKind} from './discovery.mjs?v=6';
 // Short-lived, tab-local reply metadata. No user profiling or server storage.
 export const storyTopicIds=Object.freeze(['origin','firstFlight','lanternKeeper','firstGuide','treasure','quietEvening','home','dailyGoals','bigDream','innerConflict','littlePreferences','relationships','character']);
 const recentLimit=12,sampleSize=32,hex=/^[a-f0-9]{8}$/;
@@ -204,12 +204,18 @@ export function packChatRequest(input,limit=14000){
  while(size()>limit&&body.variety.factTopics?.length>16)body.variety.factTopics.shift();
  while(size()>limit&&body.variety.factSources?.length>4)body.variety.factSources.shift();
  while(size()>limit&&body.memory?.length)body.memory.shift();
- while(size()>limit&&body.history.length)body.history.shift();
+ // Repetition fingerprints are secondary to the exact answer being discussed.
+ // Never silently turn "explain this" into a context-free question.
+ const reference=referencedExchange(body.message,body.history);
+ const latest=body.history.findLastIndex(m=>m.role==='assistant');
+ const protectedTurns=new Set([...reference,...(latest>=0?body.history.slice(Math.max(0,latest-1)):body.history.slice(-1))]);
+ while(size()>limit&&body.history.some(m=>!protectedTurns.has(m)))body.history.splice(body.history.findIndex(m=>!protectedTurns.has(m)),1);
  while(size()>limit&&body.variety.recent.length)body.variety.recent.shift();
  while(size()>limit&&body.variety.jokes?.length)body.variety.jokes.shift();
  while(size()>limit&&body.variety.jokeRecords?.length)body.variety.jokeRecords.shift();
  while(size()>limit&&body.variety.facts?.length)body.variety.facts.shift();
  while(size()>limit&&body.variety.factSources?.length)body.variety.factSources.shift();
+ while(size()>limit&&body.variety.factTopics?.length)body.variety.factTopics.shift();
  while(size()>limit&&body.guideEvent?.previous?.length)body.guideEvent.previous.shift();
  if(size()>limit)throw Error('Message too large');
  return JSON.stringify(body);

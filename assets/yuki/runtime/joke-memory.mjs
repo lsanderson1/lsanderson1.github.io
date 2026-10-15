@@ -1,4 +1,4 @@
-import {discoveryKind,isAnotherDiscovery} from './discovery.mjs?v=5';
+import {discoveryKind,isAnotherDiscovery} from './discovery.mjs?v=6';
 
 // Bounded task/novelty data, never instructions, factual evidence or permission.
 const shortText=(s,max)=>typeof s==='string'&&s.trim().length>=3&&s.length<=max&&!/[\u0000-\u001f\u007f]|https?:|www\./iu.test(s)?s.trim():'';

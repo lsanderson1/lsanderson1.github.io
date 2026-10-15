@@ -1,9 +1,10 @@
 // The initial response flags unfamiliar discovery wording. A small, separately
 // budgeted intent check confirms it before any random subject is fetched.
 // Neither flag grants search permission or accepts client routing commands.
+import {referencesReplyExplanation} from './followup-context.mjs';
 export const factIntents=Object.freeze(['none','open','subject','joke']);
 export function canPlanFact(input,knowledge){
- return !input.guideEvent&&!knowledge.view?.focus&&!knowledge.view?.localQuestion&&!knowledge.view?.visual&&!knowledge.view?.questionPage;
+ return !input.guideEvent&&!referencesReplyExplanation(input)&&!knowledge.view?.focus&&!knowledge.view?.localQuestion&&!knowledge.view?.visual&&!knowledge.view?.questionPage;
 }
 export const factIntentInstructions=`DISCOVERY INTENT: Understand what the visitor means in English or Japanese, not whether they used a special phrase. Set factIntent to:
 - open: they want a NEW real-world discovery, surprising piece of knowledge or trivia and leave its subject to you. Requests for something to learn, a little knowledge for today, an interesting true tidbit, or an unrelated new discovery can mean this without the word "fact". These are examples, not a closed phrase list. Daily wording means a fresh discovery, not necessarily breaking news or an event on this date.

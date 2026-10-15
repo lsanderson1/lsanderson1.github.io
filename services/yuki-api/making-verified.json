@@ -215,9 +215,9 @@
     "source": {
       "file": "assets/yuki/runtime/conversation-language.mjs",
       "symbol": "translatedText / translationBatch / applyTranslations",
-      "firstLine": 29,
-      "lastLine": 59,
-      "sha256": "5944f9033c526c1d869afc5bb5f9554e7a03a382b438252289fb8241a58f2b2f"
+      "firstLine": 30,
+      "lastLine": 65,
+      "sha256": "4101f98828f727700a33457de5bdb69e35934c236b1deadbc62e6b99bf669d3a"
     }
   },
   {
@@ -262,13 +262,13 @@
       "en": "Completing an unfinished answer",
       "ja": "途中で切れた返答を整える"
     },
-    "explanation": "completionRequest prepares a short text-only rewrite using the draft, its cited evidence and relevant character lore. A focused speaker/voice edit can use the existing translation model to keep Yuki in first person and natural Japanese without changing the supported explanation. It does not replace names or pronouns blindly. Its humor-specific path preserves the fictional scene, setup and payoff rather than inflating a joke into an explanation. parseCompletion rejects malformed, unfinished or overlong results, retains the original sources and routing metadata, and removes old sentence-animation indices. The worker may use this instead of the variety rewrite, at most once within the existing quota and deadline; it is not an unlimited retry or a new web search. If repair cannot finish safely, incompleteAnswer gives a localized retry notice rather than a fragment. These checks do not prove that every claim is accurate.",
+    "explanation": "completionRequest prepares a short text-only rewrite using the draft, its cited evidence and relevant character lore. Page explanations retain their original page evidence and model during repair, including first-person garden speech and Lloyd's authorship. Other focused speaker edits can use the existing translation model to keep Yuki in first person and natural Japanese without changing the supported explanation. It does not replace names or pronouns blindly. Its humor-specific path preserves a valid fictional setup and payoff, or requests a coherent replacement for a detected logic failure, rather than inflating a joke into an explanation. parseCompletion rejects malformed, unfinished or overlong results, retains the original sources and routing metadata, and removes old sentence-animation indices. The worker may use this instead of the variety rewrite, at most once within the existing quota and deadline; it is not an unlimited retry or a new web search. If repair cannot finish safely, incompleteAnswer gives a localized retry notice rather than a fragment. These checks do not prove that every claim is accurate.",
     "source": {
       "file": "services/yuki-api/reply-completion.mjs",
       "symbol": "completionRequest / parseCompletion",
       "firstLine": 8,
-      "lastLine": 82,
-      "sha256": "72c7935944559aff3a4e0cec1eb0c7ba9979f01d8cf02f44c3ec52608b88ffc5"
+      "lastLine": 85,
+      "sha256": "bcae2b0b39ed0eb315a8161d3926087619c16fc303553562b80876bc216b3cc4"
     }
   },
   {
