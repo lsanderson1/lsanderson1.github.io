@@ -20,26 +20,27 @@ test('sleep → wake → idle and bedtime → sleep draw valid frames',()=>{cons
 for(const kind of [...emotionKinds,...talkKinds,'pointLeft','pointRight'])test('ground '+kind+' preserves valid drawing transitions',()=>{const c=make();assert(c.express(kind));const frames=run(c,22000);assert(frames.size>4);assert(!c.emotion.active);});
 for(const kind of [...emotionKinds,...talkKinds])test('hover '+kind+' keeps flight and reaction frames valid',()=>{const c=make();c.rover.setArrivalStyle('hover');assert(c.hoverHere());run(c,5000);assert(c.rover.isHovering);assert(c.express(kind));assert(run(c,18000).size>12);assert(c.rover.isHovering);assert.equal(c.airReaction,null);});
 
-for(const hovering of [false,true])for(const readingBeats of [false,true])test(`full Shy finishes before talking (${hovering?'hover':'ground'}, ${readingBeats?'beats':'fallback'})`,()=>{
+for(const kind of emotionKinds)for(const hovering of [false,true])for(const readingBeats of [false,true])test(`full ${kind} finishes before talking (${hovering?'hover':'ground'}, ${readingBeats?'beats':'fallback'})`,()=>{
  const c=make();if(hovering){c.rover.setArrivalStyle('hover');assert(c.hoverHere());run(c,5000);}
- const cue={text:'You really think so? That makes me happy.',emotion:'shy',gesture:'none',...(readingBeats?{beats:[{sentence:0,emotion:'neutral',gesture:'talkOpen'},{sentence:1,emotion:'neutral',gesture:'talkExplain'}]}:{})};
- const sequence=expressionSequence(cue,replySequence(cue)),shy=clips[hovering?'hoverShy':'shy'],seen=new Set(),bridges=new Set(),groundSlots=new Set();
+ const cue={text:'Here is my reaction. Let me explain that thought.',emotion:kind,gesture:'none',...(readingBeats?{beats:[{sentence:0,emotion:'neutral',gesture:'talkOpen'},{sentence:1,emotion:'neutral',gesture:'talkExplain'}]}:{})};
+ const sequence=expressionSequence(cue,replySequence(cue)),spec=airClips[kind],expression=clips[hovering?spec.key:kind],bridge=clips[spec.transitionKey],seen=new Set(),bridges=new Set(),groundSlots=new Set();
  let nextAt=0,talked=false;
  for(let t=0;t<24000;t+=10){
   if(sequence.length&&t>=nextAt&&applyReplyCue(c,sequence[0]).animationAccepted){
    const started=sequence.shift();nextAt=t+(started.pauseMs??0);
    if(started.emotion==='neutral'){
     // Grounded bookends deliberately reuse the exact approved neutral pose.
-    assert.deepEqual([...seen].sort(),(hovering?shy.frames:shy.frames.slice(1,-1)).map(f=>f.file).sort(),'All Shy expression drawings must be seen before speaking');
-    if(!hovering)assert.deepEqual([...groundSlots],[...shy.playback.order],'Both neutral bookends must also finish');
-    if(hovering)assert.deepEqual([...bridges].sort(),clips.hoverShyTransition.frames.map(f=>f.file).sort(),'Complete entry and return wings');
+    const expected=hovering?expression.frames:expression.playback.order.filter(i=>i!==0&&i!==expression.frames.length-1).map(i=>expression.frames[i]);
+    assert.deepEqual([...seen].sort(),[...new Set(expected.map(f=>f.file))].sort(),'All configured expression drawings must be seen before speaking');
+    if(!hovering)assert.deepEqual([...groundSlots],[...new Set(expression.playback.order)],'Both neutral bookends must also finish');
+    if(hovering)assert.deepEqual([...bridges].sort(),[...new Set(bridge.frames.map(f=>f.file))].sort(),'Complete entry and return wings');
     talked=true;
    }
   }
   c.update(10);const p=projectFrame(c,clips,155);assert(p.frame?.file);
-  if(c.emotion.active&&c.emotion.kind==='shy')groundSlots.add(c.emotion.frame);
-  if(p.info===shy)seen.add(p.frame.file);
-  if(p.info===clips.hoverShyTransition)bridges.add(p.frame.file);
+  if(c.emotion.active&&c.emotion.kind===kind)groundSlots.add(c.emotion.frame);
+  if(p.info===expression)seen.add(p.frame.file);
+  if(p.info===bridge)bridges.add(p.frame.file);
  }
  assert(talked);assert.equal(sequence.length,0);assert(!c.emotion.active);assert.equal(c.airReaction,null);
  if(hovering)assert(c.rover.isHovering);

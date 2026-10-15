@@ -9,9 +9,9 @@ const knowledge={owner:'Lloyd',bio:{en:'Developer',ja:'開発者'},skills:['Blen
 const reply={text:'A Blender tool.',emotion:'neutral',gesture:'talkExplain',destination:'projects',sourceIds:['blender','https://evil.invalid']};
 const output=v=>({choices:[{finish_reason:'stop',message:{role:'assistant',content:JSON.stringify(v)}}]});
 test('baby-dragon personality maps every emotion without weakening factual or cost safeguards',()=>{
- const prompt=modelRequest(input,selectKnowledge(knowledge,input)).messages[0].content;
+ const prompt=modelRequest(input,selectKnowledge(knowledge,input)).messages.filter(m=>m.role==='system').map(m=>m.content).join('\n');
  for(const kind of ['delighted','amused','shy','proud','thoughtful','confused','surprised','reassuring'])assert(prompt.includes(kind));
- assert.match(prompt,/do not request wave/);assert.match(prompt,/Never invent credentials/);assert.match(prompt,/not misspelled baby talk/);
+ assert.match(prompt,/Never request wave/);assert.match(prompt,/Never invent credentials/);assert.match(prompt,/not misspelled baby talk/);
  assert.match(prompt,/happy, innocent, cheerful, playful and joyful/);assert.match(prompt,/Do not add another greeting/);assert.match(prompt,/no compulsory laugh/);assert.match(prompt,/Answer the actual question first/);
 });
 test('chat omits permanent category shortcuts but keeps contextual destination guiding',()=>{
