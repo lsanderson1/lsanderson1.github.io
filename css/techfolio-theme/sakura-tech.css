@@ -105,6 +105,52 @@ h1, h2, h3 { line-height: 1.12; }
 .fp-nav nav a:not(.is-active):hover,
 .fp-nav nav a:not(.is-active):focus-visible { color: var(--primary); }
 
+/* Smooth blue color, gentle lift and soft glow */
+/* transition: tells the browser to animate changes properties listed next rather than changing them instantly
+   color: animates the text color over 280 milliseconds or 0.28 seconds
+   ease: makes the change start gently, speed up, and slow down toward the end
+   transform: animates the change to the links visual position or shape
+   text-shadow: animates the shadow behind the text, making the glow fade in and out
+*/
+.fp-nav nav a {
+  transition:
+    color 280ms ease,
+    transform 280ms ease,
+    text-shadow 280ms ease;
+}
+
+/* Defines the hovered appearance */
+
+/* Targets a navigation link when your cursor is pointed over it */
+/* :not(.is-active) excludes links with the is-active class - the current tab that is opened 
+    hover means the pointer is over the link 
+*/
+.fp-nav nav a:not(.is-active):hover,
+
+/* Applies the same appearance when someone reaches the link using keyboard navigation (Usually the Tab). Makes the effect useful beyond mouse users */
+.fp-nav nav a:not(.is-active):focus-visible {
+  color: var(--primary); /* Reads the existing CSS variable primary which is the theme color of blue */
+  transform: translateY(-2px); /* Visually moves the link 2px upwards, translateY() moves something vertically, negative moves values up, positive moves it down */
+  text-shadow:                 /* Starts the shadow shading for the letters */
+    0 0 12px color-mix(        /* The three measurements mean: 0: no horizontal offset, or vertical offset, 12px is the blur radius. With no offset and a soft blur, the shadow looks like a glow surrounding the letters. color-mix begins the glows calculation */
+      in srgb,                 /* Chooses the color space used to mix the colors, can leave this unchanged */
+      var(--primary) 45%,      /* Uses 45% of the primary blue in the mixture */
+      transparent              /* Supplies the remaining 55% to be transparent, making the glow subtle rather than solid blue */
+    );
+}
+
+/* Respect reduced motion settings */
+@media (prefers-reduced-motion: reduce) {    /* Applies everything inside only when the visitor's device requests reduced motion */
+  .fp-nav nav a {
+    transition: none;                        /* Disables the animated fades and movements */
+  }
+
+  .fp-nav nav a:not(.is-active):hover,
+  .fp-nav nav a:not(.is-active):focus-visible {
+    transition: none;
+  }
+}
+
 .fp-footer {
   display: flex;
   justify-content: space-between;
