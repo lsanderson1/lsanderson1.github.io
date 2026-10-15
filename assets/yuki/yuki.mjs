@@ -14,21 +14,21 @@ import {PageMotion,pageProjection,inViewport,containPageRover,prepareCall} from 
 import {CallPerches} from './runtime/call-perches.mjs?v=7';
 import {VisitorPersonality,conversationOpening,localizeGreetingMessages,replySequence,cueArtwork} from './runtime/visitor-personality.mjs?v=11';
 import {ChatAvailability,ChatPermission,ChatSession,ChatVerification,chatEnvironment,chatEnabledKey,searchConsentKey} from './runtime/chat-access.mjs?v=3';
-import {ConversationMemory} from './runtime/conversation-memory.mjs?v=4';
+import {ConversationMemory} from './runtime/conversation-memory.mjs?v=5';
 import {VisitorInterests} from './runtime/visitor-interests.mjs';
 import {expressionSequence} from './runtime/reply-beats.mjs';
 import {GardenHome} from './home/garden.mjs?v=10';
 import {YukiLocation,capturePose,restorePose,poseArtwork,locationLabel,locationPage,portalSection,travelPortalSection} from './home/location.mjs?v=6';
 import {summonTiming,summonPhase,callFlightDuration,catchInFlight} from './home/summon.mjs';
 import {ConversationMoments,shouldWelcomeOnRefresh,isLeavingLink} from './runtime/conversation-moments.mjs?v=1';
-import {messageRecord,translatedText,translationBatch,checkedTranslations,applyTranslations,conversationHistory} from './runtime/conversation-language.mjs?v=8';
+import {messageRecord,translatedText,translationBatch,checkedTranslations,applyTranslations,conversationHistory} from './runtime/conversation-language.mjs?v=9';
 import {replyLanguage,replyQualityIssues,formalJapaneseVoice} from './runtime/reply-quality.mjs?v=4';
 import {DiscoveryGuide,isDiscoveryRequest} from './runtime/discovery-guide.mjs?v=3';
 import {CallDialogue} from './runtime/call-dialogue.mjs?v=3';
 import {ReadingMemory,readPageTitle,readingLabels,readPageDisplaySection,readPageSection,readPageImages,readGardenSpot,guideReference,followUpReference,sectionExplanation} from './runtime/reading-context.mjs?v=7';
-import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=29';
+import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=30';
 import {safeWebURL} from './runtime/web-sources.mjs?v=1';
-import {cleanVariety,rememberReply,rememberFactTopic,rememberFact,rememberFactEvidence,rememberJoke,rememberGuideReply,previousGuideReplies,packChatRequest,needsFreshText} from './runtime/reply-variety.mjs?v=14';
+import {cleanVariety,rememberReply,rememberFactTopic,rememberFact,rememberFactEvidence,rememberJoke,rememberGuideReply,previousGuideReplies,packChatRequest,needsFreshText} from './runtime/reply-variety.mjs?v=15';
 import {thirdPersonSelf} from './runtime/self-narration.mjs?v=2';
 
 const root=document.querySelector('#yuki-companion');
@@ -607,7 +607,7 @@ async function start(){
    // if verification takes time and the visitor scrolls before it completes.
    const context=sectionRequest?.page===location.pathname?{section:sectionRequest.section,images:sectionRequest.section.startsWith('i')?[sectionRequest.section]:[],lastGuide:null}:readingContext();
    conversationLanguage=guideEvent?(ja?'ja':'en'):replyLanguage(text,ja?'ja':'en');
-   const history=conversationHistory(messages,conversationLanguage);drawMessages();if(!guideEvent){addMessage('user',text,true,[],[],undefined,conversationLanguage);$('textarea').value='';}
+   const history=conversationHistory(messages,conversationLanguage,text);drawMessages();if(!guideEvent){addMessage('user',text,true,[],[],undefined,conversationLanguage);$('textarea').value='';}
    if(!guideEvent)interests.remember(text);
    status(tr('Yuki is thinking…','ゆきが考えています…'));react({text:'…',emotion:'thoughtful',gesture:'none'},{thinking:true}).catch(()=>{});
    const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:packChatRequest({message:text,history,lang:ja?'ja':'en',page:location.pathname,context,...(pass?{pass}:{token}),variety,memory:conversationMemory.recall(text,history),interests:interests.get(),...(guideEvent?{guideEvent}:{}),webSearch:!guideEvent&&searchPermission.allowed}),signal:requestController.signal,credentials:'omit'});

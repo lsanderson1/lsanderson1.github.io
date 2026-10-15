@@ -1,5 +1,35 @@
 // Resolve a short follow-up from actual recent visitor turns, never from the
 // currently visible garden, a guessed topic, or a model's old biography.
+// A reference is a conversation task, not a request for fresh entertainment.
+// These hints choose context; the model still interprets the complete question.
+export function explanationKind(message){
+ const q=String(message??'').normalize('NFKC');
+ if(/\b(?:another|different|new|random|one more)\b.{0,30}\b(?:joke|fact|pun|riddle|story)\b|(?:別の|新しい|もう一つの?)(?:冗談|ジョーク|豆知識|雑学|話|小話)/iu.test(q))return '';
+ const asks=/\b(?:explain|clarify|unpack|understand|mean|means|meaning|why|how|about|elaborate|expand)\b|説明|意味|なぜ|どうして|なんで|わから|分から|詳しく|くわしく/iu.test(q);
+ if(!asks)return '';
+ for(const [kind,noun] of [['joke','joke|pun|riddle'],['fact','fact|trivia'],['story','story|tale']]){
+  if(new RegExp('\\b(?:this|that|the|your|previous|earlier|last)\\s+(?:(?:last|previous|earlier|fun|funny|little|short)\\s+)*(?:'+noun+')\\b','iu').test(q))return kind;
+ }
+ if(/(?:この|その|前の|さっきの|今の|以前の)(?:冗談|ジョーク|ダジャレ|なぞなぞ)/u.test(q))return 'joke';
+ if(/(?:この|その|前の|さっきの|今の|以前の)(?:豆知識|雑学)/u.test(q))return 'fact';
+ if(/(?:この|その|前の|さっきの|今の|以前の)(?:話|物語|小話)/u.test(q))return 'story';
+ return '';
+}
+
+// Select the actual earlier answer of the requested kind, not an unrelated
+// latest explanation. Keep only complete request/reply pairs already supplied.
+export function referencedExchange(message,history=[]){
+ const kind=explanationKind(message);if(!kind)return [];
+ for(let i=history.length-1;i>=0;i--){
+  if(history[i].role!=='assistant')continue;
+  const at=history.slice(0,i).findLastIndex(m=>m.role==='user');if(at<0||history.slice(at+1,i).some(m=>m.role==='assistant'))continue;
+  const question=history[at].content;
+  const requestKind=discoveryKind(question,history.slice(0,at));
+  if(requestKind===kind||kind==='story'&&!explanationKind(question)&&/\bstor(?:y|ies)\b|物語|小話/u.test(question))return [history[at],history[i]];
+ }
+ return [];
+}
+
 function explicitKind(message){
  const q=String(message??'');
  if(/\b(?:make me laugh|tell me something funny|got anything funny|give me a laugh|something to make me (?:laugh|giggle)|cheer me up with (?:a |some )?(?:humou?r|something funny))\b|笑わせて|何か(?:笑える|くすっとする)(?:話|こと)|面白い冗談/iu.test(q))return 'joke';
@@ -13,6 +43,7 @@ export function isAnotherDiscovery(message){
 }
 export function discoveryKind(message,history=[]){
  const question=String(message??'');
+ if(explanationKind(question))return '';
  const newRequest=/\b(?:another|different|new|random|one more)\b.{0,30}\b(?:joke|fact|pun|riddle|story)\b|(?:別の|新しい|もう一つの?)(?:冗談|ジョーク|豆知識|雑学|話|小話|なぞなぞ|ダジャレ)/iu.test(question);
  // Mentioning a joke/fact while asking about its meaning is not a request
  // to replace it. Keep its context for explanation rather than discovery.
