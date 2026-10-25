@@ -6,7 +6,7 @@ export function assistantQuestions(text){
  // Quoted story dialogue and examples are not questions to the visitor.
  const plain=clean(text).replace(/「[^」]*」|『[^』]*』|“[^”]*”|"[^"\n]*"|(?<!\p{L})'[^'\n]*[?？]'(?!\p{L})/gu,'');
  return (plain.match(/[^.!?。！？\n]+[?？]/gu)??[]).map(s=>s.trim()).filter(s=>{
-  const n=key(s).length;return n>=10||n>=6&&/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(s);
+  const n=key(s).length;return Boolean(questionFamily(s))||n>=10||n>=6&&/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(s);
  }).slice(-4);
 }
 export function asksQuestionRepeat(message){
