@@ -4,6 +4,9 @@ import {cleanVariety,rememberJoke,needsFreshText,packChatRequest} from '../asset
 import {recentAnswers} from '../services/yuki-api/reply-variety.mjs';
 import {jokeDirection} from '../services/yuki-api/joke-direction.mjs';
 import {modelRequest,createHandler,parseModel} from '../services/yuki-api/worker.mjs';
+import {jokeReviewRequest} from '../services/yuki-api/joke-review.mjs';
+const assessment=(candidate,duplicate=false)=>({candidate,duplicate,coherent:true,native:true,reason:duplicate?'Same punchline.':'Different connected punchline.'});
+const core={premise:'A distinct situation.',payoff:'An understandable surprise.',pattern:'A visitor mistakes a vehicle in the sky for a seat inside its living room.'};
 
 const old='Why did the bicycle fall over? It was two tired!';
 test('joke memory catches older setups and payoffs even when ordinary history and recall omit them',()=>{
@@ -29,8 +32,8 @@ test('fresh joke directions vary generation rather than serving canned jokes, an
  const input={message:'Tell me a joke',lang:'en',history:[],variety:{jokes:[old]}};
  assert.notEqual(jokeDirection(input,()=>0),jokeDirection(input,()=>.99));assert.match(jokeDirection(input,()=>0),/requested topic or form/);
  assert.match(jokeDirection({...input,lang:'ja'},()=>0),/相手が指定した話題/);
- const p=modelRequest(input,{pages:[]});assert.match(p.messages[0].content,/Why did the bicycle/);assert.match(p.messages[1].content,/FRESH WRITING DIRECTION/);
- assert.match(p.messages[0].content,/fresh small observational scene/);assert.equal(p.max_tokens,1900);
+ const p=modelRequest(input,{pages:[]});assert.doesNotMatch(JSON.stringify(p.messages),/Why did the bicycle/);assert.match(jokeReviewRequest(p,{text:'New joke.'},input).messages.at(-1).content,/Why did the bicycle/);
+ assert.match(p.messages[0].content,/Different topics AND different punchline logic/);assert.equal(p.max_tokens,1900);
  assert.equal(jokeDirection({message:'What is your home?'}),'');
 });
 
@@ -43,8 +46,8 @@ test('open joke requests mix classic jokes, wordplay, dialogue and stories in bo
   assert.match(directions[1],lang==='ja'?/問いと答え/:/question-and-answer joke/);
   assert.match(directions[4],lang==='ja'?/3〜6文の小話/:/miniature comic story/);
   const prompt=modelRequest(input,{pages:[]}).messages[0].content;
-  assert.match(prompt,/stories supplement the earlier joke forms, not replace them/);
-  assert.match(prompt,/do not pad a good punchline/);
+  assert.match(prompt,/compact setup\/punchline joke, a native-language pun or witty dialogue/);
+  assert.match(prompt,/Do not pad a good punchline/);
  }
 });
 test('worker rejects an old joke after one bounded repair and only marks successful jokes',async()=>{
@@ -52,7 +55,7 @@ test('worker rejects an old joke after one bounded repair and only marks success
  const fresh='A little cloud asked for a window seat. The plane was already sitting in its living room! I think that cloud has a very roomy house.';
  for(const revised of [old,fresh]){
   let calls=0,reservations=0;const handler=createHandler(async url=>Response.json(url.includes('siteverify')?{success:true,hostname:'lsanderson1.github.io',action:'yuki-chat'}:{pages:[],owner:'Lloyd',bio:{en:'Portfolio owner.',ja:'作品の作者。'},skills:[]}));
-  const env={SITE_ORIGIN:'https://lsanderson1.github.io',CHAT_ENABLED:'true',FREE_PLAN_CONFIRMED:'true',TURNSTILE_SECRET:'test',IP_HASH_SECRET:'a'.repeat(40),AI:{run:async()=>({response:cue(calls++?revised:old)})},QUOTA:{idFromName:n=>n,get:()=>({fetch:async()=>{reservations++;return new Response(null,{status:204});}})}};
+  const env={SITE_ORIGIN:'https://lsanderson1.github.io',CHAT_ENABLED:'true',FREE_PLAN_CONFIRMED:'true',TURNSTILE_SECRET:'test',IP_HASH_SECRET:'a'.repeat(40),AI:{run:async()=>({response:calls++?{assessments:[assessment(0,true),assessment(1,revised===old)]}:{...cue(old),jokeAlternatives:[{text:revised,jokeCore:core}]}})},QUOTA:{idFromName:n=>n,get:()=>({fetch:async()=>{reservations++;return new Response(null,{status:204});}})}};
   const request=new Request('https://api.invalid/chat',{method:'POST',headers:{Origin:env.SITE_ORIGIN,'Content-Type':'application/json','CF-Connecting-IP':'192.0.2.1'},body:JSON.stringify({message:'Tell me another joke',history:[],lang:'en',page:'/',token:'test',variety:rememberJoke({},old)})});
   const response=await handler(request,env),value=await response.json();
   assert.equal(calls,2);assert.equal(reservations,2);
@@ -70,8 +73,8 @@ test('a visibly broken punchline uses the existing single repair and is never si
   let calls=0,reservations=0;
   const handler=createHandler(async url=>Response.json(url.includes('siteverify')?{success:true,hostname:'lsanderson1.github.io',action:'yuki-chat'}:{pages:[],owner:'Lloyd',bio:{en:'Portfolio owner.',ja:'作品の作者。'},skills:[]}));
   const env={SITE_ORIGIN:'https://lsanderson1.github.io',CHAT_ENABLED:'true',FREE_PLAN_CONFIRMED:'true',TURNSTILE_SECRET:'test',IP_HASH_SECRET:'a'.repeat(40),AI:{run:async(_model,request)=>{
-   if(calls++){assert.match(request.messages[0].content,/failed premise is NOT worth preserving/);return {response:{text:revised}};}
-   return {response:cue(bad)};
+   if(calls++){assert.match(request.messages[0].content,/Judge the supplied jokes/);return {response:{assessments:[{...assessment(0),coherent:false},{...assessment(1),coherent:revised!==bad}]}};}
+   return {response:{...cue(bad),jokeAlternatives:[{text:revised,jokeCore:core}]}};
   }},QUOTA:{idFromName:n=>n,get:()=>({fetch:async()=>{reservations++;return new Response(null,{status:204});}})}};
   const response=await handler(new Request('https://api.invalid/chat',{method:'POST',headers:{Origin:env.SITE_ORIGIN,'Content-Type':'application/json','CF-Connecting-IP':'192.0.2.1'},body:JSON.stringify({message:'Tell me a joke',lang:'en',page:'/',token:'test',history:[]})}),env);
   const body=await response.json();assert.equal(calls,2);assert.equal(reservations,2);

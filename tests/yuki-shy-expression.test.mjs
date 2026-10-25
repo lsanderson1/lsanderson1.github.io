@@ -19,7 +19,7 @@ for(const lang of ['en','ja'])test(`${lang} conversational routes receive contex
  ];
  for(const [i,web,task] of cases){
   const r=modelRequest(i,empty,web),systems=r.messages.filter(m=>m.role==='system');
-  const instructions=task?.startsWith('sourced-fact')?factExpressionInstructions:expressionInstructions;
+  const instructions=task?.startsWith('sourced-fact')||task?.startsWith('joke')?factExpressionInstructions:expressionInstructions;
   assert.equal(r.yukiTask,task);assert.equal(r.max_tokens,1900);
   assert.equal(systems.filter(m=>m.content.includes(instructions)).length,1);
   assert(systems.at(-1).content.endsWith(instructions));
@@ -28,7 +28,8 @@ for(const lang of ['en','ja'])test(`${lang} conversational routes receive contex
    assert(r.response_format.json_schema.properties.emotion.enum.includes(emotion));
    assert(instructions.includes(emotion));
   }
-  assert.equal(r.messages.at(-1).content,i.message+'\n/no_think');
+  const final=r.messages.at(-1).content;
+  assert.equal(task?.startsWith('joke')?JSON.parse(final.replace(/\n\/no_think$/,'')).request:final,i.message+(task?.startsWith('joke')?'':'\n/no_think'));
  }
 });
 

@@ -25,7 +25,7 @@ export const factExpressionInstructions='EXPRESSION (EN/JA): Match YOUR reply, n
 export function withExpressionGuidance(request,input){
  const allowed=request.response_format?.json_schema?.properties?.emotion?.enum;
  if(input.guideEvent||!allowed?.some(e=>e!=='neutral'&&Object.hasOwn(emotionMeanings,e)))return request;
- const instructions=request.yukiTask?.startsWith('sourced-fact')?factExpressionInstructions:expressionInstructions;
+ const instructions=request.yukiTask?.startsWith('sourced-fact')||request.yukiTask?.startsWith('joke')?factExpressionInstructions:expressionInstructions;
  const lastSystem=request.messages.findLastIndex(m=>m.role==='system');
  return {...request,messages:request.messages.map((m,i)=>i===lastSystem?{...m,content:m.content+'\n'+instructions}:m)};
 }

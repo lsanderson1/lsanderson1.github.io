@@ -5,6 +5,7 @@ import {pageAnswerRequest} from './page-answer.mjs';
 import {lightChatKind,lightChatRequest} from './light-chat.mjs';
 import {isContextualFollowup,followupAnswerRequest,followupReplyIssues} from './followup-answer.mjs';
 import {humorQualityIssues} from './humor-quality.mjs';
+import {hasJokeComparison,jokeReviewRequest,parseJokeReview,cleanJokeCandidates} from './joke-review.mjs';
 import {withExpressionGuidance} from './expression-guidance.mjs';
 import {withConversationContinuity,isSocialAnswer,socialAnswerRequest} from './conversation-continuity.mjs';
 import {cleanJokeCore,jokeRequestContext} from '../../assets/yuki/runtime/joke-memory.mjs';
@@ -147,7 +148,7 @@ export function parseModel(data,knowledge,web={}){
   value={...value,text};
  }
  // Only the server's completed discovery route can assign a seen-topic ID.
- try{return {...validReply({...value,pageOverview:undefined,factTopic:undefined,fact:undefined,joke:undefined,sources}),...(cleanJokeCore(value.jokeCore)?{jokeCore:cleanJokeCore(value.jokeCore)}:{}),...(web.mode!=='results'&&value.factIntent?{factIntent:value.factIntent}:{}),...(web.mode==='eligible'?{webQuery:safeSearchQuery(value.webQuery)}:{})};}catch{throw failure(502,'Reply unavailable');}
+ try{return {...validReply({...value,pageOverview:undefined,factTopic:undefined,fact:undefined,joke:undefined,sources}),...(cleanJokeCore(value.jokeCore)?{jokeCore:cleanJokeCore(value.jokeCore)}:{}),...(cleanJokeCandidates(value.jokeAlternatives).length?{jokeCandidates:cleanJokeCandidates(value.jokeAlternatives)}:{}),...(web.mode!=='results'&&value.factIntent?{factIntent:value.factIntent}:{}),...(web.mode==='eligible'?{webQuery:safeSearchQuery(value.webQuery)}:{})};}catch{throw failure(502,'Reply unavailable');}
 }
 export function initialInferenceTimeout(startedAt,now=Date.now()){
  return Math.max(1,Math.min(22000,38000-(now-startedAt)));
@@ -159,6 +160,9 @@ export async function runModel(ai,request,timeoutMs=22000){
  if(yukiTask==='sourced-fact'||yukiTask==='sourced-fact-ja')return runInference(ai,yukiTask==='sourced-fact-ja'?CLOUDFLARE_TRANSLATION_MODEL:CLOUDFLARE_HUMOR_MODEL,directSchema(body,'yuki_sourced_fact'),timeoutMs);
  if(yukiTask==='page-answer'||yukiTask==='page-answer-ja')return runInference(ai,yukiTask==='page-answer-ja'?CLOUDFLARE_TRANSLATION_MODEL:CLOUDFLARE_HUMOR_MODEL,directSchema(body,'yuki_page_answer'),timeoutMs);
  if(yukiTask==='discovery-intent')return runInference(ai,CLOUDFLARE_HUMOR_MODEL,directSchema(body,'yuki_discovery_intent'),timeoutMs);
+ // Reuse the existing humor model for the bounded bilingual comparison.
+ // A second assessment is a safeguard, not proof of native joke quality.
+ if(yukiTask==='joke-review')return runInference(ai,CLOUDFLARE_HUMOR_MODEL,directSchema(body,'yuki_joke_review'),timeoutMs);
  // Reuse the established translation model for focused speaker/voice repairs,
  // within the same single quota-reserved repair slot, never a provider retry.
  if(yukiTask==='guide-voice-ja'||yukiTask==='reply-voice')return runTranslation(ai,body,timeoutMs);
@@ -434,19 +438,28 @@ export function createHandler(network=fetch,{random}={}){
    const unfinished=unfinishedReply(reply.text);
    const quality=(text,core)=>[...(input.guideEvent&&!guideReplyMatches(finishGuideReply({text},input.guideEvent,cached.data,input.lang).text,input.guideEvent,cached.data.pages,input.lang)?['guide-target']:[]),...replyQualityIssues(text,input.replyLanguage,{allowRepetition:wantsExactRepeat(input.message)}),...followupReplyIssues(text,answerModel),...(searched?searchVoiceIssues(text,answerWeb.entries):[]),...(['joke','joke-ja'].includes(answerModel.yukiTask)?humorQualityIssues(text,core):[]),...(thirdPersonSelf(text,input.message)?['self-narration']:[]),...(input.replyLanguage==='ja'&&formalJapaneseVoice(text)?['voice']:[])];
    const issues=[...(unfinished?['unfinished']:[]),...quality(reply.text,reply.jokeCore)];
-   if(!repairUsed&&(issues.length||needsFreshReply(reply,input))&&!request.signal.aborted&&Date.now()-startedAt<30000){
+   const comedy=['joke','joke-ja'].includes(answerModel.yukiTask)&&!wantsExactRepeat(input.message);
+   const compareJoke=comedy&&(hasJokeComparison(input)||reply.jokeCandidates?.length>0);
+   let jokeReviewed=!compareJoke;
+   if(!repairUsed&&(compareJoke||issues.length||needsFreshReply(reply,input))&&!request.signal.aborted&&Date.now()-startedAt<30000){
     try{
      const extra=await quota.fetch('https://quota.invalid/reserve',{method:'POST',body:JSON.stringify({hash,minute:Math.floor(Date.now()/60000)}),signal:AbortSignal.timeout(1500)});
      const remaining=38000-(Date.now()-startedAt);
      if(extra.status===204&&!request.signal.aborted&&remaining>=6000){
-      const revision=issues.length?completionRequest(answerModel,reply,knowledge,answerWeb,input.replyLanguage,issues):rewriteRequest(answerModel,reply,input);
-      if(['joke','joke-ja'].includes(answerModel.yukiTask))revision.yukiTask=answerModel.yukiTask;
+      const revision=comedy?jokeReviewRequest(answerModel,reply,input,issues):issues.length?completionRequest(answerModel,reply,knowledge,answerWeb,input.replyLanguage,issues):rewriteRequest(answerModel,reply,input);
+      if(!comedy&&['joke','joke-ja'].includes(answerModel.yukiTask))revision.yukiTask=answerModel.yukiTask;
       const result=await runModel(env.AI,revision,Math.min(12000,remaining));
-      const revised=issues.length||input.guideEvent?parseCompletion(result,reply):parseModel(result,knowledge,answerWeb);
-      if(!unfinishedReply(revised.text)&&!quality(revised.text,revised.jokeCore).length)reply=issues.length?completeRevision(reply,revised):preferFreshReply(reply,revised,input);
+      const revised=comedy?parseJokeReview(result,reply,candidate=>!unfinishedReply(candidate.text)&&!quality(candidate.text,candidate.jokeCore).length&&!needsFreshReply({...reply,...candidate},input)):issues.length||input.guideEvent?parseCompletion(result,reply):parseModel(result,knowledge,answerWeb);
+      if(!unfinishedReply(revised.text)&&!quality(revised.text,revised.jokeCore).length){
+       if(comedy){if(!needsFreshReply(revised,input)){reply=revised;jokeReviewed=true;}}
+       else reply=issues.length?completeRevision(reply,revised):preferFreshReply(reply,revised,input);
+      }
      }
     }catch{/* Keep a complete original, or show the explicit notice below. */}
    }
+   // A denied/timed-out/failed comparison must not release an unchecked joke.
+   // Explicitly requested explanations/repeats never enter this new-joke gate.
+   if(!jokeReviewed){stage='VARIETY';throw failure(502,'Joke comparison unavailable');}
    const incomplete=unfinishedReply(reply.text);
    if(incomplete)reply=incompleteAnswer(input.replyLanguage);
    // Never display or remember a known wrong-language/looping answer. The UI

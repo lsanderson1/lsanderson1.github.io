@@ -21,7 +21,7 @@ test('long joke chains preserve visitor scope, not the subject Yuki happened to 
    variety=rememberJoke(rememberReply(variety,reply.text),reply.text,reply);
    history=[...history,{role:'user',content:input.message},{role:'assistant',content:reply.text}].slice(-6);
   }
-  assert.match(modelRequest({message:next,lang,history:[],variety},{pages:[]}).messages[0].content,new RegExp(root));
+  assert.match(modelRequest({message:next,lang,history:[],variety},{pages:[]}).messages.at(-1).content,new RegExp(root));
   assert.equal(jokeRequestContext({message:next,variety,history:[{role:'user',content:'What is this place?'}]}),null);
   assert.equal(rememberReply(variety,'This is the resume page.').jokeContext,undefined);
   assert.equal(jokeRequestContext({message:'Tell me a joke about music',variety}).request,'Tell me a joke about music');
@@ -78,7 +78,7 @@ test('unfamiliar humor is recognized semantically and enters the same guarded ge
  const handler=createHandler(async url=>{if(url.includes('tavily'))searches++;return Response.json(url.includes('siteverify')?{success:true,hostname:'lsanderson1.github.io',action:'yuki-chat'}:knowledge);});
  const env={SITE_ORIGIN:'https://lsanderson1.github.io',CHAT_ENABLED:'true',FREE_PLAN_CONFIRMED:'true',TURNSTILE_SECRET:'test',IP_HASH_SECRET:'a'.repeat(40),AI:{run:async(_model,request)=>{
   if(!calls++)return {response:{...cue('Let me think of a little surprise!'),factIntent:'joke'}};
-  assert.match(request.messages[0].content,/PUNCHLINE CRAFT/);assert.match(request.messages[0].content,/PREVIOUS PREMISES AND PAYOFFS/);
+  assert.match(request.messages[0].content,/PUNCHLINE CRAFT/);assert.match(request.messages[0].content,/Different topics AND different punchline logic/);
   return {response:{...cue(joke),jokeCore:core}};
  }},QUOTA:{idFromName:n=>n,get:()=>({fetch:async()=>{reserves++;return new Response(null,{status:204});}})}};
  const response=await handler(new Request('https://api.invalid/chat',{method:'POST',headers:{Origin:env.SITE_ORIGIN,'Content-Type':'application/json','CF-Connecting-IP':'192.0.2.1'},body:JSON.stringify({message:'My giggle tank could use a refill',history:[],lang:'en',page:'/',token:'test'})}),env);

@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {jokeReviewRequest} from '../services/yuki-api/joke-review.mjs';
 import assert from 'node:assert/strict';
 import {thirdPersonSelf} from '../assets/yuki/runtime/self-narration.mjs';
 import {needsFreshText,rememberReply} from '../assets/yuki/runtime/reply-variety.mjs';
@@ -43,8 +44,10 @@ test('older recall and bounded excerpts participate in the novelty guard',()=>{
  assert.deepEqual(recentAnswers(input),['An older joke to avoid.']);
  for(const pages of [[],[{id:'garden',text:'My home.'}]]){
   const request=modelRequest({...input,lang:'en'}, {pages},{mode:'eligible'});
-  assert.match(request.messages[0].content,/An older joke to avoid/);
-  assert.match(request.messages[0].content,/DIFFERENT setup and payoff/);
+  assert.doesNotMatch(JSON.stringify(request.messages),/An older joke to avoid/,'generation must not be primed by the old plot');
+  const review=jokeReviewRequest(request,{text:'A candidate joke.'},input);
+  assert.match(review.messages.at(-1).content,/An older joke to avoid/);
+  assert.match(review.messages[0].content,/SAME sequence of comic beats/);
   assert.equal(request.max_tokens,1900);
  }
  assert.match(varietyInstructions(input),/do not invent facts/);

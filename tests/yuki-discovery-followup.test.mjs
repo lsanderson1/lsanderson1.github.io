@@ -52,7 +52,7 @@ test('generic recurring framing is detected without changing ordinary necessary 
 
 test('joke prompt requires a connected payoff and lookup notices stay outside remembered conversation',()=>{
  const prompt=modelRequest({message:'another one',history:history('joke'),lang:'en'},{pages:[]}).messages[0].content;
- assert.match(prompt,/HUMOR LOGIC/);assert.match(prompt,/same punchline is the SAME joke/);assert.match(prompt,/new joke/);
+ assert.match(prompt,/PUNCHLINE CRAFT/);assert.match(prompt,/Different topics AND different punchline logic/);assert.match(prompt,/NEW joke/);
  const ui=readFileSync(new URL('../assets/yuki/yuki.mjs',import.meta.url),'utf8');
  const start=ui.indexOf('const cue=validReply(result);'),guard=ui.indexOf('if(cue.notice)',start),remember=ui.indexOf('conversationMemory.remember(text,cue.text)',start);
  assert(guard>start&&guard<remember);assert.match(ui.slice(guard,guard+95),/status\(cue.text\).*return/s);

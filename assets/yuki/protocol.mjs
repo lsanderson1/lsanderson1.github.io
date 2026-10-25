@@ -1,5 +1,5 @@
-import {cleanVariety,cleanStoryTopics,cleanFactTopic,cleanFactContext} from './runtime/reply-variety.mjs?v=17';
-import {cleanJokeCore,cleanJokeContext,cleanJokePlan} from './runtime/joke-memory.mjs?v=3';
+import {cleanVariety,cleanStoryTopics,cleanFactTopic,cleanFactContext} from './runtime/reply-variety.mjs?v=18';
+import {cleanJokeCore,cleanJokeContext,cleanJokePlan} from './runtime/joke-memory.mjs?v=4';
 import {cleanMessages} from './runtime/conversation-language.mjs?v=9';
 import {cleanReplyBeats} from './runtime/reply-beats.mjs';
 import {cleanAssistantText} from './runtime/reply-text.mjs?v=2';

@@ -38,6 +38,10 @@ const mechanisms=[
 ];
 const subjectId=pair=>pair[0].replaceAll(' ','-');
 const styleIds=['classic','question-answer','dialogue','observation','mini-story','comic-scene'];
+export function jokePlanHint(plan,language='en'){
+ const column=language==='ja'?1:0;
+ return {subject:(subjects.find(p=>subjectId(p)===plan.subject)??subjects[0])[column],format:styles[Math.max(0,styleIds.indexOf(plan.style))][column],angle:(mechanisms.find(p=>p[0]===plan.mechanism)??mechanisms[0])[column+1]};
+}
 const pick=(a,r)=>a[Math.min(a.length-1,Math.max(0,Math.floor(r()*a.length)))];
 function fresh(items,seen,id,random){const unused=items.filter(v=>!seen.includes(id(v)));return pick(unused.length?unused:items,random);}
 export function chooseJokePlan(input,random=randomUnit){

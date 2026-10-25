@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {jokeReviewRequest} from '../services/yuki-api/joke-review.mjs';
 import assert from 'node:assert/strict';
 import {discoveryKind} from '../assets/yuki/runtime/discovery.mjs';
 import {modelRequest} from '../services/yuki-api/worker.mjs';
@@ -21,15 +22,15 @@ test('playful stories in both languages inherit the same saved joke checks on fo
 
 test('native Japanese humor can use coherent little scenes instead of forced translated puns',()=>{
  const p=modelRequest({message:'笑える小話を聞かせて',lang:'ja',history:[]},{pages:[]});
- assert.equal(p.yukiTask,'joke-ja');assert.match(p.messages[0].content,/playful story is equally welcome in BOTH English and Japanese/);
- assert.match(p.messages[1].content,/目的→そのための行動→その行動が生む意外な結果/);
- assert.match(p.messages[1].content,/存在しない読み方を作らない/);
- assert.match(p.messages[1].content,/名前を変えても再利用しない/);
- assert(!p.messages[1].content.includes('駄洒落を、一つ改変せず'));
+ assert.equal(p.yukiTask,'joke-ja');assert.match(p.messages[0].content,/小話もいい/);
+ assert.match(p.messages[0].content,/前振りとオチ/);
+ assert.match(p.messages[0].content,/存在しない読み方を作らない/);
+ assert.match(p.messages[0].content,/Don't swap names into one template/);
+ assert(!p.messages[0].content.includes('駄洒落を、一つ改変せず'));
  const english=modelRequest({message:'Tell me a playful little story',lang:'en',history:[]},{pages:[]});
- assert.equal(english.yukiTask,'joke');assert.match(english.messages[1].content,/playful miniature stories/);
- assert.match(english.messages[1].content,/satisfying ending in 3–6 sentences/);
- assert.match(english.messages[0].content,/Reserve first-person/);
+ assert.equal(english.yukiTask,'joke');assert.match(english.messages[0].content,/Small comic stories are welcome/);
+ assert.match(english.messages[0].content,/clear setup and a punchline that makes sense/);
+ assert.match(english.messages[0].content,/Her thoughts can say I\/my/);
 });
 
 test('the observed mistaken-object plot is not new just because characters and objects change',()=>{
@@ -38,7 +39,8 @@ test('the observed mistaken-object plot is not new just because characters and o
  const input={message:'Tell me a playful story',lang:'en',variety:rememberJoke({},old),history:[]};
  assert(needsFreshText(next,input));
  assert(!needsFreshText('A clock refused to race another clock. It already had its hands full keeping time.',input));
- assert.match(modelRequest(input,{pages:[]}).messages[1].content,/Do NOT reuse that plot/);
+ const request=modelRequest(input,{pages:[]}),review=jokeReviewRequest(request,{text:next},input);
+ assert.match(review.messages[0].content,/SAME sequence of comic beats/);assert(review.messages.at(-1).content.includes(old));
  assert(!needsFreshText(next,{...input,message:'Repeat your last answer word for word'}));
 });
 
