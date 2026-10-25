@@ -28,6 +28,7 @@ export function followupIntent(message){
  if(/\b(?:examples?|demonstrat|illustrat)|例えば|たとえば|具体例|例は|例を/iu.test(q))return 'example';
  if(/\b(?:why|how come|reason)\b|なぜ|どうして|なんで|理由/iu.test(q))return 'reason';
  if(/\b(?:your (?:thought|opinion)|do you (?:think|like|feel)|what about you)\b|どう思|どう感じ|好きな理由|気に入|どこが好き/iu.test(q))return 'opinion';
+ if(/\b(?:coming along|getting on with|making progress|any progress|how (?:is|are) (?:it|that|things|they|you) going)\b|順調|進み具合|進捗|その後どう|どこまで進|うまくいって/iu.test(q))return 'progress';
  if(/\b(?:how|mechanism|process|work|works)\b|どうやって|どのように|仕組み|しくみ|手順/iu.test(q))return 'mechanism';
  if(/\b(?:more|expand|elaborate|detail|details|continue|go on|tell me about)\b|もっと|詳し|くわし|続きを|続きは|もう少し|掘り下げ/iu.test(q))return 'expand';
  if(/\b(?:what|where|who|which)\b|何|なに|どこ|誰|だれ|どれ|って/iu.test(q))return 'identity';
@@ -69,7 +70,7 @@ export function asksConversationFollowup(input){
  const q=clean(input.message);
  if(referencesReplyExplanation(input))return true;
  if(/^(?:(?:okay|ok|and|so|then|please)[,\s]+)*(?:(?:can|could|would) you )?(?:tell me|explain|say)(?: a (?:little|bit))? more(?: (?:about (?:that|it)|please))?[,\s]*(?:please)?[.!?]*$/iu.test(q))return true;
- if(/^(?:sources?|evidence|proof|例|理由|仕組み|出典|根拠|証拠)(?:は|を教えて)?\s*[.!?。！？]*$/iu.test(q)||followupIntent(q)==='correction')return true;
+ if(/^(?:sources?|evidence|proof|例|理由|仕組み|出典|根拠|証拠)(?:は|を教えて)?\s*[.!?。！？]*$/iu.test(q)||['correction','progress'].includes(followupIntent(q)))return true;
  if(/\b(?:it|its|that|those|these|they|them|their|this|he|she|him|her|his|hers)\b|\b(?:the) (?:tool|term|word|method|technique|mechanism|person|idea|concept|reason|difference|example)\b|それ|その|そこ|あれ|あの|あそこ|彼女|彼|本人|この(?:海|道具|言葉|方法|仕組み|人|考え|作品|例)/iu.test(q))return true;
  if(explicitFollowupSubject(q,previousAnswers(input)))return true;
  // Elliptical questions in both languages, including zero-subject Japanese.
@@ -78,6 +79,7 @@ export function asksConversationFollowup(input){
 }
 
 export const followupTasks=Object.freeze({
+ progress:'Respond to the progress/status of the relevant activity, not a technical definition or a replay of the previous milestone. For your fictional practice, give a warm present reflection or next goal without inventing completed offscreen events. If actual progress is unknown, say so. Do not repeat the visitor question you already asked.',
  evidence:'Explain what actually supports the previous claim. Earlier AI text is not evidence. Use supplied verified sources or the permitted lookup when needed; do not invent a source, claim to have checked without results, or merely insist the old answer is true. Correct errors and distinguish uncertainty.',
  identity:'Identify the requested person, place, tool, word or concept first, then explain that subject itself. Do not reopen the older topic that merely mentioned it.',
  mechanism:'Explain HOW the just-mentioned process works: its relevant stages or cause-and-effect, then a concrete example if helpful. Add the next layer instead of repeating the overview.',

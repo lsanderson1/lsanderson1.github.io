@@ -6,6 +6,7 @@ import {lightChatKind,lightChatRequest} from './light-chat.mjs';
 import {isContextualFollowup,followupAnswerRequest,followupReplyIssues} from './followup-answer.mjs';
 import {humorQualityIssues} from './humor-quality.mjs';
 import {withExpressionGuidance} from './expression-guidance.mjs';
+import {withConversationContinuity,isSocialAnswer,socialAnswerRequest} from './conversation-continuity.mjs';
 import {cleanJokeCore,jokeRequestContext} from '../../assets/yuki/runtime/joke-memory.mjs';
 import {chooseJokePlan} from './joke-direction.mjs';
 import {personalityInstructions,replyContract,followupFocusInstructions} from './personality.mjs';
@@ -30,7 +31,7 @@ import {unfinishedReply,completionRequest,parseCompletion,completeRevision,incom
 
 // Deliberately fixed: neither a visitor nor an environment model override can
 // route requests to a paid-only model, AI Gateway, or another provider.
-// Free-tier eligibility checked 2026-10-15; recheck before deployment.
+// Free-tier eligibility checked 2026-10-25; recheck before deployment.
 export const CLOUDFLARE_MODEL='@cf/qwen/qwen3-30b-a3b-fp8';
 // English jokes and focused follow-ups; bounded live comparisons through 2026-10-13.
 // Explicitly available on Workers Free per Cloudflare's model-access changelog.
@@ -70,7 +71,7 @@ export function selectKnowledge(k,input){
  try{return retrieveKnowledge(k,input);}catch{throw failure(503,'Site information unavailable');}
 }
 export function modelRequest(input,knowledge,web={}){
- return withExpressionGuidance(addFactIntent(buildModelRequest(input,knowledge,web),input,knowledge,web),input);
+ return withExpressionGuidance(withConversationContinuity(addFactIntent(buildModelRequest(input,knowledge,web),input,knowledge,web),input),input);
 }
 function buildModelRequest(input,knowledge,web={}){
  const language=input.replyLanguage??input.lang;
@@ -80,6 +81,7 @@ function buildModelRequest(input,knowledge,web={}){
  if(input.guideEvent)return guideReplyRequest(input,schema,knowledge);
  if(knowledge.view?.localQuestion&&!input.guideEvent)return pageAnswerRequest({...input,lang:language},knowledge,web,schema);
  const lightKind=web.factIntent?'fact':lightChatKind(input,knowledge);if(lightKind)return lightChatRequest(input,web,schema,lightKind);
+ if(isSocialAnswer(input))return socialAnswerRequest(input,schema);
  if(isContextualFollowup(input,knowledge))return followupAnswerRequest(input,knowledge,web,schema);
  const instructions=`${input.history?.length?followupFocusInstructions+'\n':''}${personalityInstructions(language)}
 ${portfolioExplanationInstructions}
@@ -164,6 +166,7 @@ export async function runModel(ai,request,timeoutMs=22000){
  // Nemotron corrected an inherited EN direction error; Gemma kept JA casual.
  // This is one initial inference, not an extra call, retry or paid fallback.
  if(yukiTask==='contextual-followup'||yukiTask==='contextual-followup-ja')return runInference(ai,yukiTask==='contextual-followup-ja'?CLOUDFLARE_TRANSLATION_MODEL:CLOUDFLARE_HUMOR_MODEL,directSchema(body,'yuki_followup'),timeoutMs);
+ if(yukiTask==='social-answer'||yukiTask==='social-answer-ja')return runInference(ai,yukiTask==='social-answer-ja'?CLOUDFLARE_TRANSLATION_MODEL:CLOUDFLARE_HUMOR_MODEL,directSchema(body,'yuki_social_answer'),timeoutMs);
  const joke=yukiTask==='joke'||yukiTask==='joke-ja';
  const model=yukiTask==='joke-ja'?CLOUDFLARE_TRANSLATION_MODEL:yukiTask==='joke'?CLOUDFLARE_HUMOR_MODEL:CLOUDFLARE_MODEL;
  return runInference(ai,model,joke?directSchema(body,'yuki_joke'):body,timeoutMs);
