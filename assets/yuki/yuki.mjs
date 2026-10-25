@@ -26,9 +26,9 @@ import {replyLanguage,replyQualityIssues,formalJapaneseVoice} from './runtime/re
 import {DiscoveryGuide,isDiscoveryRequest} from './runtime/discovery-guide.mjs?v=3';
 import {CallDialogue} from './runtime/call-dialogue.mjs?v=3';
 import {ReadingMemory,readPageTitle,readingLabels,readPageDisplaySection,readPageSection,readPageImages,readGardenSpot,guideReference,followUpReference,sectionExplanation} from './runtime/reading-context.mjs?v=7';
-import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=32';
+import {validReply,readSession,chatUnavailable,cleanAssistantText} from './protocol.mjs?v=33';
 import {safeWebURL} from './runtime/web-sources.mjs?v=1';
-import {cleanVariety,rememberReply,rememberFactTopic,rememberFact,rememberFactEvidence,rememberJoke,rememberGuideReply,previousGuideReplies,packChatRequest,needsFreshText} from './runtime/reply-variety.mjs?v=17';
+import {cleanVariety,rememberReply,rememberFactTopic,rememberFact,rememberFactEvidence,rememberJoke,rememberGuideReply,previousGuideReplies,packChatRequest,needsFreshText} from './runtime/reply-variety.mjs?v=18';
 import {thirdPersonSelf} from './runtime/self-narration.mjs?v=2';
 
 const root=document.querySelector('#yuki-companion');

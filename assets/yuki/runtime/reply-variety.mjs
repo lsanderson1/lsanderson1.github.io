@@ -1,5 +1,5 @@
 import {discoveryKind,referencedExchange} from './discovery.mjs?v=6';
-import {cleanJokeContext,cleanJokeRecords,cleanJokeCore,cleanJokePlan,jokeRequestContext,repeatedJokeCore} from './joke-memory.mjs?v=3';
+import {cleanJokeContext,cleanJokeRecords,cleanJokeCore,cleanJokePlan,jokeRequestContext,repeatedJokeCore,repeatedJokeCorrection} from './joke-memory.mjs?v=4';
 import {safeWebURL} from './web-sources.mjs';
 import {repeatedConversationQuestion,requestsSubject,asksQuestionRepeat} from './conversation-continuity.mjs?v=2';
 import {cleanGuideRecords,guideRecord,previousGuideReplies,cleanGuidePrevious,repeatedGuideReply} from './guide-variety.mjs?v=1';
@@ -211,6 +211,7 @@ export function needsFreshText(text,input){
  if(!jokeRequestContext(input)&&requestedTopicReuse(text,input))return false;
  const kind=jokeRequestContext(input)?'joke':discoveryKind(input.message,input.history),discovery=Boolean(kind);
  if(kind==='joke'&&repeatedJokeCore(input.jokeCore,input.variety?.jokeRecords))return true;
+ if(kind==='joke'&&repeatedJokeCorrection(text,[...(input.variety?.jokes??[]),...(input.history??[]).filter(m=>m.role==='assistant').map(m=>m.content),...(input.memory??[]).map(m=>m.answer)]))return true;
  return repetitionScore(text,input.variety,input.history??[],input.memory??[],{discovery,joke:kind==='joke'})>=(input.guideEvent?0.75:discovery?0.72:repeatThreshold);
 }
 export function wantsExactRepeat(text){
