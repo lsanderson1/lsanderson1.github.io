@@ -1,6 +1,7 @@
 import {discoveryKind,referencedExchange} from './discovery.mjs?v=6';
 import {cleanJokeContext,cleanJokeRecords,cleanJokeCore,cleanJokePlan,jokeRequestContext,repeatedJokeCore} from './joke-memory.mjs?v=3';
 import {safeWebURL} from './web-sources.mjs';
+import {repeatedConversationQuestion,requestsSubject,asksQuestionRepeat} from './conversation-continuity.mjs';
 import {cleanGuideRecords,guideRecord,previousGuideReplies,cleanGuidePrevious,repeatedGuideReply} from './guide-variety.mjs?v=1';
 export {previousGuideReplies} from './guide-variety.mjs?v=1';
 export {discoveryKind} from './discovery.mjs?v=6';
@@ -118,6 +119,26 @@ function discoveryIdeaScore(text,previous){
  }
  return 0;
 }
+function repeatedPersonalEpisode(text,previous){
+ // A long, lightly reworded first-person scene can evade whole-paragraph
+ // fingerprints. Compare its content words separately from the social wrapper.
+ // This intentionally catches close lexical retellings, not all paraphrases.
+ const episode=s=>/\bi(?:'|’)ve been\b|\bi (?:have been|was|had|managed|watched|found|tried|practiced|practised|saw|spent|learned|learnt)\b|\b(?:today|yesterday|earlier)\b.{0,30}\bi\b|(?:今日|昨日|さっき|この前).{0,100}(?:見た|見て|できた|練習|した|してた|過ごした)/iu.test(s);
+ const parts=value=>String(value).split(/[.!?。！？\n]+/u).filter(episode);
+ for(const a of parts(text))for(const b of parts(previous)){
+  if(/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(a+b)){
+   // Japanese has no word spaces; short character pairs also retain mixed
+   // kanji/kana words, which the factual keyword tokenizer cannot represent.
+   const pairs=s=>{const chars=[...normalized(s)];return new Set(chars.slice(1).map((c,i)=>chars[i]+c));};
+   const left=pairs(a),right=pairs(b),shared=[...left].filter(w=>right.has(w)).length;
+   if(shared>=18&&shared/Math.max(left.size,right.size)>=.62)return true;
+  }
+  const left=ideaWords(a),right=ideaWords(b),shared=[...left].filter(w=>right.has(w)).length;
+  const minimum=/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(a+b)?4:7;
+  if(shared>=minimum&&shared/Math.min(left.size,right.size)>=.7&&shared/Math.max(left.size,right.size)>=.55)return true;
+ }
+ return false;
+}
 function sameJapaneseJokeSetup(text,previous){
  const opening=value=>normalized(String(value).split(/[?？!！。\n]/u)[0]);
  const left=opening(text),right=opening(previous);
@@ -146,7 +167,7 @@ export function repetitionScore(text,variety,history=[],memory=[],{discovery=fal
  const previous=[...new Set([...history.filter(item=>item.role==='assistant').map(item=>item.content),...memory.filter(item=>typeof item?.answer==='string').map(item=>item.answer),...(joke?cleanJokes(variety?.jokes):discovery?cleanFacts(variety?.facts):[])])];
  for(const content of previous)recent.push(replyFingerprint(content));
  const score=recent.reduce((score,item)=>Math.max(score,discovery&&fingerprint.length>=8&&fingerprint.digest===item.digest?1:replySimilarity(fingerprint,item)),0);
- return previous.reduce((score,content)=>Math.max(score,sharedPassage(text,content,discovery),discovery?discoveryIdeaScore(text,content):0,joke&&(sameJapaneseJokeSetup(text,content)||usesMistakenObjectPlot(text)&&usesMistakenObjectPlot(content))?.84:0),Math.max(score,recurringFrame(text,previous)? .82:0));
+ return previous.reduce((score,content)=>Math.max(score,sharedPassage(text,content,discovery),discovery?discoveryIdeaScore(text,content):repeatedPersonalEpisode(text,content)?.84:0,joke&&(sameJapaneseJokeSetup(text,content)||usesMistakenObjectPlot(text)&&usesMistakenObjectPlot(content))?.84:0),Math.max(score,recurringFrame(text,previous)? .82:0));
 }
 export const repeatThreshold=.8;
 // Naming an earlier subject is permission to revisit its established facts,
@@ -158,6 +179,7 @@ const topicTerms=value=>[...ideaWords(value)].filter(w=>w.length>=2&&!topicStop.
 export function requestedTopicReuse(text,input){
  if(input.guideEvent||discoveryKind(input.message,input.history))return false;
  const question=String(input.message??'');
+ if(!requestsSubject(question))return false;
  if(/\b(?:facts?|trivia|jokes?|puns?|riddles?)\b|豆知識|雑学|冗談|ジョーク|ダジャレ|なぞなぞ/iu.test(question))return false;
  // A request for a new angle/detail still deserves genuinely new substance.
  if(/\b(?:another|different|random|new|more|further|else|avoid|stop)\b|\b(?:don't|do not)\s+repeat|\bno repeats?\b|別|ほか|他の|新し|ランダム|もっと|詳し|繰り返さない|繰り返さず/iu.test(question))return false;
@@ -168,6 +190,12 @@ export function requestedTopicReuse(text,input){
 }
 export function needsFreshText(text,input){
  if(wantsExactRepeat(input.message))return false;
+ // Short questions often escaped paragraph similarity and topic-revisit
+ // exemptions. A shared topic is not permission to re-ask the visitor.
+ if(repeatedConversationQuestion(text,input))return true;
+ // A request to hear the question again permits the question, not replaying
+ // the surrounding anecdote. Keep the normal checks on the rest of the reply.
+ if(asksQuestionRepeat(input.message))text=text.replace(/[^.!?。！？\n]+[?？]/gu,'');
  // A server-resolved overview is a factual explanation of this exact page,
  // not an open-ended request for novelty. Rephrasing "what is this place?"
  // should not turn its correct identity/content into a forbidden repeat.
