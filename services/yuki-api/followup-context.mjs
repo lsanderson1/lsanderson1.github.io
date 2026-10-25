@@ -60,7 +60,7 @@ export function referencesReplyExplanation(input){
  if(/\b(?:page|section|heading|paragraph|picture|photo|image|screen|website|site|place|garden|here)\b|ページ|項目|見出し|段落|写真|画像|画面|サイト|場所|庭|ここ|この部分/iu.test(q))return false;
  if(explanationKind(q))return true;
  if(!(input.history??[]).some(m=>m.role==='assistant'&&m.content?.trim()))return false;
- if(/\bwhat (?:does|did) (?:this|that|it) mean\b|\b(?:what you (?:just |previously )?said|your (?:last|previous) (?:message|answer|reply))\b|(?:これ|それ)(?:は|って)?どういう意味/iu.test(q))return true;
+ if(/\bwhat (?:does|did) (?:this|that|it) mean\b|\b(?:what you (?:just |previously )?(?:said|meant|mean|were getting at)|what (?:do|did) you mean|your (?:last|previous) (?:message|answer|reply))\b|(?:これ|それ)(?:は|って)?どういう意味|(?:さっき|今)(?:の(?:返事|話|説明))?(?:は|って)?どういう(?:意味|こと)/iu.test(q))return true;
  if(/\b(?:explain|clarify|unpack|elaborate on|expand on|break down|help me understand|walk me through)\s+(?:(?:this|that|it)(?:\s+(?:fun(?:ny)?\s+)?(?:joke|story|fact|answer|reply|explanation|example|point))?|your (?:(?:last|previous) )?(?:answer|reply|explanation|message))(?=\s*(?:[.!?]|$)|\s+(?:again|more|further|please|in|for|a|to|because|so)\b)/iu.test(q))return true;
  if(/\b(?:this|that)\s+(?:joke|story|fact|answer|reply|explanation|example|point)\b/iu.test(q)&&/\b(?:mean|means|about|why|how|explain|understand)\b/iu.test(q))return true;
  return /(?:これ|それ|さっきの返事|今の説明|(?:この|その)(?:答え|説明|冗談|ジョーク|豆知識|雑学|話|例)).{0,35}(?:説明|詳し|くわし|わかりやす|分かりやす|噛み砕|かみくだ|どういう意味|どういうこと)/u.test(q);

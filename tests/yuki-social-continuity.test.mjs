@@ -5,6 +5,8 @@ import {modelRequest,validateInput,createHandler,runModel,CLOUDFLARE_HUMOR_MODEL
 import {followupIntent} from '../services/yuki-api/followup-context.mjs';
 import {assistantQuestions,repeatedConversationQuestion} from '../assets/yuki/runtime/conversation-continuity.mjs';
 import {continuityInstructions,isSocialAnswer} from '../services/yuki-api/conversation-continuity.mjs';
+import {ConversationMemory} from '../assets/yuki/runtime/conversation-memory.mjs';
+import {conversationHistory,messageRecord} from '../assets/yuki/runtime/conversation-language.mjs';
 
 const first="Oh! It’s been a while! I’ve been busy exploring the garden and practicing my flights. How have you been? I’d love to hear what you’ve been up to!";
 const progress="Oh, it’s going wonderfully! I’ve been practicing little loops and dives near the cherry blossoms, and today I even managed to hover just long enough to watch a paper crane spin slowly in the breeze—it made me giggle with delight! How about you? Any fun adventures or quiet moments you’d like to share?";
@@ -46,6 +48,87 @@ test('common check-in rephrasings are caught in both languages',()=>{
  for(const [old,next] of [['How have you been?','How are you doing?'],['最近はどう過ごしてる？','今日はどうだった？'],['最近は何をしてたの？','この頃何していたの？']]){
   assert(repeatedConversationQuestion(next,{message:'I just came to see you.',history:[{role:'assistant',content:old}]}),next);
  }
+});
+
+test('short English and Japanese check-ins are not lost to the sentence-length filter',()=>{
+ for(const [old,next,message] of [['How are you?','How have you been?','I am doing well.'],['How have you been?','How are you?','Fine, thank you!'],['元気？','最近はどう過ごしてる？','元気だよ'],['最近はどう過ごしてる？','元気？','今日は楽しかったよ']]){
+  assert.equal(assistantQuestions(old).length,1,old);
+  assert(repeatedConversationQuestion(next,{message,history:[{role:'assistant',content:old}]}),next);
+ }
+ assert.deepEqual(assistantQuestions('Why?'),[],'a short ambiguous clarification is not a social check-in');
+ assert.deepEqual(assistantQuestions('何？'),[]);
+});
+
+test('different conversational subjects retain both speakers and the same bilingual personality',()=>{
+ const cases=[
+  ['en','Which kind of books do you enjoy?','Mysteries are my favorite.'],
+  ['en','What did you enjoy about learning that?','The way the pieces finally fit together.'],
+  ['en','How has your day been?','I am a little tired, but talking helps.'],
+  ['ja','どんな本が好き？','推理小説が好きなんだ。'],
+  ['ja','最近はどう過ごしてる？','ちょっと疲れてるけど、お話できて嬉しい。']
+ ];
+ for(const [lang,answer,message] of cases){
+  const input=validateInput({message,lang,page:lang==='ja'?'/ja/resume.html':'/resume.html',token:'test',history:[{role:'assistant',content:answer}]}),request=modelRequest(input,{pages:[]});
+  assert(request.messages.some(m=>m.content.includes(answer)),answer);
+  assert(request.messages.at(-1).content.includes(message));
+  const prompt=request.messages.filter(m=>m.role==='system').map(m=>m.content).join('\n');
+  assert.match(prompt,/happy, innocent/);
+  assert.match(prompt,/first.person|I\/my/i);
+  assert.match(prompt,/detailed explanation|useful detail/);
+  assert.match(prompt,/already.*(?:asked|supplied)|answered question/s);
+  if(lang==='ja')assert.match(prompt,/普通体/);
+ }
+});
+
+test('technical, factual, humorous and personal follow-ups keep depth and their actual referent',()=>{
+ for(const [lang,answer,message] of [
+  ['en','A dictionary associates keys with values.','Can you give me an example of that?'],
+  ['en','The joke turns on the two meanings of light: not heavy and illumination.','Explain what you meant.'],
+  ['en','I dream of making a flying library that feels welcoming to new readers.','What do you like about that?'],
+  ['ja','屈折は、違う物質に入るときに光の進む方向が変わることだよ。','その仕組みを教えて'],
+  ['ja','この冗談は、同じ音で違う意味を持つ二つの言葉を使っているよ。','それを詳しく説明して'],
+  ['ja','いつか、初めて来た人も安心できる空飛ぶ図書館を作りたいな。','そのどこが好き？']
+ ]){
+  const input=validateInput({message,lang,page:'/',token:'test',history:[{role:'assistant',content:answer}]}),request=modelRequest(input,{pages:[]});
+  const prompt=request.messages.filter(m=>m.role==='system').map(m=>m.content).join('\n');
+  assert.match(request.yukiTask,/contextual-followup/);
+  assert(prompt.includes(answer));
+  assert.match(prompt,/5–8 connected sentences/);
+  assert.match(prompt,/not an automatic follow-up question/);
+  assert.equal(request.max_tokens,1900);
+  assert.match(prompt,/happy, innocent, playful/);
+ }
+});
+
+test('ordinary meaning questions stay attached to the reply rather than treating the words as a new topic',()=>{
+ for(const [lang,messages,answer] of [
+  ['en',['Explain what you meant.','What did you mean by that?','Can you clarify what you were getting at?'],'A prism separates light into different colors through refraction.'],
+  ['ja',['さっきの返事はどういうこと？','今の説明ってどういう意味？'],'プリズムは屈折によって光をいくつかの色に分けるんだ。']
+ ])for(const message of messages){
+  const input=validateInput({message,lang,page:'/',token:'test',history:[{role:'assistant',content:answer}]}),request=modelRequest(input,{pages:[]});
+  assert.match(request.yukiTask,/contextual-followup/,message);
+  assert(request.messages[0].content.includes('EXACT REPLY EXPLANATION'));
+  assert(request.messages[0].content.includes(answer));
+ }
+});
+
+test('page and language changes retain bounded recall and the latest exchange in order',()=>{
+ let now=1000;const saved=new Map(),storage={getItem:k=>saved.get(k),setItem:(k,v)=>saved.set(k,v),removeItem:k=>saved.delete(k)};
+ const original=new ConversationMemory(storage,'en',()=>now);
+ original.remember('I like mysteries.','A mystery gives me little clues to think about!');
+ const switched=new ConversationMemory(storage,'ja',()=>now);
+ assert.deepEqual(switched.turns,original.turns);
+ const visible=[messageRecord('assistant','Which kind of books do you enjoy?','en'),messageRecord('user','Mysteries are my favorite.','en')];
+ for(const [page,lang] of [['/yuki/','en'],['/ja/resume.html','ja']]){
+  const history=conversationHistory(visible,lang,'Why do you like mysteries?');
+  assert.equal(history.at(-1).content,'Mysteries are my favorite.');
+  const packed=JSON.parse(packChatRequest({message:'Why do you like mysteries?',lang,page,token:'test',history,memory:switched.recall('mysteries',history)}));
+  assert.deepEqual(packed.history,history);
+ }
+ // A cleared visible transcript is separate from recall; it is not infinite.
+ assert.equal(switched.recall('mysteries',[]).length,1);
+ now+=86400000;
+ assert.equal(switched.recall('mysteries',[]).length,0);
 });
 
 test('explicit requests repeat only the question, not the old surrounding anecdote',()=>{
